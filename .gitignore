@@ -1,4 +1,8 @@
 /node_modules
-
+/public/css/styles.css
+/public/css/styles.css.map
+.env
+.DS_Store
+.idea
+.vscode
 *.log
-.vscode/

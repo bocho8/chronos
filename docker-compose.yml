@@ -1,0 +1,64 @@
+version: "3.9"
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: chronos-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./public:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+
+  php:
+    build:
+      context: ./docker/php
+    container_name: chronos-php
+    working_dir: /var/www/html
+    volumes:
+      - ./public:/var/www/html
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: chronos_db
+      POSTGRES_USER: chronos_user
+      POSTGRES_PASSWORD: chronos_pass
+
+  node:
+    image: node:20-alpine
+    container_name: chronos-node
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "npm install && npm run tw:dev"
+    tty: true
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: chronos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: chronos_db
+      POSTGRES_USER: chronos_user
+      POSTGRES_PASSWORD: chronos_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: chronos-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
+
+volumes:
+  pg_data:
