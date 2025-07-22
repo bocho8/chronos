@@ -1,10 +1,13 @@
 # chronos
 
+## Dependencias
+[Instalar NodeJS](https://nodejs.org/en/download)
+[Documentacion TailwindCSS](https://tailwindcss.com/docs/styling-with-utility-classes)
+
 git clone https://github.com/bocho8/chronos.git
 
 cd chronos
 
-[Instalar NodeJS](https://nodejs.org/en/download)
 
 npm install
 
