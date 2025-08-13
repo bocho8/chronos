@@ -1,4 +1,7 @@
 <?php
+header("Location: login.php");
+exit();
+
 $host = getenv('POSTGRES_HOST');
 $db   = getenv('POSTGRES_DB');
 $user = getenv('POSTGRES_USER');
@@ -11,8 +14,7 @@ try {
 } catch (PDOException $e) {
     $msg = "❌ Error: " . $e->getMessage();
 }
-?>
-<!doctype html>
+?><!doctype html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
