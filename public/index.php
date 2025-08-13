@@ -1,5 +1,5 @@
 <?php
-header("Location: login.php");
+header("Location: ../src/views/login.php");
 exit();
 
 $host = getenv('POSTGRES_HOST');
