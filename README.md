@@ -1,4 +1,9 @@
 # chronos
+
+## 📚 Documentación
+
+- **[ESRE - Especificación de Requerimientos de Software](docs/ESRE_SIGIE.md)** - Documento completo de especificación de requerimientos para el sistema de gestión de horarios escolares.
+
 ## Requisitos previos
 
 | Herramienta | ¿Dónde conseguirla? |
