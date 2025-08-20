@@ -5,6 +5,7 @@
 |-------------|---------------------|
 | **Docker** 20.10+ | https://docs.docker.com/get-docker |
 | **Git**            | https://git-scm.com/downloads |
+| **DBeaver** (opcional, cliente DB) | https://dbeaver.io/download |
 
 ## 1. Levantar el proyecto
 
@@ -20,8 +21,14 @@ docker compose up -d --build
 | Servicio   | URL / puerto            | Credenciales                                               |
 | ---------- | ----------------------- | ---------------------------------------------------------- |
 | Sitio web  | <http://localhost>      | —                                                          |
-| pgAdmin    | <http://localhost:8080> | `admin@example.com` / `admin`                              |
 | PostgreSQL | localhost:5432          | user: `chronos_user` pass: `chronos_pass` db: `chronos_db` |
+
+👉 Para administrar la base de datos, usar **DBeaver** y crear una conexión con estos datos:
+- Host: `localhost`
+- Puerto: `5432`
+- Base de datos: `chronos_db`
+- Usuario: `chronos_user`
+- Contraseña: `chronos_pass`
 
 ## 2. Scripts de TailwindCSS
 ```bash
