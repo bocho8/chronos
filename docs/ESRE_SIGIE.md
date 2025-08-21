@@ -118,6 +118,7 @@ El sistema es una aplicación web independiente diseñada para gestionar y optim
 ### 4.3. Administración de Usuarios y Permisos
 
 - El sistema debe soportar los roles de usuario: Administrador, Dirección, Coordinador, Docente y Padre.
+- El sistema debe permitir al usuario seleccionar su rol durante el proceso de login.
 - El sistema debe permitir al rol Dirección añadir nuevos docentes.
 - El sistema debe permitir al rol Dirección añadir nuevas materias.
 - El sistema debe permitir al rol Dirección publicar los horarios generados.
