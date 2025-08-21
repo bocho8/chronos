@@ -1,1 +1,14 @@
 @import 'tailwindcss';
+
+/* Custom styles for form validation and error messages */
+.error-message {
+  display: none;
+}
+
+.input-error {
+  border-color: #dc3545 !important;
+}
+
+.input-success {
+  border-color: #28a745 !important;
+}

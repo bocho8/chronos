@@ -4,26 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Inicio de Sesión | SIM</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Merriweather+Sans:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Merriweather Sans', Arial, sans-serif;
-    }
-    
-    /* Estilos para mensajes de error */
-    .error-message {
-      display: none;
-    }
-    
-    .input-error {
-      border-color: #dc3545 !important;
-    }
-    
-    .input-success {
-      border-color: #28a745 !important;
-    }
-  </style>
 </head>
 <body class="m-0 font-['Merriweather_Sans'] bg-gray-100 text-blue-900">
   <header class="bg-blue-900 text-white h-[70px] min-h-[70px] flex items-center justify-between px-8 box-border">
@@ -47,10 +29,15 @@
       <h2 class="text-blue-900 text-[1.7rem] font-bold mb-6">Inicio de Sesión</h2>
       
       <?php
+      // Include required files
+      require_once __DIR__ . '/../models/Database.php';
+      require_once __DIR__ . '/../models/Auth.php';
+      
       $errors = [];
       $ci = '';
       $password = '';
       $role = '';
+      $loginMessage = '';
       
       if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ci = trim($_POST['ci'] ?? '');
@@ -80,9 +67,53 @@
         }
         
         if (empty($errors)) {
-          // Aquí iría la lógica de autenticación
-          // Por ahora solo mostramos un mensaje de éxito
-          echo '<div class="text-green-600 mb-4 p-2 bg-green-100 rounded">Datos válidos. Procesando login...</div>';
+          try {
+            // Load database configuration
+            $dbConfig = require __DIR__ . '/../config/database.php';
+            
+            // Initialize database and auth
+            $database = new Database($dbConfig);
+            $auth = new Auth($database->getConnection());
+            
+            // Attempt authentication
+            $user = $auth->authenticate($ci, $password, $role);
+            
+            if ($user) {
+              // Start session and store user data
+              session_start();
+              $_SESSION['user'] = $user;
+              $_SESSION['logged_in'] = true;
+              
+              // Redirect based on role
+              $redirectUrl = $this->getRedirectUrl($role);
+              header("Location: $redirectUrl");
+              exit();
+            } else {
+              $errors['auth'] = 'C.I, contraseña o rol incorrectos';
+            }
+            
+          } catch (Exception $e) {
+            $errors['system'] = 'Error del sistema. Por favor, intente más tarde.';
+            error_log("Login error: " . $e->getMessage());
+          }
+        }
+      }
+      
+      // Helper function to get redirect URL based on role
+      function getRedirectUrl($role) {
+        switch ($role) {
+          case 'Admin':
+            return '/src/views/admin/';
+          case 'Coordinador':
+            return '/src/views/coordinador/';
+          case 'Docente':
+            return '/src/views/docente/';
+          case 'Padre/Madre':
+            return '/src/views/padre/';
+          case 'Director':
+            return '/src/views/director/';
+          default:
+            return '/src/views/login.php';
         }
       }
       ?>
@@ -119,6 +150,18 @@
         <div class="error-message text-red-600 text-sm mt-1" id="roleError">
           <?php echo isset($errors['role']) ? htmlspecialchars($errors['role']) : ''; ?>
         </div>
+        
+        <?php if (isset($errors['auth'])): ?>
+          <div class="text-red-600 mb-4 p-2 bg-red-100 rounded text-center">
+            <?php echo htmlspecialchars($errors['auth']); ?>
+          </div>
+        <?php endif; ?>
+        
+        <?php if (isset($errors['system'])): ?>
+          <div class="text-red-600 mb-4 p-2 bg-red-100 rounded text-center">
+            <?php echo htmlspecialchars($errors['system']); ?>
+          </div>
+        <?php endif; ?>
       </form>
     </section>
   </div>
