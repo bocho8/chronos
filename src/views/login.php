@@ -4,35 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Inicio de Sesión | SIM</title>
-  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather+Sans:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* Ajuste visual para el logo placeholder */
-    .logo-placeholder {
-      width: 48px;
-      height: 48px;
-      background: #fff;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      color: #22397A;
-      font-size: 1.1rem;
-      border: 2px solid #22397A;
-      box-sizing: border-box;
-    }
-    .header-logo-text {
-      font-size: 1.1rem;
-      font-weight: bold;
-      line-height: 1.1;
-      letter-spacing: 0.01em;
+    body {
+      font-family: 'Merriweather Sans', Arial, sans-serif;
     }
     
     /* Estilos para mensajes de error */
     .error-message {
-      color: #dc3545;
-      font-size: 0.875rem;
-      margin-top: 0.25rem;
       display: none;
     }
     
@@ -45,22 +25,26 @@
     }
   </style>
 </head>
-<body>
-  <header class="header">
-    <div class="header-logo">
-      <div class="logo-placeholder">SIM</div>
-      <div class="header-logo-text">
+<body class="m-0 font-['Merriweather_Sans'] bg-gray-100 text-blue-900">
+  <header class="bg-blue-900 text-white h-[70px] min-h-[70px] flex items-center justify-between px-8 box-border">
+    <div class="flex items-center gap-2.5">
+      <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center font-bold text-blue-900 text-lg border-2 border-blue-900 box-border">
+        SIM
+      </div>
+      <div class="text-lg font-bold leading-tight tracking-tight">
         Scuola<br>Italiana di<br>Montevideo
       </div>
     </div>
-    <div class="header-title">Sistema de Horarios SIM</div>
-    <div class="menu-icon" style="visibility:hidden;">
-      <span></span><span></span><span></span>
+    <div class="text-3xl font-bold flex-1 text-center tracking-wide">Sistema de Horarios SIM</div>
+    <div class="w-11 h-11 flex flex-col justify-center gap-2 cursor-pointer items-end" style="visibility:hidden;">
+      <span class="block h-1 w-full bg-white rounded-sm"></span>
+      <span class="block h-1 w-full bg-white rounded-sm"></span>
+      <span class="block h-1 w-full bg-white rounded-sm"></span>
     </div>
   </header>
-  <div class="login-bg">
-    <section class="card login-card">
-      <h2>Inicio de Sesión</h2>
+  <div class="min-h-[calc(100vh-70px)] bg-gray-800 flex items-center justify-center">
+    <section class="bg-gray-200 rounded-[32px] p-12 pb-8 w-[420px] shadow-lg flex flex-col items-center">
+      <h2 class="text-blue-900 text-[1.7rem] font-bold mb-6">Inicio de Sesión</h2>
       
       <?php
       $errors = [];
@@ -98,32 +82,32 @@
         if (empty($errors)) {
           // Aquí iría la lógica de autenticación
           // Por ahora solo mostramos un mensaje de éxito
-          echo '<div style="color: #28a745; margin-bottom: 1rem; padding: 0.5rem; background: #d4edda; border-radius: 4px;">Datos válidos. Procesando login...</div>';
+          echo '<div class="text-green-600 mb-4 p-2 bg-green-100 rounded">Datos válidos. Procesando login...</div>';
         }
       }
       ?>
       
-      <form method="POST" autocomplete="off" id="loginForm">
-        <label for="ci">C.I</label>
+      <form method="POST" autocomplete="off" id="loginForm" class="w-full">
+        <label for="ci" class="text-base text-blue-900 font-medium mb-1 mt-2.5 self-start block">C.I</label>
         <input type="text" id="ci" name="ci" placeholder="C.I" autocomplete="off" 
                value="<?php echo htmlspecialchars($ci); ?>"
-               class="<?php echo isset($errors['ci']) ? 'input-error' : ''; ?>">
-        <div class="error-message" id="ciError">
+               class="w-full px-4 py-3 rounded-lg border-[1.5px] border-gray-300 text-base mb-4 bg-white text-blue-900 box-border focus:border-blue-900 <?php echo isset($errors['ci']) ? 'input-error' : ''; ?>">
+        <div class="error-message text-red-600 text-sm mt-1" id="ciError">
           <?php echo isset($errors['ci']) ? htmlspecialchars($errors['ci']) : ''; ?>
         </div>
         
-        <label for="password">Contraseña</label>
+        <label for="password" class="text-base text-blue-900 font-medium mb-1 mt-2.5 self-start block">Contraseña</label>
         <input type="password" id="password" name="password" placeholder="Contraseña" autocomplete="off"
-               class="<?php echo isset($errors['password']) ? 'input-error' : ''; ?>">
-        <div class="error-message" id="passwordError">
+               class="w-full px-4 py-3 rounded-lg border-[1.5px] border-gray-300 text-base mb-4 bg-white text-blue-900 box-border focus:border-blue-900 <?php echo isset($errors['password']) ? 'input-error' : ''; ?>">
+        <div class="error-message text-red-600 text-sm mt-1" id="passwordError">
           <?php echo isset($errors['password']) ? htmlspecialchars($errors['password']) : ''; ?>
         </div>
         
-        <button type="submit">Iniciar Sesión</button>
+        <button type="submit" class="w-full bg-blue-900 text-white border-none rounded-lg py-3 text-base font-bold mb-3 mt-2 cursor-pointer transition-colors duration-200 hover:bg-blue-800">Iniciar Sesión</button>
         
-        <div class="flex" style="justify-content:space-between;align-items:center;">
-          <a class="link" href="#">¿Olvidaste tu contraseña?</a>
-          <select name="role" id="role" class="<?php echo isset($errors['role']) ? 'input-error' : ''; ?>">
+        <div class="w-full flex justify-between items-center mt-0">
+          <a class="text-blue-900 underline text-[0.97rem] cursor-pointer mr-2" href="#">¿Olvidaste tu contraseña?</a>
+          <select name="role" id="role" class="px-4 py-3 rounded-lg border-[1.5px] border-gray-300 text-base bg-white text-blue-900 box-border focus:border-blue-900 <?php echo isset($errors['role']) ? 'input-error' : ''; ?>">
             <option value="">Roles</option>
             <option value="Admin" <?php echo $role === 'Admin' ? 'selected' : ''; ?>>Admin</option>
             <option value="Coordinador" <?php echo $role === 'Coordinador' ? 'selected' : ''; ?>>Coordinador</option>
@@ -132,7 +116,7 @@
             <option value="Director" <?php echo $role === 'Director' ? 'selected' : ''; ?>>Director</option>
           </select>
         </div>
-        <div class="error-message" id="roleError">
+        <div class="error-message text-red-600 text-sm mt-1" id="roleError">
           <?php echo isset($errors['role']) ? htmlspecialchars($errors['role']) : ''; ?>
         </div>
       </form>
