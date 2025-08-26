@@ -8,7 +8,7 @@
  */
 
 return [
-    'host' => 'localhost',
+    'host' => 'postgres',
     'port' => '5432',
     'dbname' => 'chronos_db',
     'username' => 'chronos_user',
