@@ -2,7 +2,6 @@
 /public/css/styles.css
 /public/css/styles.css.map
 /docs
-/docker/ngrok.env
 .env
 .DS_Store
 .idea
