@@ -10,9 +10,9 @@
 return [
     'host' => 'localhost',
     'port' => '5432',
-    'dbname' => 'chronos',
-    'username' => 'postgres',
-    'password' => 'your_password_here',
+    'dbname' => 'chronos_db',
+    'username' => 'chronos_user',
+    'password' => 'chronos_pass',
     
     // Connection options
     'options' => [

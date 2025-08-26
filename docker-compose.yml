@@ -50,5 +50,17 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
 
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: chronos-ngrok
+    ports:
+      - "4040:4040"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN:-}
+    command: http nginx:80 --log=stdout
+    depends_on:
+      - nginx
+    restart: unless-stopped
+
 volumes:
   pg_data:
