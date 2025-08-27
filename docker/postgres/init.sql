@@ -2,7 +2,7 @@
 -- PostgreSQL Database for School Schedule Management System
 -- Version: 2.0.0
 -- Created: 2025
--- Updated: Based on new ER diagram structure with cedula identification
+-- Updated: Based on new ER diagram structure
 
 -- Drop and recreate schema
 DROP SCHEMA IF EXISTS public CASCADE;
@@ -199,6 +199,10 @@ INSERT INTO bloque_horario (id_bloque, hora_inicio, hora_fin) VALUES
 -- Insert default predefined observations
 INSERT INTO observacion_predefinida (id_observacion_predefinida, texto, es_sistema, activa) VALUES
 (1, 'Otro liceo', TRUE, TRUE),
+(2, 'Licencia médica', TRUE, TRUE),
+(3, 'Capacitación', TRUE, TRUE),
+(4, 'Reunión coordinación', TRUE, TRUE),
+(5, 'Evaluación institucional', TRUE, TRUE);
 
 -- Insert default admin user
 INSERT INTO usuario (id_usuario, cedula, nombre, apellido, email, telefono, contrasena_hash) VALUES
@@ -209,4 +213,4 @@ INSERT INTO usuario_rol (id_usuario, nombre_rol) VALUES
 (1, 'ADMIN');
 
 -- Insert version information
-COMMENT ON SCHEMA public IS 'Chronos Database Schema v2.0.0 - Updated 2025 with cedula identification';
+COMMENT ON SCHEMA public IS 'Chronos Database Schema v2.0.0 - Updated 2025';
