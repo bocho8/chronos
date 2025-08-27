@@ -1,34 +1,5 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inicio de Sesión | SIM</title>
-  <link rel="stylesheet" href="/css/styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Merriweather+Sans:wght@400;700&display=swap" rel="stylesheet">
-</head>
-<body class="m-0 font-['Merriweather_Sans'] bg-gray-100 text-blue-900">
-  <header class="bg-blue-900 text-white h-[70px] min-h-[70px] flex items-center justify-between px-8 box-border">
-    <div class="flex items-center gap-2.5">
-      <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center font-bold text-blue-900 text-lg border-2 border-blue-900 box-border">
-        SIM
-      </div>
-      <div class="text-lg font-bold leading-tight tracking-tight">
-        Scuola<br>Italiana di<br>Montevideo
-      </div>
-    </div>
-    <div class="text-3xl font-bold flex-1 text-center tracking-wide">Sistema de Horarios SIM</div>
-    <div class="w-11 h-11 flex flex-col justify-center gap-2 cursor-pointer items-end" style="visibility:hidden;">
-      <span class="block h-1 w-full bg-white rounded-sm"></span>
-      <span class="block h-1 w-full bg-white rounded-sm"></span>
-      <span class="block h-1 w-full bg-white rounded-sm"></span>
-    </div>
-  </header>
-  <div class="min-h-[calc(100vh-70px)] bg-gray-800 flex items-center justify-center">
-    <section class="bg-gray-200 rounded-[32px] p-12 pb-8 w-[420px] shadow-lg flex flex-col items-center">
-      <h2 class="text-blue-900 text-[1.7rem] font-bold mb-6">Inicio de Sesión</h2>
-      
-      <?php
+<?php
+// Move all PHP logic to the top before any HTML output
       // Include required files
       require_once __DIR__ . '/../models/Database.php';
       require_once __DIR__ . '/../models/Auth.php';
@@ -85,7 +56,7 @@
               $_SESSION['logged_in'] = true;
               
               // Redirect based on role
-              $redirectUrl = $this->getRedirectUrl($role);
+              $redirectUrl = getRedirectUrl($role);
               header("Location: $redirectUrl");
               exit();
             } else {
@@ -102,21 +73,50 @@
       // Helper function to get redirect URL based on role
       function getRedirectUrl($role) {
         switch ($role) {
-          case 'Admin':
+          case 'ADMIN':
             return '/src/views/admin/';
-          case 'Coordinador':
-            return '/src/views/coordinador/';
-          case 'Docente':
-            return '/src/views/docente/';
-          case 'Padre/Madre':
-            return '/src/views/padre/';
-          case 'Director':
+          case 'DIRECTOR':
             return '/src/views/director/';
+          case 'COORDINADOR':
+            return '/src/views/coordinador/';
+          case 'DOCENTE':
+            return '/src/views/docente/';
+          case 'PADRE':
+            return '/src/views/padre/';
           default:
             return '/src/views/login.php';
         }
       }
       ?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inicio de Sesión | SIM</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather+Sans:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="m-0 font-['Merriweather_Sans'] bg-gray-100 text-blue-900">
+  <header class="bg-blue-900 text-white h-[70px] min-h-[70px] flex items-center justify-between px-8 box-border">
+    <div class="flex items-center gap-2.5">
+      <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center font-bold text-blue-900 text-lg border-2 border-blue-900 box-border">
+        SIM
+      </div>
+      <div class="text-lg font-bold leading-tight tracking-tight">
+        Scuola<br>Italiana di<br>Montevideo
+      </div>
+    </div>
+    <div class="text-3xl font-bold flex-1 text-center tracking-wide">Sistema de Horarios SIM</div>
+    <div class="w-11 h-11 flex flex-col justify-center gap-2 cursor-pointer items-end" style="visibility:hidden;">
+      <span class="block h-1 w-full bg-white rounded-sm"></span>
+      <span class="block h-1 w-full bg-white rounded-sm"></span>
+      <span class="block h-1 w-full bg-white rounded-sm"></span>
+    </div>
+  </header>
+  <div class="min-h-[calc(100vh-70px)] bg-gray-800 flex items-center justify-center">
+    <section class="bg-gray-200 rounded-[32px] p-12 pb-8 w-[420px] shadow-lg flex flex-col items-center">
+      <h2 class="text-blue-900 text-[1.7rem] font-bold mb-6">Inicio de Sesión</h2>
       
       <form method="POST" autocomplete="off" id="loginForm" class="w-full">
         <label for="ci" class="text-base text-blue-900 font-medium mb-1 mt-2.5 self-start block">C.I</label>
@@ -140,11 +140,11 @@
           <a class="text-blue-900 underline text-[0.97rem] cursor-pointer mr-2" href="#">¿Olvidaste tu contraseña?</a>
           <select name="role" id="role" class="px-4 py-3 rounded-lg border-[1.5px] border-gray-300 text-base bg-white text-blue-900 box-border focus:border-blue-900 <?php echo isset($errors['role']) ? 'input-error' : ''; ?>">
             <option value="">Roles</option>
-            <option value="Admin" <?php echo $role === 'Admin' ? 'selected' : ''; ?>>Admin</option>
-            <option value="Coordinador" <?php echo $role === 'Coordinador' ? 'selected' : ''; ?>>Coordinador</option>
-            <option value="Docente" <?php echo $role === 'Docente' ? 'selected' : ''; ?>>Docente</option>
-            <option value="Padre/Madre" <?php echo $role === 'Padre/Madre' ? 'selected' : ''; ?>>Padre/Madre</option>
-            <option value="Director" <?php echo $role === 'Director' ? 'selected' : ''; ?>>Director</option>
+            <option value="ADMIN" <?php echo $role === 'ADMIN' ? 'selected' : ''; ?>>Admin</option>
+            <option value="DIRECTOR" <?php echo $role === 'DIRECTOR' ? 'selected' : ''; ?>>Director</option>
+            <option value="COORDINADOR" <?php echo $role === 'COORDINADOR' ? 'selected' : ''; ?>>Coordinador</option>
+            <option value="DOCENTE" <?php echo $role === 'DOCENTE' ? 'selected' : ''; ?>>Docente</option>
+            <option value="PADRE" <?php echo $role === 'PADRE' ? 'selected' : ''; ?>>Padre/Madre</option>
           </select>
         </div>
         <div class="error-message text-red-600 text-sm mt-1" id="roleError">

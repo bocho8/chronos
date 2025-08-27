@@ -21,12 +21,13 @@ class Auth {
                 return false;
             }
             
-            // Prepare query to get user by cedula and role
-            $query = "SELECT u.cedula, u.nombre, u.apellido, u.email, u.telefono, 
-                             u.contrasena_hash, u.nombre_rol, r.descripcion as rol_descripcion
+            // Prepare query to get user by cedula and role using the new junction table structure
+            $query = "SELECT u.id_usuario, u.cedula, u.nombre, u.apellido, u.email, u.telefono, 
+                             u.contrasena_hash, ur.nombre_rol, r.descripcion as rol_descripcion
                       FROM usuario u 
-                      INNER JOIN rol r ON u.nombre_rol = r.nombre_rol 
-                      WHERE u.cedula = :cedula AND u.nombre_rol = :role";
+                      INNER JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario
+                      INNER JOIN rol r ON ur.nombre_rol = r.nombre_rol 
+                      WHERE u.cedula = :cedula AND ur.nombre_rol = :role";
             
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':cedula', $cedula, PDO::PARAM_STR);
@@ -93,19 +94,42 @@ class Auth {
             // Hash password
             $passwordHash = password_hash($userData['contrasena'], PASSWORD_DEFAULT);
             
-            $query = "INSERT INTO usuario (cedula, nombre, apellido, email, telefono, contrasena_hash, nombre_rol) 
-                      VALUES (:cedula, :nombre, :apellido, :email, :telefono, :contrasena_hash, :nombre_rol)";
+            // Begin transaction to ensure both user and role assignment are created
+            $this->db->beginTransaction();
             
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':cedula', $userData['cedula'], PDO::PARAM_STR);
-            $stmt->bindParam(':nombre', $userData['nombre'], PDO::PARAM_STR);
-            $stmt->bindParam(':apellido', $userData['apellido'], PDO::PARAM_STR);
-            $stmt->bindParam(':email', $userData['email'], PDO::PARAM_STR);
-            $stmt->bindParam(':telefono', $userData['telefono'], PDO::PARAM_STR);
-            $stmt->bindParam(':contrasena_hash', $passwordHash, PDO::PARAM_STR);
-            $stmt->bindParam(':nombre_rol', $userData['nombre_rol'], PDO::PARAM_STR);
-            
-            $result = $stmt->execute();
+            try {
+                // Insert user first
+                $query = "INSERT INTO usuario (cedula, nombre, apellido, email, telefono, contrasena_hash) 
+                          VALUES (:cedula, :nombre, :apellido, :email, :telefono, :contrasena_hash)";
+                
+                $stmt = $this->db->prepare($query);
+                $stmt->bindParam(':cedula', $userData['cedula'], PDO::PARAM_STR);
+                $stmt->bindParam(':nombre', $userData['nombre'], PDO::PARAM_STR);
+                $stmt->bindParam(':apellido', $userData['apellido'], PDO::PARAM_STR);
+                $stmt->bindParam(':email', $userData['email'], PDO::PARAM_STR);
+                $stmt->bindParam(':telefono', $userData['telefono'], PDO::PARAM_STR);
+                $stmt->bindParam(':contrasena_hash', $passwordHash, PDO::PARAM_STR);
+                
+                $stmt->execute();
+                
+                // Get the user ID
+                $userId = $this->db->lastInsertId();
+                
+                // Insert role assignment
+                $roleQuery = "INSERT INTO usuario_rol (id_usuario, nombre_rol) VALUES (:id_usuario, :nombre_rol)";
+                $roleStmt = $this->db->prepare($roleQuery);
+                $roleStmt->bindParam(':id_usuario', $userId, PDO::PARAM_INT);
+                $roleStmt->bindParam(':nombre_rol', $userData['nombre_rol'], PDO::PARAM_STR);
+                
+                $result = $roleStmt->execute();
+                
+                // Commit transaction
+                $this->db->commit();
+            } catch (Exception $e) {
+                // Rollback transaction on error
+                $this->db->rollback();
+                throw $e;
+            }
             
             if ($result) {
                 // Log user creation
@@ -179,10 +203,11 @@ class Auth {
      */
     public function getUserByCedula($cedula) {
         try {
-            $query = "SELECT u.cedula, u.nombre, u.apellido, u.email, u.telefono, 
-                             u.nombre_rol, r.descripcion as rol_descripcion
+            $query = "SELECT u.id_usuario, u.cedula, u.nombre, u.apellido, u.email, u.telefono, 
+                             ur.nombre_rol, r.descripcion as rol_descripcion
                       FROM usuario u 
-                      INNER JOIN rol r ON u.nombre_rol = r.nombre_rol 
+                      INNER JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario
+                      INNER JOIN rol r ON ur.nombre_rol = r.nombre_rol 
                       WHERE u.cedula = :cedula";
             
             $stmt = $this->db->prepare($query);
@@ -207,9 +232,21 @@ class Auth {
      */
     private function logLogin($cedula, $accion, $detalle) {
         try {
-            $query = "INSERT INTO log (cedula_usuario, accion, detalle) VALUES (:cedula, :accion, :detalle)";
+            // Get user ID from cedula first
+            $userQuery = "SELECT id_usuario FROM usuario WHERE cedula = :cedula";
+            $userStmt = $this->db->prepare($userQuery);
+            $userStmt->bindParam(':cedula', $cedula, PDO::PARAM_STR);
+            $userStmt->execute();
+            $userId = $userStmt->fetchColumn();
+            
+            if (!$userId) {
+                error_log("No se pudo encontrar usuario con cedula: " . $cedula);
+                return false;
+            }
+            
+            $query = "INSERT INTO log (id_usuario, accion, detalle) VALUES (:id_usuario, :accion, :detalle)";
             $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':cedula', $cedula, PDO::PARAM_STR);
+            $stmt->bindParam(':id_usuario', $userId, PDO::PARAM_INT);
             $stmt->bindParam(':accion', $accion, PDO::PARAM_STR);
             $stmt->bindParam(':detalle', $detalle, PDO::PARAM_STR);
             
