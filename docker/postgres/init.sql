@@ -206,7 +206,7 @@ INSERT INTO observacion_predefinida (id_observacion_predefinida, texto, es_siste
 
 -- Insert default admin user
 INSERT INTO usuario (id_usuario, cedula, nombre, apellido, email, telefono, contrasena_hash) VALUES
-(1, '12345678', 'Administrador', 'Sistema', 'admin@chronos.edu.uy', '099123456', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+(1, '12345678', 'Administrador', 'Sistema', 'admin@chronos.edu.uy', '099123456', '$2y$10$6fF5.mtmT4ScYKYmJp6TpuaSfcbLVJQ20czlx.JK.a/f800qjD7Ri');
 
 -- Assign admin role to default user
 INSERT INTO usuario_rol (id_usuario, nombre_rol) VALUES
