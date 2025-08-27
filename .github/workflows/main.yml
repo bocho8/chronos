@@ -19,7 +19,8 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
+          #port: ${{ secrets.SSH_PORT }}
+          port: 22
           script: |
             cd /opt/chronos
             git pull origin main
