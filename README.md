@@ -1,57 +1,57 @@
-# chronos
+# Chronos
 
-## 📚 Documentación
+Sistema de gestión de horarios escolares desarrollado con PHP, TailwindCSS v4 y PostgreSQL.
 
-- **[ESRE - Especificación de Requerimientos de Software](docs/ESRE_SIGIE.md)** - Documento completo de especificación de requerimientos para el sistema de gestión de horarios escolares.
+## 🚀 Inicio rápido
 
-## Requisitos previos
+### Requisitos
+- [Docker](https://docs.docker.com/get-docker) 20.10+
+- [Git](https://git-scm.com/downloads)
 
-| Herramienta | ¿Dónde conseguirla? |
-|-------------|---------------------|
-| **Docker** 20.10+ | https://docs.docker.com/get-docker |
-| **Git**            | https://git-scm.com/downloads |
-| **DBeaver** (opcional, cliente DB) | https://dbeaver.io/download |
-
-## 1. Levantar el proyecto
-
+### Instalación
 ```bash
-# 1. Clonar
 git clone https://github.com/bocho8/chronos.git
 cd chronos
-
-# 2. Construir y ejecutar
 docker compose up -d --build
 ```
 
-| Servicio   | URL / puerto            | Credenciales                                               |
-| ---------- | ----------------------- | ---------------------------------------------------------- |
-| Sitio web  | <http://localhost>      | —                                                          |
-| PostgreSQL | localhost:5432          | user: `chronos_user` pass: `chronos_pass` db: `chronos_db` |
+El sitio estará disponible en **http://localhost**
 
-👉 Para administrar la base de datos, usar **DBeaver** y crear una conexión con estos datos:
-- Host: `localhost`
-- Puerto: `5432`
-- Base de datos: `chronos_db`
-- Usuario: `chronos_user`
-- Contraseña: `chronos_pass`
+## 🛠️ Desarrollo
 
-## 2. Scripts de TailwindCSS
+### TailwindCSS
 ```bash
-# Modo watch (desarrollo)
-docker compose exec node npm run tw:dev
+# Desarrollo (modo watch)
+npm run tw:dev
 
-# Build minificado (producción)
-docker compose exec node npm run tw:build
+# Producción (minificado)
+npm run tw:build
 ```
 
-## 3. Log, para y limpiar
+### Base de datos
+- **Host:** localhost:5432
+- **Base de datos:** chronos_db  
+- **Usuario:** chronos_user
+- **Contraseña:** chronos_pass
+
+Recomendamos [DBeaver](https://dbeaver.io/download) para administrar la base de datos.
+
+## 📋 Comandos útiles
+
 ```bash
-# Ver logs en tiempo real
+# Ver logs
 docker compose logs -f
 
-# Detener
+# Detener servicios
 docker compose stop
 
-# Parar y borrar volúmenes (⚠️ pierdes la DB)
+# Reiniciar (mantiene datos)
+docker compose restart
+
+# Limpiar todo (⚠️ borra la base de datos)
 docker compose down -v
 ```
+
+## 📚 Documentación
+
+- [Esquema de base de datos](docs/database_schema.sql)
