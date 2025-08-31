@@ -54,4 +54,4 @@ docker compose down -v
 
 ## 📚 Documentación
 
-- [Esquema de base de datos](docs/database_schema.sql)
+- [Esquema de base de datos](docs/database_schema.sql).
