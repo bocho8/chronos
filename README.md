@@ -6,6 +6,7 @@ Sistema de gestión de horarios escolares desarrollado con PHP, TailwindCSS v4 y
 
 ### Requisitos
 - [Docker](https://docs.docker.com/get-docker) 20.10+
+- [Node.js](https://nodejs.org/) 18+
 - [Git](https://git-scm.com/downloads)
 
 ### Instalación

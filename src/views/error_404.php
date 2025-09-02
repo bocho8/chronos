@@ -21,7 +21,7 @@
     <div class="w-11 h-11 flex flex-col justify-center gap-2 cursor-pointer items-end" style="visibility:hidden;">
       <span class="block h-1 w-full bg-white rounded-sm"></span>
       <span class="block h-1 w-full bg-white rounded-sm"></span>
-      <span class="block h-1 w-full bg-white rounded-sm"></span>
+      <span class="block h-1 w-full  bg-white rounded-sm"></span>
     </div>
   </header>
   
