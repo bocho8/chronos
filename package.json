@@ -8,9 +8,9 @@
     "tw:build": "tailwindcss -i ./src/tailwind.css -o ./public/css/styles.css --minify"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.1.11",
+    "@tailwindcss/cli": "^4.1.12",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.11"
+    "tailwindcss": "^4.1.12"
   }
 }
