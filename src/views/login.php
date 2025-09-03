@@ -18,12 +18,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (empty($ci)) {
     $errors['ci'] = 'El C.I es obligatorio';
   } elseif (!preg_match('/^\d{7,8}$/', $ci)) {
-    // Patrón regex: ^\d{7,8}$
-    // ^ = inicio de la cadena
-    // \d = cualquier dígito del 0-9
-    // {7,8} = entre 7 y 8 caracteres
-    // $ = fin de la cadena
-    // Valida que el CI tenga exactamente 7 u 8 dígitos numéricos
     $errors['ci'] = 'El C.I debe tener 7 u 8 dígitos numéricos';
   }
   
@@ -74,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 function getRedirectUrl($role) {
   switch ($role) {
     case 'ADMIN':
-      return '/src/views/admin/';
+      return 'admin-docente.php'; // Cambiado para redirigir al archivo específico
     case 'DIRECTOR':
       return '/src/views/director/';
     case 'COORDINADOR':
@@ -84,7 +78,7 @@ function getRedirectUrl($role) {
     case 'PADRE':
       return '/src/views/padre/';
     default:
-      return '/src/views/login.php';
+      return 'login.php';
   }
 }
 ?>
@@ -155,8 +149,8 @@ function getRedirectUrl($role) {
     <div class="w-full grid grid-cols-3 items-center px-4">
       <!-- IZQUIERDA -->
       <div class="flex items-center gap-3 justify-self-start">
-        <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center border-2 border-navy box-border overflow-hidden">
-          <img src="/upload/LogoScuola.png" alt="Logo Scuola Italiana" class="w-full h-full object-contain">
+        <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center font-bold text-navy text-lg border-2 border-navy box-border">
+          SIM
         </div>
         <span class="text-base font-semibold">Scuola Italiana di Montevideo</span>
       </div>
