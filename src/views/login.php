@@ -18,6 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (empty($ci)) {
     $errors['ci'] = 'El C.I es obligatorio';
   } elseif (!preg_match('/^\d{7,8}$/', $ci)) {
+    // Patrón regex: ^\d{7,8}$
+    // ^ = inicio de la cadena
+    // \d = cualquier dígito del 0-9
+    // {7,8} = entre 7 y 8 caracteres
+    // $ = fin de la cadena
+    // Valida que el CI tenga exactamente 7 u 8 dígitos numéricos
     $errors['ci'] = 'El C.I debe tener 7 u 8 dígitos numéricos';
   }
   
@@ -68,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 function getRedirectUrl($role) {
   switch ($role) {
     case 'ADMIN':
-      return 'admin-docente.php'; // Cambiado para redirigir al archivo específico
+      return '/src/views/admin/';
     case 'DIRECTOR':
       return '/src/views/director/';
     case 'COORDINADOR':
@@ -78,7 +84,7 @@ function getRedirectUrl($role) {
     case 'PADRE':
       return '/src/views/padre/';
     default:
-      return 'login.php';
+      return '/src/views/login.php';
   }
 }
 ?>
