@@ -153,12 +153,11 @@ function getRedirectUrl($role) {
   <!-- BARRA SUPERIOR -->
   <header class="bg-navy text-white h-18 flex items-center justify-center">
     <div class="w-full grid grid-cols-3 items-center px-4">
+      
       <!-- IZQUIERDA -->
-      <div class="flex items-center gap-3 justify-self-start">
-        <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center font-bold text-navy text-lg border-2 border-navy box-border">
-          SIM
-        </div>
-        <span class="text-base font-semibold">Scuola Italiana di Montevideo</span>
+      <div class="px-5 flex items-center h-[60px] bg-darkblue gap-2.5">
+          <img src="/upload/LogoScuola.png" alt="Scuola Italiana di Montevideo" class="h-9 w-auto">
+          <span class="text-white font-semibold text-lg">Scuola Italiana</span>
       </div>
 
       <!-- CENTRO -->
