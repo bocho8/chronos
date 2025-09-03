@@ -1,4 +1,12 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #1f366d;
+  --color-bg: #f5f6f8;
+  --color-card: #d9d9d9;
+  --color-muted: #475569;
+  --font-family-sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
 
 /* Custom styles for form validation and error messages */
 .error-message {
