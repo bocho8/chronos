@@ -18,6 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (empty($ci)) {
     $errors['ci'] = 'El C.I es obligatorio';
   } elseif (!preg_match('/^\d{7,8}$/', $ci)) {
+    // Patrón regex: ^\d{7,8}$
+    // ^ = inicio de la cadena
+    // \d = cualquier dígito del 0-9
+    // {7,8} = entre 7 y 8 caracteres
+    // $ = fin de la cadena
+    // Valida que el CI tenga exactamente 7 u 8 dígitos numéricos
     $errors['ci'] = 'El C.I debe tener 7 u 8 dígitos numéricos';
   }
   
@@ -68,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 function getRedirectUrl($role) {
   switch ($role) {
     case 'ADMIN':
-      return 'admin-docente.php'; // Cambiado para redirigir al archivo específico
+      return '/src/views/admin/';
     case 'DIRECTOR':
       return '/src/views/director/';
     case 'COORDINADOR':
@@ -78,7 +84,7 @@ function getRedirectUrl($role) {
     case 'PADRE':
       return '/src/views/padre/';
     default:
-      return 'login.php';
+      return '/src/views/login.php';
   }
 }
 ?>
@@ -139,6 +145,7 @@ function getRedirectUrl($role) {
       color: #e53e3e;
       font-size: 0.875rem;
       margin-top: 0.25rem;
+      display: none;
     }
   </style>
 </head>
@@ -245,7 +252,12 @@ function getRedirectUrl($role) {
       const passwordError = document.getElementById('passwordError');
       const roleError = document.getElementById('roleError');
       
-      // Función para mostrar errores
+      /**
+       * Función para mostrar errores de validación en los campos del formulario
+       * @param {HTMLElement} input - Elemento de entrada que contiene el error
+       * @param {HTMLElement} errorElement - Elemento donde se mostrará el mensaje de error
+       * @param {string} message - Mensaje de error a mostrar
+       */
       function showError(input, errorElement, message) {
         input.classList.add('input-error');
         input.classList.remove('input-success');
@@ -253,14 +265,22 @@ function getRedirectUrl($role) {
         errorElement.style.display = 'block';
       }
       
-      // Función para mostrar éxito
+      /**
+       * Función para mostrar éxito en la validación de los campos del formulario
+       * @param {HTMLElement} input - Elemento de entrada que se validó correctamente
+       * @param {HTMLElement} errorElement - Elemento de error que se ocultará
+       */
       function showSuccess(input, errorElement) {
         input.classList.remove('input-error');
         input.classList.add('input-success');
         errorElement.style.display = 'none';
       }
       
-      // Función para validar CI
+      /**
+       * Función para validar el formato del C.I (Cédula de Identidad)
+       * @param {string} ci - Valor del C.I a validar
+       * @returns {string} - Mensaje de error vacío si es válido, o mensaje de error si no es válido
+       */
       function validateCI(ci) {
         if (ci.trim() === '') {
           return 'El C.I es obligatorio';
@@ -271,7 +291,11 @@ function getRedirectUrl($role) {
         return '';
       }
       
-      // Función para validar contraseña
+      /**
+       * Función para validar la contraseña del usuario
+       * @param {string} password - Contraseña a validar
+       * @returns {string} - Mensaje de error vacío si es válida, o mensaje de error si no es válida
+       */
       function validatePassword(password) {
         if (password.trim() === '') {
           return 'La contraseña es obligatoria';
@@ -282,7 +306,11 @@ function getRedirectUrl($role) {
         return '';
       }
       
-      // Función para validar rol
+      /**
+       * Función para validar la selección del rol del usuario
+       * @param {string} role - Rol seleccionado a validar
+       * @returns {string} - Mensaje de error vacío si es válido, o mensaje de error si no es válido
+       */
       function validateRole(role) {
         if (role === '' || role === 'Seleccione un rol') {
           return 'Debe seleccionar un rol';
@@ -291,6 +319,10 @@ function getRedirectUrl($role) {
       }
       
       // Event listeners para validación en tiempo real
+      /**
+       * Event listener para validar el C.I cuando el usuario sale del campo (evento blur)
+       * Realiza validación inmediata y muestra/oculta errores según corresponda
+       */
       ciInput.addEventListener('blur', function() {
         const error = validateCI(this.value);
         if (error) {
@@ -300,6 +332,10 @@ function getRedirectUrl($role) {
         }
       });
       
+      /**
+       * Event listener para validar la contraseña cuando el usuario sale del campo (evento blur)
+       * Realiza validación inmediata y muestra/oculta errores según corresponda
+       */
       passwordInput.addEventListener('blur', function() {
         const error = validatePassword(this.value);
         if (error) {
@@ -309,6 +345,10 @@ function getRedirectUrl($role) {
         }
       });
       
+      /**
+       * Event listener para validar el rol cuando el usuario cambia la selección (evento change)
+       * Realiza validación inmediata y muestra/oculta errores según corresponda
+       */
       roleSelect.addEventListener('change', function() {
         const error = validateRole(this.value);
         if (error) {
@@ -318,7 +358,11 @@ function getRedirectUrl($role) {
         }
       });
       
-      // Validar formulario antes del envío
+      /**
+       * Event listener para validar todo el formulario antes del envío (evento submit)
+       * Previene el envío si hay errores de validación y muestra alerta al usuario
+       * @param {Event} e - Evento de envío del formulario
+       */
       form.addEventListener('submit', function(e) {
         let hasErrors = false;
         
@@ -349,14 +393,18 @@ function getRedirectUrl($role) {
           showSuccess(roleSelect, roleError);
         }
         
-        // Si hay errores, prevenir el envío
+        // Si hay errores, prevenir el envío del formulario
         if (hasErrors) {
           e.preventDefault();
           alert('Por favor, corrija los errores antes de continuar.');
         }
       });
       
-      // Limpiar errores mientras se escribe
+      // Limpiar errores cuando el usuario empiece a escribir/seleccionar
+      /**
+       * Event listener para limpiar errores del C.I mientras el usuario escribe (evento input)
+       * Si el campo tenía error y ahora es válido, se muestra el estado de éxito
+       */
       ciInput.addEventListener('input', function() {
         if (this.classList.contains('input-error')) {
           const error = validateCI(this.value);
@@ -366,6 +414,10 @@ function getRedirectUrl($role) {
         }
       });
       
+      /**
+       * Event listener para limpiar errores de la contraseña mientras el usuario escribe (evento input)
+       * Si el campo tenía error y ahora es válido, se muestra el estado de éxito
+       */
       passwordInput.addEventListener('input', function() {
         if (this.classList.contains('input-error')) {
           const error = validatePassword(this.value);
