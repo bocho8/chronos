@@ -276,4 +276,81 @@ class Auth {
             return false;
         }
     }
+    
+    /**
+     * Logout user and log the action
+     * 
+     * @param string $cedula User's cedula
+     * @return bool True if successful, false otherwise
+     */
+    public function logout($cedula) {
+        try {
+            // Log logout action
+            $this->logLogin($cedula, 'LOGOUT', 'Cierre de sesión');
+            
+            // Clear session data
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION = array();
+                
+                // Destroy session cookie
+                if (ini_get("session.use_cookies")) {
+                    $params = session_get_cookie_params();
+                    setcookie(session_name(), '', time() - 42000,
+                        $params["path"], $params["domain"],
+                        $params["secure"], $params["httponly"]
+                    );
+                }
+                
+                // Destroy session
+                session_destroy();
+            }
+            
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Error en logout: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Check if user session is valid
+     * 
+     * @param string $cedula User's cedula
+     * @param int $timeoutMinutes Session timeout in minutes
+     * @return bool True if session is valid, false otherwise
+     */
+    public function isSessionValid($cedula, $timeoutMinutes = 30) {
+        if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
+            return false;
+        }
+        
+        if (!isset($_SESSION['user']) || $_SESSION['user']['cedula'] !== $cedula) {
+            return false;
+        }
+        
+        // Check session timeout
+        $lastActivity = $_SESSION['last_activity'] ?? time();
+        $timeout = $timeoutMinutes * 60; // Convert to seconds
+        
+        if ((time() - $lastActivity) > $timeout) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Update user's last activity timestamp
+     * 
+     * @param string $cedula User's cedula
+     * @return bool True if successful, false otherwise
+     */
+    public function updateLastActivity($cedula) {
+        if (isset($_SESSION['user']) && $_SESSION['user']['cedula'] === $cedula) {
+            $_SESSION['last_activity'] = time();
+            return true;
+        }
+        return false;
+    }
 }

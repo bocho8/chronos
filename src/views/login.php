@@ -1,10 +1,15 @@
 <?php
 // Move all PHP logic to the top before any HTML output
 // Include required files
+require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/../models/Database.php';
 require_once __DIR__ . '/../models/Auth.php';
 require_once __DIR__ . '/../helpers/Translation.php';
+require_once __DIR__ . '/../helpers/AuthHelper.php';
 require_once __DIR__ . '/../components/LanguageSwitcher.php';
+
+// Initialize secure session first
+initSecureSession();
 
 // Initialize translation system
 $translation = Translation::getInstance();
@@ -13,11 +18,30 @@ $languageSwitcher = new LanguageSwitcher();
 // Handle language change
 $languageSwitcher->handleLanguageChange();
 
+// Redirect if already logged in
+AuthHelper::redirectIfLoggedIn();
+
 $errors = [];
 $ci = '';
 $password = '';
 $role = '';
 $loginMessage = '';
+$successMessage = '';
+
+// Handle logout messages
+if (isset($_GET['message'])) {
+    switch ($_GET['message']) {
+        case 'logout_success':
+            $successMessage = $translation->get('logout_success');
+            break;
+        case 'logout_error':
+            $errors['system'] = $translation->get('logout_error');
+            break;
+        case 'session_expired':
+            $errors['system'] = $translation->get('session_expired');
+            break;
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $ci = trim($_POST['ci'] ?? '');
@@ -62,6 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Store user data (session already started by Translation class)
         $_SESSION['user'] = $user;
         $_SESSION['logged_in'] = true;
+        
+        // Set last activity timestamp for session timeout
+        updateLastActivity();
         
         // Redirect based on role
         $redirectUrl = getRedirectUrl($role);
@@ -209,6 +236,12 @@ function getRedirectUrl($role) {
         <?php if (isset($errors['system'])): ?>
           <div class="text-red-600 p-2 bg-red-100 rounded text-center">
             <?php echo htmlspecialchars($errors['system']); ?>
+          </div>
+        <?php endif; ?>
+        
+        <?php if (!empty($successMessage)): ?>
+          <div class="text-green-600 p-2 bg-green-100 rounded text-center">
+            <?php echo htmlspecialchars($successMessage); ?>
           </div>
         <?php endif; ?>
 

@@ -57,7 +57,8 @@ class Translation
      */
     private function detectLanguage()
     {
-        // Start session if not already started
+        // Session should already be started by initSecureSession()
+        // Only start if not already started (fallback)
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }

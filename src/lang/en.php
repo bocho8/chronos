@@ -169,4 +169,10 @@ return [
     'access_denied' => 'Access denied',
     'session_expired' => 'Session expired',
     'please_login' => 'Please login',
+    'logout_success' => 'Session closed successfully',
+    'logout_error' => 'Error closing session',
+    'logout_confirm' => 'Are you sure you want to logout?',
+    'logout_confirm_user' => 'Are you sure you want to logout, %s?',
+    'auto_logout_in' => 'Auto logout in',
+    'seconds' => 'seconds',
 ];

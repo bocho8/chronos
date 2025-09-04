@@ -169,4 +169,10 @@ return [
     'access_denied' => 'Acceso denegado',
     'session_expired' => 'Sesión expirada',
     'please_login' => 'Por favor, inicie sesión',
+    'logout_success' => 'Sesión cerrada correctamente',
+    'logout_error' => 'Error al cerrar sesión',
+    'logout_confirm' => '¿Está seguro que desea cerrar sesión?',
+    'logout_confirm_user' => '¿Está seguro que desea cerrar sesión, %s?',
+    'auto_logout_in' => 'Cierre automático en',
+    'seconds' => 'segundos',
 ];
