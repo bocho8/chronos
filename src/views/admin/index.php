@@ -16,33 +16,7 @@ $languageSwitcher->handleLanguageChange();
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?php _e('app_name'); ?> — <?php _e('admin_panel'); ?> · <?php _e('teachers'); ?></title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            navy: '#1f366d',
-            bg: '#f8f9fa',
-            card: '#d1d1d1',
-            muted: '#7f8c8d',
-            darktext: '#2c3e50',
-            border: '#b8b8b8',
-            hover: '#b8b8b8',
-            lightborder: '#e0e0e0',
-            lightbg: '#f5f7f9',
-            darkblue: '#142852',
-            sidebar: '#f0f2f5',
-            sidebarHover: '#e4e6eb',
-            sidebarActive: '#d8dadf'
-          },
-          fontFamily: {
-            sans: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
-          },
-        }
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="/css/styles.css">
   <style type="text/css">
     .hamburger span {
       width: 25px;

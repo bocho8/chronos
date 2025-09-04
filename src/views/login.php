@@ -102,27 +102,10 @@ function getRedirectUrl($role) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?php _e('app_name'); ?> — <?php _e('login_title'); ?></title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            navy: '#1f366d',
-            bg: '#f5f6f8',
-            card: '#d9d9d9',
-            muted: '#475569',
-          },
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
-          },
-        }
-      }
-    }
-  </script>
   <style type="text/css">
     .select__icon {
       position: absolute;
@@ -137,33 +120,22 @@ function getRedirectUrl($role) {
       border-top: 8px solid #111827;
     }
     .hamburger span {
-      width: 26px;
+      width: 25px;
       height: 3px;
-      background: #fff;
-      display: block;
+      background-color: white;
+      margin: 3px 0;
       border-radius: 2px;
-    }
-    .input-error {
-      border-color: #e53e3e;
-    }
-    .input-success {
-      border-color: #38a169;
-    }
-    .error-message {
-      color: #e53e3e;
-      font-size: 0.875rem;
-      margin-top: 0.25rem;
-      display: none;
+      transition: all 0.3s;
     }
   </style>
 </head>
-<body class="bg-bg font-sans text-[#0f172a]">
+<body class="bg-bg font-sans text-gray-800 leading-relaxed">
   <!-- BARRA SUPERIOR -->
-  <header class="bg-navy text-white h-18 flex items-center justify-center">
-    <div class="w-full grid grid-cols-3 items-center px-4">
+  <header class="bg-navy text-white h-[60px] flex items-center">
+    <div class="w-full grid grid-cols-3 items-center px-4 h-full">
       
       <!-- IZQUIERDA -->
-      <div class="px-5 flex items-center h-[60px] bg-darkblue gap-2.5">
+      <div class="flex items-center gap-2.5">
           <img src="/upload/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
           <span class="text-white font-semibold text-lg"><?php _e('scuola_italiana'); ?></span>
       </div>
@@ -172,7 +144,7 @@ function getRedirectUrl($role) {
       <h1 class="m-0 text-center text-xl md:text-[22px] font-bold"><?php _e('app_name'); ?></h1>
 
       <!-- DERECHA -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 justify-end">
         <?php echo $languageSwitcher->render(); ?>
         <button class="w-11 h-11 grid place-content-center gap-1.5 bg-transparent border-0 cursor-pointer hamburger" aria-label="Menú">
           <span></span><span></span><span></span>
@@ -182,8 +154,9 @@ function getRedirectUrl($role) {
   </header>
 
   <!-- CONTENEDOR CENTRAL -->
-  <main class="flex items-center justify-center min-h-[calc(100vh-72px)] p-6">
-    <section class="bg-card rounded-3xl p-10 md:px-16 md:py-10 w-full max-w-[500px] shadow-lg" aria-labelledby="titulo-login">
+  <main class="flex items-center justify-center min-h-[calc(100vh-60px)] p-6">
+    <div class="w-full flex justify-center">
+      <section class="bg-card rounded-3xl p-10 md:px-16 md:py-10 w-full max-w-[500px] shadow-lg" aria-labelledby="titulo-login">
       <h2 id="titulo-login" class="text-center text-2xl md:text-[28px] font-extrabold text-navy mb-6"><?php _e('login_title'); ?></h2>
 
       <form method="POST" autocomplete="off" id="loginForm" class="flex flex-col gap-5">
@@ -247,7 +220,8 @@ function getRedirectUrl($role) {
           <a class="text-navy no-underline font-semibold text-sm hover:underline" href="#" tabindex="0"><?php _e('forgot_password'); ?></a>
         </div>
       </form>
-    </section>
+      </section>
+    </div>
   </main>
 
   <script>

@@ -5,8 +5,34 @@
   --color-bg: #f5f6f8;
   --color-card: #d9d9d9;
   --color-muted: #475569;
+  --color-darktext: #2c3e50;
+  --color-border: #b8b8b8;
+  --color-hover: #b8b8b8;
+  --color-lightborder: #e0e0e0;
+  --color-lightbg: #f5f7f9;
+  --color-darkblue: #142852;
+  --color-sidebar: #f0f2f5;
+  --color-sidebarHover: #e4e6eb;
+  --color-sidebarActive: #d8dadf;
   --font-family-sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
+
+/* Custom utility classes for the custom colors */
+.bg-bg { background-color: var(--color-bg); }
+.bg-card { background-color: var(--color-card); }
+.bg-sidebar { background-color: var(--color-sidebar); }
+.bg-darkblue { background-color: var(--color-darkblue); }
+.bg-sidebarHover { background-color: var(--color-sidebarHover); }
+.bg-sidebarActive { background-color: var(--color-sidebarActive); }
+.bg-lightbg { background-color: var(--color-lightbg); }
+
+.text-navy { color: var(--color-navy); }
+.text-muted { color: var(--color-muted); }
+.text-darktext { color: var(--color-darktext); }
+
+.border-border { border-color: var(--color-border); }
+.border-lightborder { border-color: var(--color-lightborder); }
+.border-hover { border-color: var(--color-hover); }
 
 /* Custom styles for form validation and error messages */
 .error-message {
