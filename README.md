@@ -55,8 +55,7 @@ docker compose down -v
 
 ## 📚 Documentación
 
+- [**Documentación para Desarrolladores**](docs/DEVELOPER_DOCUMENTATION.md) - Guía técnica
+- [**Referencia Rápida**](docs/QUICK_REFERENCE.md) - Comandos esenciales
 - [Estructura del proyecto](docs/PROJECT_STRUCTURE.md)
 - [Esquema de base de datos](docs/database/database_schema.sql)
-- [**Documentación para Desarrolladores**](docs/DEVELOPER_DOCUMENTATION.md) - Guía técnica completa
-- [**Guía de Referencia Rápida**](docs/QUICK_REFERENCE.md) - Comandos y enlaces útiles
-- [**Centro de Documentación**](docs/README.md) - Índice de toda la documentación
