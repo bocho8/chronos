@@ -8,6 +8,15 @@
 - **Reuniones:** Daily standups, Sprint planning, Retrospectivas
 - **Documentación:** Continua y actualizada
 
+### Información del Proyecto
+- **Nombre del Proyecto:** S.I.G.I.E Chronos E.S.R.E
+- **Institución:** Liceo Italiano
+- **Fecha de Entrega:** 28/07/2025
+- **Equipo de Desarrollo:**
+  - **Coordinador:** Juan Chapuis (5.630.283-4)
+  - **Sub-Coordinador:** Agustin Roizen (6.339.592-9)
+  - **Integrante:** Bruno Marino (5.707.620-6)
+
 ## Diagrama de Metodología de Desarrollo
 
 ```mermaid
@@ -50,47 +59,55 @@ graph LR
 
 ```mermaid
 gantt
-    title Cronograma del Proyecto Chronos
+    title Cronograma del Proyecto Chronos - Liceo Italiano
     dateFormat  YYYY-MM-DD
-    section Fase 1
+    section Primera Entrega
     Análisis y Diseño    :done, fase1, 2024-01-01, 2024-01-15
-    section Fase 2
+    section Segunda Entrega
     Desarrollo Backend   :active, fase2, 2024-01-16, 2024-02-15
-    section Fase 3
+    Modelo de Datos      :active, fase2b, 2024-01-16, 2024-02-15
+    section Tercera Entrega
     Desarrollo Frontend  :fase3, 2024-02-16, 2024-03-15
-    section Fase 4
+    Integración          :fase3b, 2024-02-16, 2024-03-15
+    section Cuarta Entrega
     Testing y Deploy     :fase4, 2024-03-16, 2024-03-30
+    Entrega Final        :fase5, 2024-07-28, 2024-07-28
 ```
 
 ### Entregables por Fase
 
-#### Fase 1: Análisis y Diseño
-- [x] Especificación de requisitos
+#### Primera Entrega: Análisis y Diseño
+- [x] Especificación de requisitos (ESRE)
 - [x] Modelo de datos conceptual
 - [x] Arquitectura del sistema
 - [x] Casos de uso
 - [x] Diagramas UML
 
-#### Fase 2: Desarrollo Backend
-- [ ] Configuración de base de datos
-- [ ] Modelos de datos
-- [ ] Controladores API
-- [ ] Autenticación y autorización
-- [ ] Validaciones de negocio
+#### Segunda Entrega: Desarrollo Backend
+- [x] Configuración de base de datos PostgreSQL
+- [x] Modelos de datos (Usuario, Materia, Grupo, Horario, Asignacion)
+- [x] Gestión de disponibilidad docente
+- [x] Sistema de observaciones
+- [x] Controladores API
+- [x] Autenticación y autorización por roles
+- [x] Validaciones de negocio (pautas ANEP)
 
-#### Fase 3: Desarrollo Frontend
-- [ ] Interfaces de usuario
+#### Tercera Entrega: Desarrollo Frontend
+- [ ] Interfaces de usuario por rol
+- [ ] Generación automática de horarios
+- [ ] Edición manual de horarios
+- [ ] Gestión de disponibilidad docente
 - [ ] Integración con backend
 - [ ] Responsive design
 - [ ] Validaciones del lado cliente
-- [ ] Optimización de rendimiento
 
-#### Fase 4: Testing y Deploy
+#### Cuarta Entrega: Testing y Deploy
 - [ ] Pruebas unitarias
 - [ ] Pruebas de integración
-- [ ] Pruebas de usuario
-- [ ] Configuración de producción
+- [ ] Pruebas de usuario (60 usuarios concurrentes)
+- [ ] Configuración Docker (PHP 8.3, PostgreSQL 16, Nginx)
 - [ ] Documentación final
+- [ ] Entrega final (28/07/2025)
 
 ## Gestión de Riesgos
 

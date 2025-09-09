@@ -133,33 +133,42 @@ find $BACKUP_DIR -name "chronos_incremental_*.sql.gz" -mtime +30 -delete
 echo "Respaldo incremental completado: chronos_incremental_$DATE.sql.gz"
 ```
 
-## Configuración de MySQL para Respaldo
+## Configuración de PostgreSQL para Respaldo
 
-### my.cnf Configuration
+### postgresql.conf Configuration
 ```ini
-[mysqld]
 # Configuración para respaldos
-log-bin=mysql-bin
-binlog-format=ROW
-expire_logs_days=7
-max_binlog_size=100M
-sync_binlog=1
+wal_level = replica
+max_wal_senders = 3
+wal_keep_segments = 64
+checkpoint_completion_target = 0.9
+wal_buffers = 16MB
+checkpoint_timeout = 5min
 
-# Configuración de InnoDB
-innodb_flush_log_at_trx_commit=1
-innodb_buffer_pool_size=128M
-innodb_log_file_size=64M
+# Configuración de rendimiento
+shared_buffers = 128MB
+effective_cache_size = 512MB
+work_mem = 4MB
+maintenance_work_mem = 64MB
 
-# Configuración de seguridad
-local_infile=0
+# Configuración de logging
+log_destination = 'stderr'
+logging_collector = on
+log_directory = 'pg_log'
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+log_rotation_age = 1d
+log_rotation_size = 100MB
 ```
 
 ### Configuración de Usuario de Respaldo
 ```sql
--- Crear usuario específico para respaldos
-CREATE USER 'chronos_backup'@'%' IDENTIFIED BY 'chronos_backup_pass_2024';
-GRANT SELECT, LOCK TABLES, SHOW VIEW, EVENT, TRIGGER ON chronos_db.* TO 'chronos_backup'@'%';
-GRANT REPLICATION CLIENT ON *.* TO 'chronos_backup'@'%';
+-- Crear usuario específico para respaldos en PostgreSQL
+CREATE USER chronos_backup WITH PASSWORD 'chronos_backup_pass_2024';
+GRANT CONNECT ON DATABASE chronos_db TO chronos_backup;
+GRANT USAGE ON SCHEMA public TO chronos_backup;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO chronos_backup;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO chronos_backup;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO chronos_backup;
 ```
 
 ## Diagrama de Proceso de Respaldo
@@ -393,6 +402,9 @@ gantt
 - **Tiempo de recuperación PITR:** < 1 hora
 - **Disponibilidad de respaldos:** 99.9%
 - **Integridad de respaldos:** 100%
+- **Disponibilidad del sistema:** 99% (horario escolar: lunes-viernes 8:00-17:00)
+- **Usuarios concurrentes soportados:** 60 usuarios
+- **Tiempo de respuesta:** < 2 segundos para operaciones comunes
 
 ### Reportes Semanales
 - Resúmen de respaldos realizados
