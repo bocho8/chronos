@@ -1,6 +1,7 @@
 /node_modules
 /public/css/styles.css
 /public/css/styles.css.map
+.cursor
 .env
 .DS_Store
 .idea
