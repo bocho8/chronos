@@ -4,6 +4,8 @@ require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
+require_once __DIR__ . '/../../models/Database.php';
+require_once __DIR__ . '/../../models/Docente.php';
 
 // Initialize secure session first
 initSecureSession();
@@ -22,6 +24,23 @@ AuthHelper::requireRole('ADMIN');
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
+}
+
+// Load database configuration and get teachers
+try {
+    $dbConfig = require __DIR__ . '/../../config/database.php';
+    $database = new Database($dbConfig);
+    $docenteModel = new Docente($database->getConnection());
+    $docentes = $docenteModel->getAllDocentes();
+    
+    if ($docentes === false) {
+        $docentes = [];
+        $error_message = 'Error cargando lista de docentes';
+    }
+} catch (Exception $e) {
+    error_log("Error cargando docentes: " . $e->getMessage());
+    $docentes = [];
+    $error_message = 'Error interno del servidor';
 }
 ?>
 <!DOCTYPE html>
@@ -74,6 +93,98 @@ if (!AuthHelper::checkSessionTimeout()) {
             width: 4px;
             background-color: #1f366d;
         }
+        
+        /* Modal animations */
+        #docenteModal {
+            transition: all 0.3s ease-in-out;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999 !important;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            background-color: rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        /* Ensure modal content is visible and above everything */
+        #docenteModal .modal-content {
+            background: white !important;
+            z-index: 10000 !important;
+            position: relative !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+        }
+        
+        /* Ensure all elements inside modal are visible */
+        #docenteModal * {
+            z-index: 10001 !important;
+            position: relative !important;
+        }
+        
+        /* Specific styles for buttons to ensure visibility */
+        #docenteModal button[type="submit"],
+        #docenteModal button[type="button"] {
+            z-index: 10002 !important;
+            position: relative !important;
+            background-color: #3b82f6 !important;
+            color: white !important;
+            border: none !important;
+            padding: 8px 16px !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+            font-weight: 500 !important;
+        }
+        
+        #docenteModal button[type="button"] {
+            background-color: #6b7280 !important;
+        }
+        
+        #docenteModal button[type="button"]:hover {
+            background-color: #4b5563 !important;
+        }
+        
+        #docenteModal button[type="submit"]:hover {
+            background-color: #2563eb !important;
+        }
+        
+        #docenteModal.hidden {
+            display: none !important;
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        #docenteModal:not(.hidden) {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        #docenteModal .modal-content {
+            transform: scale(0.9) translateY(-20px);
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        #docenteModal:not(.hidden) .modal-content {
+            transform: scale(1) translateY(0);
+        }
+        
+        /* Form focus styles */
+        .form-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Ensure modal is above everything */
+        #docenteModal {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+        
+        /* Remove pseudo-element that might be causing issues */
     </style>
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">
@@ -187,7 +298,7 @@ if (!AuthHelper::checkSessionTimeout()) {
                                     </svg>
                                     <?php _e('delete_selected'); ?>
                                 </button>
-                                <button class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
+                                <button class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center" onclick="showAddDocenteModal()">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                     </svg>
@@ -196,44 +307,166 @@ if (!AuthHelper::checkSessionTimeout()) {
                             </div>
                         </div>
 
+                        <?php if (isset($error_message)): ?>
+                            <div class="p-4 text-center text-red-600 bg-red-50">
+                                <?php echo htmlspecialchars($error_message); ?>
+                            </div>
+                        <?php elseif (empty($docentes)): ?>
+                            <div class="p-8 text-center text-gray-500">
+                                <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                                </svg>
+                                <p class="text-lg font-medium"><?php _e('no_teachers_found'); ?></p>
+                                <p class="text-sm"><?php _e('add_first_teacher'); ?></p>
+                            </div>
+                        <?php else: ?>
                         <div class="divide-y divide-gray-200">
-                            <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
+                                <?php foreach ($docentes as $docente): ?>
+                                    <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg group">
                                 <div class="flex items-center">
-                                    <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">JP</div>
+                                            <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
+                                                <?php echo strtoupper(substr($docente['nombre'], 0, 1) . substr($docente['apellido'], 0, 1)); ?>
+                                            </div>
                                     <div class="meta">
-                                        <div class="font-semibold text-darktext mb-1">Juan Pérez</div>
-                                        <div class="text-muted text-sm"><?php _e('subject_mathematics'); ?></div>
+                                                <div class="font-semibold text-darktext mb-1">
+                                                    <?php echo htmlspecialchars($docente['nombre'] . ' ' . $docente['apellido']); ?>
+                                    </div>
+                                                <div class="text-muted text-sm">
+                                                    C.I: <?php echo htmlspecialchars($docente['cedula']); ?>
+                                                    <?php if (!empty($docente['email'])): ?>
+                                                        • <?php echo htmlspecialchars($docente['email']); ?>
+                                                    <?php endif; ?>
+                                </div>
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    <?php if ($docente['trabaja_otro_liceo']): ?>
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                                                            <?php _e('works_other_school'); ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                    <?php if ($docente['horas_asignadas'] > 0): ?>
+                                                        <span class="ml-2"><?php echo $docente['horas_asignadas']; ?>h</span>
+                                                    <?php endif; ?>
                                     </div>
                                 </div>
-                            </article>
-
-                            <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
-                                <div class="flex items-center">
-                                    <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">AG</div>
-                                    <div class="meta">
-                                        <div class="font-semibold text-darktext mb-1">Ana Gómez</div>
-                                        <div class="text-muted text-sm"><?php _e('subject_history'); ?></div>
                                     </div>
+                                        <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors" 
+                                                    onclick="editDocente(<?php echo $docente['id_docente']; ?>)" 
+                                                    title="<?php _e('edit'); ?>">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
+                                            <button class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors" 
+                                                    onclick="deleteDocente(<?php echo $docente['id_docente']; ?>, '<?php echo htmlspecialchars($docente['nombre'] . ' ' . $docente['apellido']); ?>')" 
+                                                    title="<?php _e('delete'); ?>">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
                                 </div>
                             </article>
-
-                            <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
-                                <div class="flex items-center">
-                                    <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">LR</div>
-                                    <div class="meta">
-                                        <div class="font-semibold text-darktext mb-1">Luís Rodríguez</div>
-                                        <div class="text-muted text-sm"><?php _e('subject_biology'); ?></div>
-                                    </div>
-                                </div>
-                            </article>
+                                <?php endforeach; ?>
                         </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </section>
         </main>
     </div>
 
+    <!-- Modal para agregar/editar docente -->
+    <div id="docenteModal" class="fixed inset-0 bg-gray-900 bg-opacity-30 h-full w-full hidden z-[9999] flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="modal-content relative mx-auto p-6 border w-96 shadow-xl rounded-lg bg-white max-h-[90vh] overflow-y-auto">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900" id="modalTitle"><?php _e('add_teacher'); ?></h3>
+                    <button onclick="closeDocenteModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="docenteForm" class="space-y-4">
+                    <input type="hidden" id="docenteId" name="id_docente">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?php _e('ci_label'); ?></label>
+                        <input type="text" id="cedula" name="cedula" required 
+                               class="form-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="<?php _e('ci_placeholder'); ?>">
+                        <div class="text-red-500 text-xs mt-1" id="cedulaError"></div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?php _e('name'); ?></label>
+                        <input type="text" id="nombre" name="nombre" required 
+                               class="form-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="<?php _e('name_placeholder'); ?>">
+                        <div class="text-red-500 text-xs mt-1" id="nombreError"></div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?php _e('lastname'); ?></label>
+                        <input type="text" id="apellido" name="apellido" required 
+                               class="form-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="<?php _e('lastname_placeholder'); ?>">
+                        <div class="text-red-500 text-xs mt-1" id="apellidoError"></div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?php _e('email'); ?></label>
+                        <input type="email" id="email" name="email" 
+                               class="form-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="<?php _e('email_placeholder'); ?>">
+                        <div class="text-red-500 text-xs mt-1" id="emailError"></div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?php _e('phone'); ?></label>
+                        <input type="text" id="telefono" name="telefono" 
+                               class="form-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="<?php _e('phone_placeholder'); ?>">
+                        <div class="text-red-500 text-xs mt-1" id="telefonoError"></div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?php _e('password'); ?></label>
+                        <input type="password" id="contrasena" name="contrasena" 
+                               class="form-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="<?php _e('password_placeholder'); ?>">
+                        <div class="text-red-500 text-xs mt-1" id="contrasenaError"></div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="trabaja_otro_liceo" name="trabaja_otro_liceo" 
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <label for="trabaja_otro_liceo" class="ml-2 block text-sm text-gray-700">
+                            <?php _e('works_other_school'); ?>
+                        </label>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeDocenteModal()" 
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                            <?php _e('cancel'); ?>
+                        </button>
+                        <button type="submit" 
+                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <span id="submitButtonText"><?php _e('add_teacher'); ?></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Variables globales
+        let isEditMode = false;
+        let currentDocenteId = null;
+
         // Funcionalidad para la barra lateral
         document.addEventListener('DOMContentLoaded', function() {
             // Obtener todos los enlaces de la barra lateral
@@ -248,24 +481,12 @@ if (!AuthHelper::checkSessionTimeout()) {
                 
                 // Agregar la clase active al enlace clickeado
                 this.classList.add('active');
-                
-                // Aquí puedes agregar lógica de redirección si es necesario
-                // window.location.href = this.getAttribute('href');
             }
             
             // Agregar event listener a cada enlace
             sidebarLinks.forEach(link => {
                 link.addEventListener('click', handleSidebarClick);
             });
-            
-            // También puedes agregar funcionalidad para el botón hamburguesa si es necesario
-            const hamburger = document.querySelector('.hamburger');
-            if (hamburger) {
-                hamburger.addEventListener('click', function() {
-                    // Aquí puedes agregar la funcionalidad para expandir/contraer el sidebar
-                    document.querySelector('aside').classList.toggle('hidden');
-                });
-            }
             
             // Logout functionality
             const logoutButton = document.getElementById('logoutButton');
@@ -311,15 +532,196 @@ if (!AuthHelper::checkSessionTimeout()) {
                 });
             }
             
-            // Session timeout warning (optional)
-            let sessionTimeout = 30 * 60 * 1000; // 30 minutes in milliseconds
-            let warningTime = 5 * 60 * 1000; // 5 minutes before timeout
+            // Form submission
+            const docenteForm = document.getElementById('docenteForm');
+            if (docenteForm) {
+                docenteForm.addEventListener('submit', handleFormSubmit);
+            }
+        });
+
+        // Mostrar modal para agregar docente
+        function showAddDocenteModal() {
+            isEditMode = false;
+            currentDocenteId = null;
             
-            setTimeout(function() {
-                if (confirm('<?php _e('session_expired'); ?> <?php _e('please_login'); ?>')) {
-                    window.location.href = '/src/views/login.php?message=session_expired';
-                }
-            }, sessionTimeout - warningTime);
+            // Reset form
+            document.getElementById('docenteForm').reset();
+            clearErrors();
+            
+            // Update modal title and button
+            document.getElementById('modalTitle').textContent = '<?php _e('add_teacher'); ?>';
+            document.getElementById('submitButtonText').textContent = '<?php _e('add_teacher'); ?>';
+            
+            // Show modal with animation
+            const modal = document.getElementById('docenteModal');
+            modal.style.display = 'flex';
+            
+            // Force reflow to ensure display change is applied
+            modal.offsetHeight;
+            
+            // Remove hidden class for animation
+            setTimeout(() => {
+                modal.classList.remove('hidden');
+            }, 10);
+            
+            // Focus on first input
+            setTimeout(() => {
+                document.getElementById('cedula').focus();
+            }, 300);
+        }
+
+        // Mostrar modal para editar docente
+        function editDocente(id) {
+            isEditMode = true;
+            currentDocenteId = id;
+            
+            // Fetch docente data
+            fetch(`/src/controllers/docente_handler.php?action=get&id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Populate form
+                        document.getElementById('docenteId').value = data.data.id_docente;
+                        document.getElementById('cedula').value = data.data.cedula;
+                        document.getElementById('nombre').value = data.data.nombre;
+                        document.getElementById('apellido').value = data.data.apellido;
+                        document.getElementById('email').value = data.data.email || '';
+                        document.getElementById('telefono').value = data.data.telefono || '';
+                        document.getElementById('trabaja_otro_liceo').checked = data.data.trabaja_otro_liceo;
+                        
+                        // Update modal title and button
+                        document.getElementById('modalTitle').textContent = '<?php _e('edit_teacher'); ?>';
+                        document.getElementById('submitButtonText').textContent = '<?php _e('update'); ?>';
+                        
+                        // Show modal
+                        const modal = document.getElementById('docenteModal');
+                        modal.style.display = 'flex';
+                        
+                        // Force reflow to ensure display change is applied
+                        modal.offsetHeight;
+                        
+                        // Remove hidden class for animation
+                        setTimeout(() => {
+                            modal.classList.remove('hidden');
+                        }, 10);
+                        
+                        // Focus on first input
+                        setTimeout(() => {
+                            document.getElementById('cedula').focus();
+                        }, 300);
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error cargando datos del docente');
+                });
+        }
+
+        // Eliminar docente
+        function deleteDocente(id, nombre) {
+            const confirmMessage = `¿Está seguro de que desea eliminar al docente "${nombre}"?`;
+            if (confirm(confirmMessage)) {
+                const formData = new FormData();
+                formData.append('action', 'delete');
+                formData.append('id_docente', id);
+                
+                fetch('/src/controllers/docente_handler.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Docente eliminado exitosamente');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error eliminando docente');
+                });
+            }
+        }
+
+        // Cerrar modal
+        function closeDocenteModal() {
+            const modal = document.getElementById('docenteModal');
+            
+            // Add hidden class for animation
+            modal.classList.add('hidden');
+            
+            // Hide modal after animation completes
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+            
+            clearErrors();
+        }
+
+        // Manejar envío del formulario
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            clearErrors();
+            
+            const formData = new FormData(e.target);
+            formData.append('action', isEditMode ? 'update' : 'create');
+            
+            fetch('/src/controllers/docente_handler.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                    
+                    if (data.success) {
+                        alert(data.message);
+                        closeDocenteModal();
+                        location.reload();
+                    } else {
+                        if (data.data && typeof data.data === 'object') {
+                            // Show validation errors
+                            Object.keys(data.data).forEach(field => {
+                                const errorElement = document.getElementById(field + 'Error');
+                                if (errorElement) {
+                                    errorElement.textContent = data.data[field];
+                                }
+                            });
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error procesando solicitud');
+            });
+        }
+
+        // Limpiar errores de validación
+        function clearErrors() {
+            const errorElements = document.querySelectorAll('[id$="Error"]');
+            errorElements.forEach(element => {
+                element.textContent = '';
+            });
+        }
+
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('docenteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDocenteModal();
+            }
+        });
+
+        // Cerrar modal con tecla Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDocenteModal();
+            }
         });
     </script>
 </body>
