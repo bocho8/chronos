@@ -23,21 +23,21 @@ Tel./Cel.
 Coordinador
 Chapuis
 Juan
-5.630.283-4
-jchapuis@scuolaitaliana.edu.uy
-098844043
+x
+x
+x
 Sub-Coordinador
 Roizen
 Agustin
-6.339.592-9
-aroizen@scuolaitaliana.edu.uy
-097259510
+x
+x
+x
 Integrante
 Marino
 Bruno
-5.707.620-6
-bmarino@scuolaitaliana.edu.uy
-092617596
+x
+x
+x
 
 
 
