@@ -86,6 +86,16 @@ if (!AuthHelper::checkSessionTimeout()) {
   <ul class="py-5 list-none">
     <li>
       <a href="index.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+        <?php _e('dashboard'); ?>
+      </a>
+    </li>
+    <li>
+      <a href="admin-usuarios.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+        <?php _e('users'); ?>
+      </a>
+    </li>
+    <li>
+      <a href="admin-docentes.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
         <?php _e('teachers'); ?>
       </a>
     </li>
@@ -167,61 +177,46 @@ if (!AuthHelper::checkSessionTimeout()) {
       <section class="flex-1 px-6 py-8">
         <div class="max-w-6xl mx-auto">
           <div class="mb-8">
-            <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('Registro de coordinadores'); ?></h2>
-            <p class="text-muted mb-6 text-base"><?php _e('Lista de los coordinadores registrados'); ?></p>
+            <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('manage_coordinators'); ?></h2>
+            <p class="text-muted mb-6 text-base"><?php _e('manage_coordinators_description'); ?></p>
           </div>
 
-          <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
-            <!-- Header de la tabla -->
-            <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-medium text-darktext"><?php _e('Coordinadores registrado'); ?></h3>
-              <div class="flex gap-2">
-                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                  <?php _e('filter'); ?>
-                </button>
-                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50">
-                  <?php _e('export'); ?>
-                </button>
-                <button class="py-2 px-4 border border-red-300 rounded cursor-pointer font-medium transition-all text-sm bg-red-50 text-red-600 hover:bg-red-100 flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7极16" />
-                  </svg>
-                  <?php _e('delete_selected'); ?>
-                </button>
-                <button class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <?php _e('Agregar Coordinador'); ?>
-                </button>
+          <!-- Botón de agregar coordinador -->
+          <div class="mb-6">
+            <button onclick="openCoordinadorModal()" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors">
+              <?php _e('add_coordinator'); ?>
+            </button>
+          </div>
+
+          <!-- Lista de coordinadores -->
+          <div class="bg-white rounded-lg shadow-sm border border-lightborder">
+            <div class="p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4"><?php _e('coordinators'); ?></h3>
+              
+              <!-- Filtros -->
+              <div class="mb-6 flex flex-wrap gap-4">
+                <div class="flex-1 min-w-64">
+                  <input type="text" id="searchInput" placeholder="<?php _e('search_placeholder'); ?>" 
+                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex gap-2">
+                  <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
+                    <?php _e('export'); ?>
+                  </button>
+                  <button class="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors">
+                    <?php _e('delete_selected'); ?>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Lista de coordinadores -->
+              <div id="coordinadoresList">
+                <!-- Los coordinadores se cargarán aquí dinámicamente -->
               </div>
             </div>
-
-            <!-- Lista de coordinadores -->
-<div class="divide-y divide-gray-200">
-  <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
-    <div class="flex items-center">
-      <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">AD</div>
-      <div class="meta">
-        <div class="font-semibold text-darktext mb-1">Alberto De Mattos</div>
-        <div class="text-muted text-sm"><?php _e('coordinador'); ?></div>
-      </div>
-    </div>
-  </article>
-
-  <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
-    <div class="flex items-center">
-      <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">PM</div>
-      <div class="meta">
-        <div class="font-semibold text-darktext mb-1">Patricia Molinari</div>
-        <div class="text-muted text-sm"><?php _e('coordinadora'); ?></div>
-      </div>
-    </div>
-  </article>
-</div>
+          </div>
+        </div>
+      </section>
 
 
   <script>
@@ -290,6 +285,340 @@ if (!AuthHelper::checkSessionTimeout()) {
         });
       }
     });
+
+    // Variables globales
+    let coordinadores = [];
+    let isEditing = false;
+
+    // Cargar coordinadores al inicializar la página
+    document.addEventListener('DOMContentLoaded', function() {
+      loadCoordinadores();
+      setupEventListeners();
+    });
+
+    // Configurar event listeners
+    function setupEventListeners() {
+      // Búsqueda
+      document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        filterCoordinadores(searchTerm);
+      });
+
+      // Formulario
+      document.getElementById('coordinadorForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (isEditing) {
+          updateCoordinador();
+        } else {
+          createCoordinador();
+        }
+      });
+    }
+
+    // Cargar coordinadores
+    async function loadCoordinadores() {
+      try {
+        const response = await fetch('coordinador_handler.php?action=getAll');
+        const data = await response.json();
+        
+        if (data.success) {
+          coordinadores = data.data || [];
+          renderCoordinadores();
+        } else {
+          showToast('Error cargando coordinadores: ' + data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+      }
+    }
+
+    // Renderizar coordinadores
+    function renderCoordinadores() {
+      const container = document.getElementById('coordinadoresList');
+      
+      if (coordinadores.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2"><?php _e('no_coordinators_found'); ?></h3>
+            <p class="text-gray-500 mb-4"><?php _e('add_first_coordinator'); ?></p>
+            <button onclick="openCoordinadorModal()" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors">
+              <?php _e('add_coordinator'); ?>
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '<div class="space-y-4">';
+      coordinadores.forEach(coordinador => {
+        const initials = (coordinador.nombre.charAt(0) + coordinador.apellido.charAt(0)).toUpperCase();
+        html += `
+          <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+            <div class="flex items-center">
+              <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                ${initials}
+              </div>
+              <div>
+                <div class="font-semibold text-gray-900">${coordinador.nombre} ${coordinador.apellido}</div>
+                <div class="text-sm text-gray-500">${coordinador.email} • CI: ${coordinador.cedula} • Roles: ${coordinador.roles}</div>
+              </div>
+            </div>
+            <div class="flex space-x-2">
+              <button onclick="editCoordinador(${coordinador.id_usuario})" 
+                      class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
+                <?php _e('edit'); ?>
+              </button>
+              <button onclick="deleteCoordinador(${coordinador.id_usuario})" 
+                      class="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">
+                <?php _e('delete'); ?>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // Filtrar coordinadores
+    function filterCoordinadores(searchTerm) {
+      const filtered = coordinadores.filter(coordinador => 
+        coordinador.nombre.toLowerCase().includes(searchTerm) ||
+        coordinador.apellido.toLowerCase().includes(searchTerm) ||
+        coordinador.email.toLowerCase().includes(searchTerm) ||
+        coordinador.cedula.includes(searchTerm)
+      );
+      
+      // Crear una copia temporal para renderizar
+      const originalCoordinadores = coordinadores;
+      coordinadores = filtered;
+      renderCoordinadores();
+      coordinadores = originalCoordinadores;
+    }
+
+    // Abrir modal
+    function openCoordinadorModal() {
+      isEditing = false;
+      document.getElementById('modalTitle').textContent = '<?php _e('add_coordinator'); ?>';
+      document.getElementById('coordinadorForm').reset();
+      document.getElementById('coordinadorId').value = '';
+      document.getElementById('coordinadorModal').classList.remove('hidden');
+    }
+
+    // Cerrar modal
+    function closeCoordinadorModal() {
+      document.getElementById('coordinadorModal').classList.add('hidden');
+    }
+
+    // Editar coordinador
+    async function editCoordinador(id) {
+      try {
+        const response = await fetch(`coordinador_handler.php?action=get&id=${id}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          const coordinador = data.data;
+          document.getElementById('coordinadorId').value = coordinador.id_usuario;
+          document.getElementById('cedula').value = coordinador.cedula;
+          document.getElementById('nombre').value = coordinador.nombre;
+          document.getElementById('apellido').value = coordinador.apellido;
+          document.getElementById('email').value = coordinador.email;
+          document.getElementById('telefono').value = coordinador.telefono || '';
+          document.getElementById('contrasena').value = '';
+          
+          isEditing = true;
+          document.getElementById('modalTitle').textContent = '<?php _e('edit_coordinator'); ?>';
+          document.getElementById('coordinadorModal').classList.remove('hidden');
+        } else {
+          showToast('Error cargando coordinador: ' + data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+      }
+    }
+
+    // Crear coordinador
+    async function createCoordinador() {
+      const formData = new FormData(document.getElementById('coordinadorForm'));
+      formData.append('action', 'create');
+      
+      try {
+        const response = await fetch('coordinador_handler.php', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast(data.message, 'success');
+          closeCoordinadorModal();
+          loadCoordinadores();
+        } else {
+          showToast(data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+      }
+    }
+
+    // Actualizar coordinador
+    async function updateCoordinador() {
+      const formData = new FormData(document.getElementById('coordinadorForm'));
+      formData.append('action', 'update');
+      
+      try {
+        const response = await fetch('coordinador_handler.php', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast(data.message, 'success');
+          closeCoordinadorModal();
+          loadCoordinadores();
+        } else {
+          showToast(data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+      }
+    }
+
+    // Eliminar coordinador
+    async function deleteCoordinador(id) {
+      if (!confirm('¿Está seguro de que desea eliminar este coordinador?')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('coordinador_handler.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=delete&id=${id}`
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast(data.message, 'success');
+          loadCoordinadores();
+        } else {
+          showToast(data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Error de conexión', 'error');
+      }
+    }
+
+    // Mostrar toast
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const bgColor = type === 'success' ? 'bg-green-500' : 
+                     type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+      
+      toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg mb-2 transform transition-all duration-300 translate-x-full`;
+      toast.textContent = message;
+      
+      container.appendChild(toast);
+      
+      // Animar entrada
+      setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+      }, 100);
+      
+      // Auto eliminar después de 5 segundos
+      setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+          }
+        }, 300);
+      }, 5000);
+    }
   </script>
+
+  <!-- Modal para agregar/editar coordinador -->
+  <div id="coordinadorModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-medium text-gray-900" id="modalTitle"><?php _e('add_coordinator'); ?></h3>
+          <button onclick="closeCoordinadorModal()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <form id="coordinadorForm">
+          <input type="hidden" id="coordinadorId" name="id">
+          
+          <div class="mb-4">
+            <label for="cedula" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('id_number'); ?></label>
+            <input type="text" id="cedula" name="cedula" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <div class="mb-4">
+            <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('name'); ?></label>
+            <input type="text" id="nombre" name="nombre" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <div class="mb-4">
+            <label for="apellido" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('lastname'); ?></label>
+            <input type="text" id="apellido" name="apellido" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <div class="mb-4">
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('email'); ?></label>
+            <input type="email" id="email" name="email" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <div class="mb-4">
+            <label for="telefono" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('phone'); ?></label>
+            <input type="text" id="telefono" name="telefono"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          
+          <div class="mb-6">
+            <label for="contrasena" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('password'); ?></label>
+            <input type="password" id="contrasena" name="contrasena"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <p class="text-xs text-gray-500 mt-1"><?php _e('password_leave_blank'); ?></p>
+          </div>
+          
+          <div class="flex justify-end space-x-3">
+            <button type="button" onclick="closeCoordinadorModal()" 
+                    class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+              <?php _e('cancel'); ?>
+            </button>
+            <button type="submit" 
+                    class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors">
+              <?php _e('save'); ?>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notifications -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-50"></div>
 </body>
 </html>

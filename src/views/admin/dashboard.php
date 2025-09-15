@@ -66,7 +66,6 @@ try {
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">
     <div class="flex min-h-screen">
-        <!-- Sidebar -->
         <aside class="w-64 bg-sidebar border-r border-border">
             <div class="px-5 flex items-center h-[60px] bg-darkblue gap-2.5">
                 <img src="/upload/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
@@ -76,31 +75,31 @@ try {
             <ul class="py-5 list-none">
                 <li>
                     <a href="index.php" class="sidebar-link active flex items-center py-3 px-5 text-gray-800 no-underline transition-all hover:bg-sidebarHover">
+                        <span class="w-2 h-2 bg-gray-500 rounded-full mr-3"></span>
                         <?php _e('dashboard'); ?>
                     </a>
                 </li>
                 <li>
-                    <a href="admin-usuarios.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-                        <?php _e('users'); ?>
-                    </a>
-                </li>
-                <li>
                     <a href="admin-docentes.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+                        <span class="w-2 h-2 bg-gray-500 rounded-full mr-3"></span>
                         <?php _e('teachers'); ?>
                     </a>
                 </li>
                 <li>
                     <a href="admin-coordinadores.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+                        <span class="w-2 h-2 bg-gray-500 rounded-full mr-3"></span>
                         <?php _e('coordinators'); ?>
                     </a>
                 </li>
                 <li>
                     <a href="admin-materias.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+                        <span class="w-2 h-2 bg-gray-500 rounded-full mr-3"></span>
                         <?php _e('subjects'); ?>
                     </a>
                 </li>
                 <li>
                     <a href="admin-horarios.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+                        <span class="w-2 h-2 bg-gray-500 rounded-full mr-3"></span>
                         <?php _e('schedules'); ?>
                     </a>
                 </li>
@@ -233,19 +232,7 @@ try {
                     <!-- Quick Actions -->
                     <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6 mb-8">
                         <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('quick_actions'); ?></h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                            <a href="admin-usuarios.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                                <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
-                                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900"><?php _e('manage_users'); ?></p>
-                                    <p class="text-sm text-gray-500"><?php _e('manage_users_description'); ?></p>
-                                </div>
-                            </a>
-
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <a href="admin-docentes.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                 <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                                     <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
