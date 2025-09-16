@@ -119,7 +119,7 @@ if (!AuthHelper::checkSessionTimeout()) {
         <!-- Sidebar -->
         <aside class="w-64 bg-sidebar border-r border-border">
             <div class="px-5 flex items-center h-[60px] bg-darkblue gap-2.5">
-                <img src="/upload/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
+                <img src="/assets/images/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
                 <span class="text-white font-semibold text-lg"><?php _e('scuola_italiana'); ?></span>
             </div>
 
