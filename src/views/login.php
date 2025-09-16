@@ -163,7 +163,7 @@ function getRedirectUrl($role) {
       
       <!-- IZQUIERDA -->
       <div class="flex items-center gap-2.5">
-          <img src="/assets\images/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
+          <img src="/upload/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
           <span class="text-white font-semibold text-lg"><?php _e('scuola_italiana'); ?></span>
       </div>
 

@@ -168,7 +168,7 @@ function getUserInitials($nombre, $apellido) {
     <!-- Sidebar -->
     <aside class="w-64 bg-sidebar border-r border-border">
       <div class="px-5 flex items-center h-[60px] bg-darkblue gap-2.5">
-        <img src="/upload/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
+        <img src="/assets/images/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
         <span class="text-white font-semibold text-lg"><?php _e('scuola_italiana'); ?></span>
       </div>
 
@@ -186,11 +186,6 @@ function getUserInitials($nombre, $apellido) {
         <li>
           <a href="admin-docentes.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
             <?php _e('teachers'); ?>
-          </a>
-        </li>
-        <li>
-          <a href="admin-coordinadores.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-            <?php _e('coordinators'); ?>
           </a>
         </li>
         <li>
