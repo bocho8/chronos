@@ -174,11 +174,6 @@ function getUserInitials($nombre, $apellido) {
                     </a>
                 </li>
                 <li>
-                    <a href="admin-coordinadores.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-                        <?php _e('coordinators'); ?>
-                    </a>
-                </li>
-                <li>
                     <a href="admin-materias.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
                         <?php _e('subjects'); ?>
                     </a>

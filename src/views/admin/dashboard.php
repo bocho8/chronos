@@ -87,7 +87,7 @@ try {
     <div class="flex min-h-screen">
         <aside class="w-64 bg-sidebar border-r border-border">
             <div class="px-5 flex items-center h-[60px] bg-darkblue gap-2.5">
-                <img src="/upload/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
+                <img src="/assets/images/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
                 <span class="text-white font-semibold text-lg"><?php _e('scuola_italiana'); ?></span>
             </div>
 
@@ -105,11 +105,6 @@ try {
                 <li>
                     <a href="admin-docentes.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
                         <?php _e('teachers'); ?>
-                    </a>
-                </li>
-                <li>
-                    <a href="admin-coordinadores.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-                        <?php _e('coordinators'); ?>
                     </a>
                 </li>
                 <li>
@@ -264,7 +259,7 @@ try {
                                 </div>
                             </a>
 
-                            <a href="admin-coordinadores.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <a href="#" onclick="alert('Coordinadores view has been removed from admin panel'); return false;" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                 <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
                                     <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
