@@ -63,6 +63,25 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php _e('app_name'); ?> — <?php _e('admin_dashboard'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s;
+        }
+        .sidebar-link.active {
+            background-color: #e4e6eb;
+            font-weight: 600;
+        }
+        .sidebar-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: #1f366d;
+        }
+    </style>
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">
     <div class="flex min-h-screen">

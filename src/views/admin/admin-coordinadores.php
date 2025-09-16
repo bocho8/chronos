@@ -71,6 +71,80 @@ if (!AuthHelper::checkSessionTimeout()) {
       width: 4px;
       background-color: #1f366d;
     }
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      padding: 16px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      max-width: 400px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .toast.show {
+      transform: translateX(0);
+    }
+    .toast-success {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+    .toast-error {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+    .toast-warning {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+    .toast-info {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+    #toastContainer {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+    }
+    
+    /* Modal styles */
+    #coordinadorModal {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      z-index: 10000 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background-color: rgba(0, 0, 0, 0.2) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+    
+    #coordinadorModal.hidden {
+      display: none !important;
+    }
+    
+    #coordinadorModal .modal-content {
+      position: relative !important;
+      z-index: 10001 !important;
+      background: white !important;
+      border-radius: 8px !important;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    }
+    
+    #coordinadorModal button[type="submit"], 
+    #coordinadorModal button[type="button"] {
+      z-index: 10002 !important;
+      position: relative !important;
+      background-color: #1f366d !important;
+      color: white !important;
+    }
   </style>
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">
@@ -520,105 +594,124 @@ if (!AuthHelper::checkSessionTimeout()) {
       }
     }
 
-    // Mostrar toast
+    // Toast notification functions
     function showToast(message, type = 'info') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
       
-      const bgColor = type === 'success' ? 'bg-green-500' : 
-                     type === 'error' ? 'bg-red-500' : 'bg-blue-500';
-      
-      toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg mb-2 transform transition-all duration-300 translate-x-full`;
-      toast.textContent = message;
+      const icon = getToastIcon(type);
+      toast.innerHTML = `
+        <div class="flex items-center">
+          ${icon}
+          <span>${message}</span>
+        </div>
+        <button onclick="hideToast(this)" class="ml-4 text-white hover:text-gray-200">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      `;
       
       container.appendChild(toast);
       
-      // Animar entrada
-      setTimeout(() => {
-        toast.classList.remove('translate-x-full');
-      }, 100);
+      // Trigger animation
+      setTimeout(() => toast.classList.add('show'), 100);
       
-      // Auto eliminar después de 5 segundos
-      setTimeout(() => {
-        toast.classList.add('translate-x-full');
+      // Auto hide after 5 seconds
+      setTimeout(() => hideToast(toast), 5000);
+    }
+
+    function getToastIcon(type) {
+      const icons = {
+        success: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
+        error: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
+        warning: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>',
+        info: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+      };
+      return icons[type] || icons.info;
+    }
+
+    function hideToast(toast) {
+      if (toast && toast.parentNode) {
+        toast.classList.remove('show');
         setTimeout(() => {
           if (toast.parentNode) {
             toast.parentNode.removeChild(toast);
           }
         }, 300);
-      }, 5000);
+      }
     }
   </script>
 
   <!-- Modal para agregar/editar coordinador -->
-  <div id="coordinadorModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-      <div class="mt-3">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-gray-900" id="modalTitle"><?php _e('add_coordinator'); ?></h3>
-          <button onclick="closeCoordinadorModal()" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
+  <div id="coordinadorModal" class="hidden">
+    <div class="modal-content p-8 w-full max-w-md mx-auto">
+      <div class="flex justify-between items-center mb-6">
+        <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_coordinator'); ?></h3>
+        <button onclick="closeCoordinadorModal()" class="text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+        
+      <form id="coordinadorForm" class="space-y-4">
+        <input type="hidden" id="coordinadorId" name="id">
+        
+        <div>
+          <label for="cedula" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('cedula'); ?></label>
+          <input type="text" id="cedula" name="cedula" required
+                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
         </div>
         
-        <form id="coordinadorForm">
-          <input type="hidden" id="coordinadorId" name="id">
-          
-          <div class="mb-4">
-            <label for="cedula" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('id_number'); ?></label>
-            <input type="text" id="cedula" name="cedula" required
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          
-          <div class="mb-4">
-            <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('name'); ?></label>
-            <input type="text" id="nombre" name="nombre" required
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          
-          <div class="mb-4">
-            <label for="apellido" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('lastname'); ?></label>
-            <input type="text" id="apellido" name="apellido" required
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          
-          <div class="mb-4">
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('email'); ?></label>
-            <input type="email" id="email" name="email" required
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          
-          <div class="mb-4">
-            <label for="telefono" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('phone'); ?></label>
-            <input type="text" id="telefono" name="telefono"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          
-          <div class="mb-6">
-            <label for="contrasena" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('password'); ?></label>
-            <input type="password" id="contrasena" name="contrasena"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <p class="text-xs text-gray-500 mt-1"><?php _e('password_leave_blank'); ?></p>
-          </div>
-          
-          <div class="flex justify-end space-x-3">
-            <button type="button" onclick="closeCoordinadorModal()" 
-                    class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
-              <?php _e('cancel'); ?>
-            </button>
-            <button type="submit" 
-                    class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors">
-              <?php _e('save'); ?>
-            </button>
-          </div>
-        </form>
+        <div>
+          <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('name'); ?></label>
+          <input type="text" id="nombre" name="nombre" required
+                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+        </div>
+        
+        <div>
+          <label for="apellido" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('lastname'); ?></label>
+          <input type="text" id="apellido" name="apellido" required
+                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+        </div>
+        
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('email'); ?></label>
+          <input type="email" id="email" name="email" required
+                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+        </div>
+        
+        <div>
+          <label for="telefono" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('phone'); ?></label>
+          <input type="text" id="telefono" name="telefono"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+        </div>
+        
+        <div>
+          <label for="contrasena" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('password'); ?></label>
+          <input type="password" id="contrasena" name="contrasena"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+          <p class="text-xs text-gray-500 mt-1"><?php _e('password_leave_blank'); ?></p>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4">
+          <button type="button" onclick="closeCoordinadorModal()" 
+                  class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
+            <?php _e('cancel'); ?>
+          </button>
+          <button type="submit" 
+                  class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkblue hover:bg-navy focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
+            <?php _e('save'); ?>
+          </button>
+        </div>
+      </form>
       </div>
     </div>
   </div>
 
-  <!-- Toast notifications -->
-  <div id="toastContainer" class="fixed top-4 right-4 z-50"></div>
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
 </body>
 </html>

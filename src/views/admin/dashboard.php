@@ -63,6 +63,25 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php _e('app_name'); ?> — <?php _e('admin_dashboard'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s;
+        }
+        .sidebar-link.active {
+            background-color: #e4e6eb;
+            font-weight: 600;
+        }
+        .sidebar-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: #1f366d;
+        }
+    </style>
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">
     <div class="flex min-h-screen">
@@ -75,31 +94,31 @@ try {
             <ul class="py-5 list-none">
                 <li>
                     <a href="index.php" class="sidebar-link active flex items-center py-3 px-5 text-gray-800 no-underline transition-all hover:bg-sidebarHover">
-                        <span class="w-2 h-2 bg-gray-500 rounded-full mr-3"></span>
                         <?php _e('dashboard'); ?>
                     </a>
                 </li>
                 <li>
+                    <a href="admin-usuarios.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+                        <?php _e('users'); ?>
+                    </a>
+                </li>
+                <li>
                     <a href="admin-docentes.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-                        <span class="w-2 h-2 bg-gray-500 rounded-full mr-3"></span>
                         <?php _e('teachers'); ?>
                     </a>
                 </li>
                 <li>
                     <a href="admin-coordinadores.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-                        <span class="w-2 h-2 bg-gray-500 rounded-full mr-3"></span>
                         <?php _e('coordinators'); ?>
                     </a>
                 </li>
                 <li>
                     <a href="admin-materias.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-                        <span class="w-2 h-2 bg-gray-500 rounded-full mr-3"></span>
                         <?php _e('subjects'); ?>
                     </a>
                 </li>
                 <li>
                     <a href="admin-horarios.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-                        <span class="w-2 h-2 bg-gray-500 rounded-full mr-3"></span>
                         <?php _e('schedules'); ?>
                     </a>
                 </li>
