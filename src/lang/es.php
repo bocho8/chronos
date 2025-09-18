@@ -298,5 +298,46 @@ return [
     'select_group' => 'Seleccionar grupo',
     'select_subject' => 'Seleccionar materia',
     'select_teacher' => 'Seleccionar docente',
-    'admin_panel' => 'Panel de Administración',
+    'admin_panel' => 'Panel de Administración',  
+    
+    // Navigation sections
+    'administration' => 'Administración',
+    'academic_management' => 'Gestión Académica',
+    'coordinator_functions' => 'Funciones de Coordinador',
+    'teacher_functions' => 'Funciones de Docente',
+    'parent_functions' => 'Funciones de Padre',
+    
+    // New menu items
+    'coordinators' => 'Coordinadores',
+    'groups' => 'Grupos',
+    'teacher_availability' => 'Disponibilidad Docentes',
+    'subject_assignments' => 'Asignación de Materias',
+    'reports' => 'Reportes',
+    'my_schedule' => 'Mi Horario',
+    'my_availability' => 'Mi Disponibilidad',
+    'students' => 'Estudiantes',
+    'student_schedules' => 'Horarios de Estudiantes',
+    
+    // Coordinators Management
+    'coordinators_management' => 'Gestión de Coordinadores',
+    'coordinators_management_description' => 'Administrar todos los coordinadores del sistema',
+    'add_coordinator' => 'Agregar Coordinador',
+    'edit_coordinator' => 'Editar Coordinador',
+    'no_coordinators_found' => 'No se encontraron coordinadores',
+    'add_first_coordinator' => 'Agregue el primer coordinador al sistema',
+    
+    // Groups Management
+    'groups_management' => 'Gestión de Grupos',
+    'groups_management_description' => 'Administrar todos los grupos del sistema',
+    'add_group' => 'Agregar Grupo',
+    'edit_group' => 'Editar Grupo',
+    'group_name' => 'Nombre del Grupo',
+    'level' => 'Nivel',
+    'select_level' => 'Seleccionar nivel',
+    'view_schedule' => 'Ver Horario',
+    'no_groups_found' => 'No se encontraron grupos',
+    'add_first_group' => 'Agregue el primer grupo al sistema',
+    'manage_groups' => 'Gestionar Grupos',
+    'manage_teacher_availability' => 'Gestionar disponibilidad de docentes',
+    'generate_reports' => 'Generar reportes del sistema',
 ];
