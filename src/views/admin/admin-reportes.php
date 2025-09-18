@@ -1,6 +1,6 @@
 <?php
 /**
- * Página de gestión de grupos para administradores
+ * Página de reportes para administradores
  */
 
 // Include required files
@@ -9,7 +9,6 @@ require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../models/Database.php';
-require_once __DIR__ . '/../../models/Horario.php';
 
 // Initialize secure session
 initSecureSession();
@@ -30,31 +29,42 @@ if (!AuthHelper::checkSessionTimeout()) {
     exit();
 }
 
-// Load database configuration and get grupos
+// Load database configuration and get statistics
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
+    $pdo = $database->getConnection();
     
-    // Get grupos using Horario model (since it has the getAllGrupos method)
-    $horarioModel = new Horario($database->getConnection());
-    $grupos = $horarioModel->getAllGrupos();
+    // Get comprehensive statistics
+    $stats = [];
     
-    if ($grupos === false) {
-        $grupos = [];
-    }
+    // Total counts
+    $stats['total_usuarios'] = $database->queryCount("SELECT COUNT(*) FROM usuario");
+    $stats['total_docentes'] = $database->queryCount("SELECT COUNT(*) FROM docente");
+    $stats['total_materias'] = $database->queryCount("SELECT COUNT(*) FROM materia");
+    $stats['total_grupos'] = $database->queryCount("SELECT COUNT(*) FROM grupo");
+    $stats['total_horarios'] = $database->queryCount("SELECT COUNT(*) FROM horario");
+    
+    // Docentes by availability
+    $stmt = $pdo->query("SELECT COUNT(DISTINCT id_docente) as count FROM disponibilidad WHERE disponible = true");
+    $stats['docentes_disponibles'] = $stmt->fetch()['count'] ?? 0;
+    
+    // Materias by program
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM materia WHERE es_programa_italiano = true");
+    $stats['materias_italiano'] = $stmt->fetch()['count'] ?? 0;
+    
+    // Recent activity
+    $stmt = $pdo->prepare("SELECT l.*, u.nombre, u.apellido FROM log l 
+                          LEFT JOIN usuario u ON l.id_usuario = u.id_usuario 
+                          ORDER BY l.fecha DESC LIMIT 20");
+    $stmt->execute();
+    $recentActivity = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
 } catch (Exception $e) {
-    error_log("Error cargando grupos: " . $e->getMessage());
-    $grupos = [];
+    error_log("Error cargando reportes: " . $e->getMessage());
+    $stats = [];
+    $recentActivity = [];
     $error_message = 'Error interno del servidor';
-}
-
-// Function to get group initials
-function getGroupInitials($nombre) {
-    $words = explode(' ', $nombre);
-    if (count($words) >= 2) {
-        return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
-    }
-    return strtoupper(substr($nombre, 0, 2));
 }
 ?>
 
@@ -63,7 +73,7 @@ function getGroupInitials($nombre) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?php _e('app_name'); ?> — <?php _e('groups_management'); ?></title>
+    <title><?php _e('app_name'); ?> — <?php _e('reports'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
     <style type="text/css">
         body {
@@ -86,79 +96,19 @@ function getGroupInitials($nombre) {
             width: 4px;
             background-color: #1f366d;
         }
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            padding: 16px 20px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transform: translateX(100%);
-            transition: transform 0.3s ease-in-out;
-            max-width: 400px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+        .stat-card {
+            transition: transform 0.2s;
         }
-        .toast.show {
-            transform: translateX(0);
+        .stat-card:hover {
+            transform: translateY(-2px);
         }
-        .toast-success {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-        .toast-error {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-        }
-        .toast-warning {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-        }
-        .toast-info {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-        }
-        #toastContainer {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-        }
-        
-        /* Modal styles */
-        #grupoModal {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            z-index: 10000 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            background-color: rgba(0, 0, 0, 0.2) !important;
-            backdrop-filter: blur(8px) !important;
-            -webkit-backdrop-filter: blur(8px) !important;
-        }
-        
-        #grupoModal.hidden {
-            display: none !important;
-        }
-        
-        #grupoModal .modal-content {
-            position: relative !important;
-            z-index: 10001 !important;
-            background: white !important;
-            border-radius: 8px !important;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-        }
-        
-        #grupoModal button[type="submit"], 
-        #grupoModal button[type="button"] {
-            z-index: 10002 !important;
-            position: relative !important;
-            background-color: #1f366d !important;
-            color: white !important;
+        .chart-placeholder {
+            background: linear-gradient(45deg, #f3f4f6 25%, transparent 25%), 
+                        linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #f3f4f6 75%), 
+                        linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
         }
     </style>
 </head>
@@ -228,7 +178,7 @@ function getGroupInitials($nombre) {
                     </a>
                 </li>
                 <li>
-                    <a href="admin-grupos.php" class="sidebar-link active flex items-center py-3 px-5 text-gray-800 no-underline transition-all hover:bg-sidebarHover">
+                    <a href="admin-grupos.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 616 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
@@ -267,7 +217,7 @@ function getGroupInitials($nombre) {
                     </a>
                 </li>
                 <li>
-                    <a href="admin-reportes.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+                    <a href="admin-reportes.php" class="sidebar-link active flex items-center py-3 px-5 text-gray-800 no-underline transition-all hover:bg-sidebarHover">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
@@ -284,7 +234,7 @@ function getGroupInitials($nombre) {
                 <li>
                     <a href="admin-mi-horario.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0V3a2 2 0 012-2h4a2 2 0 012 2v4M7 7h10l4 10v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4L7 7z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 712-2h4a2 2 0 712 2v4m-6 0V3a2 2 0 712-2h4a2 2 0 712 2v4M7 7h10l4 10v4a1 1 0 71-1 1H4a1 1 0 71-1-1v-4L7 7z"></path>
                         </svg>
                         <?php _e('my_schedule'); ?>
                     </a>
@@ -325,17 +275,13 @@ function getGroupInitials($nombre) {
             </ul>
         </aside>
 
-        <!-- Main -->
         <main class="flex-1 flex flex-col">
             <!-- Header -->
             <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-                <!-- Espacio para el botón de menú hamburguesa -->
                 <div class="w-8"></div>
                 
-                <!-- Título centrado -->
                 <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
                 
-                <!-- Contenedor de iconos a la derecha -->
                 <div class="flex items-center">
                     <?php echo $languageSwitcher->render('', 'mr-4'); ?>
                     <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
@@ -344,13 +290,11 @@ function getGroupInitials($nombre) {
                         </svg>
                     </button>
                     
-                    <!-- User Menu Dropdown -->
                     <div class="relative group">
                         <button class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-darkblue font-semibold hover:bg-gray-100 transition-colors" id="userMenuButton">
                             <?php echo htmlspecialchars(AuthHelper::getUserInitials()); ?>
                         </button>
                         
-                        <!-- Dropdown Menu -->
                         <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block" id="userMenu">
                             <div class="px-4 py-2 text-sm text-gray-700 border-b">
                                 <div class="font-medium"><?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?></div>
@@ -365,7 +309,7 @@ function getGroupInitials($nombre) {
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" id="settingsLink">
                                 <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 616 0z"></path>
                                 </svg>
                                 <?php _e('settings'); ?>
                             </a>
@@ -381,262 +325,207 @@ function getGroupInitials($nombre) {
                 </div>
             </header>
 
-            <!-- Contenido principal - Centrado -->
+            <!-- Contenido principal -->
             <section class="flex-1 px-6 py-8">
                 <div class="max-w-6xl mx-auto">
                     <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('groups_management'); ?></h2>
-                        <p class="text-muted mb-6 text-base"><?php _e('groups_management_description'); ?></p>
+                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('reports'); ?></h2>
+                        <p class="text-muted mb-6 text-base"><?php _e('reports_description'); ?></p>
                     </div>
 
-                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
-                        <!-- Header de la tabla -->
-                        <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-                            <h3 class="font-medium text-darktext"><?php _e('groups'); ?></h3>
-                            <div class="flex gap-2">
-                                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    <!-- Statistics Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="stat-card bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 515 0z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500"><?php _e('total_users'); ?></p>
+                                    <p class="text-2xl font-semibold text-gray-900"><?php echo $stats['total_usuarios'] ?? 0; ?></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500"><?php _e('total_teachers'); ?></p>
+                                    <p class="text-2xl font-semibold text-gray-900"><?php echo $stats['total_docentes'] ?? 0; ?></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500"><?php _e('total_subjects'); ?></p>
+                                    <p class="text-2xl font-semibold text-gray-900"><?php echo $stats['total_materias'] ?? 0; ?></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500"><?php _e('total_schedules'); ?></p>
+                                    <p class="text-2xl font-semibold text-gray-900"><?php echo $stats['total_horarios'] ?? 0; ?></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Report Generation -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <!-- Quick Reports -->
+                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('quick_reports'); ?></h3>
+                            <div class="space-y-3">
+                                <button onclick="generateReport('teachers')" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+                                    <svg class="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                     </svg>
-                                    <?php _e('filter'); ?>
+                                    <div>
+                                        <p class="font-medium text-gray-900"><?php _e('teachers_report'); ?></p>
+                                        <p class="text-sm text-gray-500"><?php _e('teachers_report_description'); ?></p>
+                                    </div>
                                 </button>
-                                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50">
-                                    <?php _e('export'); ?>
-                                </button>
-                                <button onclick="showAddGrupoModal()" class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+
+                                <button onclick="generateReport('schedules')" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+                                    <svg class="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    <?php _e('add_group'); ?>
+                                    <div>
+                                        <p class="font-medium text-gray-900"><?php _e('schedules_report'); ?></p>
+                                        <p class="text-sm text-gray-500"><?php _e('schedules_report_description'); ?></p>
+                                    </div>
+                                </button>
+
+                                <button onclick="generateReport('subjects')" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+                                    <svg class="w-5 h-5 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    </svg>
+                                    <div>
+                                        <p class="font-medium text-gray-900"><?php _e('subjects_report'); ?></p>
+                                        <p class="text-sm text-gray-500"><?php _e('subjects_report_description'); ?></p>
+                                    </div>
+                                </button>
+
+                                <button onclick="generateReport('availability')" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+                                    <svg class="w-5 h-5 text-orange-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                    </svg>
+                                    <div>
+                                        <p class="font-medium text-gray-900"><?php _e('availability_report'); ?></p>
+                                        <p class="text-sm text-gray-500"><?php _e('availability_report_description'); ?></p>
+                                    </div>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Lista de grupos -->
-                        <div class="divide-y divide-gray-200">
-                            <?php if (!empty($grupos)): ?>
-                                <?php foreach ($grupos as $grupo): ?>
-                                    <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
-                                        <div class="flex items-center">
-                                            <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
-                                                <?php echo getGroupInitials($grupo['nombre']); ?>
-                                            </div>
-                                            <div class="meta">
-                                                <div class="font-semibold text-darktext mb-1">
-                                                    <?php echo htmlspecialchars($grupo['nombre']); ?>
-                                                </div>
-                                                <div class="text-muted text-sm">
-                                                    <?php _e('level'); ?>: <?php echo htmlspecialchars($grupo['nivel']); ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center space-x-2">
-                                            <button onclick="viewGroupSchedule(<?php echo $grupo['id_grupo']; ?>)" 
-                                                    class="text-green-600 hover:text-green-800 text-sm font-medium transition-colors">
-                                                <?php _e('view_schedule'); ?>
-                                            </button>
-                                            <button onclick="editGrupo(<?php echo $grupo['id_grupo']; ?>)" 
-                                                    class="text-darkblue hover:text-navy text-sm font-medium transition-colors">
-                                                <?php _e('edit'); ?>
-                                            </button>
-                                            <button onclick="deleteGrupo(<?php echo $grupo['id_grupo']; ?>, '<?php echo htmlspecialchars($grupo['nombre']); ?>')" 
-                                                    class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors">
-                                                <?php _e('delete'); ?>
-                                            </button>
-                                        </div>
-                                    </article>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <div class="p-8 text-center">
-                                    <div class="text-gray-500 text-lg mb-2"><?php _e('no_groups_found'); ?></div>
-                                    <div class="text-gray-400 text-sm"><?php _e('add_first_group'); ?></div>
+                        <!-- System Overview -->
+                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('system_overview'); ?></h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600"><?php _e('total_groups'); ?>:</span>
+                                    <span class="font-semibold"><?php echo $stats['total_grupos'] ?? 0; ?></span>
                                 </div>
-                            <?php endif; ?>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600"><?php _e('available_teachers'); ?>:</span>
+                                    <span class="font-semibold"><?php echo $stats['docentes_disponibles'] ?? 0; ?></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600"><?php _e('italian_subjects'); ?>:</span>
+                                    <span class="font-semibold"><?php echo $stats['materias_italiano'] ?? 0; ?></span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600"><?php _e('active_schedules'); ?>:</span>
+                                    <span class="font-semibold"><?php echo $stats['total_horarios'] ?? 0; ?></span>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('recent_activity'); ?></h3>
+                        <?php if (!empty($recentActivity)): ?>
+                            <div class="space-y-4 max-h-96 overflow-y-auto">
+                                <?php foreach ($recentActivity as $activity): ?>
+                                    <div class="flex items-start space-x-3">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm text-gray-900">
+                                                <span class="font-medium">
+                                                    <?php echo htmlspecialchars($activity['nombre'] . ' ' . $activity['apellido']); ?>
+                                                </span>
+                                                <?php echo htmlspecialchars($activity['accion']); ?>
+                                            </p>
+                                            <p class="text-xs text-gray-500">
+                                                <?php echo date('d/m/Y H:i', strtotime($activity['fecha'])); ?>
+                                            </p>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-center py-8">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-500"><?php _e('no_recent_activity'); ?></p>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Modal para agregar/editar grupo -->
-    <div id="grupoModal" class="hidden">
-        <div class="modal-content p-8 w-full max-w-md mx-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_group'); ?></h3>
-                <button onclick="closeGrupoModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <form id="grupoForm" onsubmit="handleGrupoFormSubmit(event)" class="space-y-4">
-                <input type="hidden" id="grupoId" name="id" value="">
-                
-                <div>
-                    <label for="nombre_grupo" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('group_name'); ?></label>
-                    <input type="text" id="nombre_grupo" name="nombre" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
-                           placeholder="Ej: 1º Año A">
-                </div>
-                
-                <div>
-                    <label for="nivel" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('level'); ?></label>
-                    <select id="nivel" name="nivel" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
-                        <option value=""><?php _e('select_level'); ?></option>
-                        <option value="1º Año">1º Año</option>
-                        <option value="2º Año">2º Año</option>
-                        <option value="3º Año">3º Año</option>
-                        <option value="4º Año">4º Año</option>
-                        <option value="5º Año">5º Año</option>
-                        <option value="6º Año">6º Año</option>
-                    </select>
-                </div>
-
-                <div class="flex justify-end space-x-3 pt-4">
-                    <button type="button" onclick="closeGrupoModal()" 
-                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
-                        <?php _e('cancel'); ?>
-                    </button>
-                    <button type="submit" 
-                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkblue hover:bg-navy focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
-                        <?php _e('save'); ?>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Toast Container -->
-    <div id="toastContainer"></div>
-
     <script>
-        let isEditMode = false;
-
-        // Mostrar modal para agregar grupo
-        function showAddGrupoModal() {
-            isEditMode = false;
-            document.getElementById('modalTitle').textContent = '<?php _e('add_group'); ?>';
-            document.getElementById('grupoForm').reset();
-            document.getElementById('grupoId').value = '';
-            
-            clearErrors();
-            document.getElementById('grupoModal').classList.remove('hidden');
-            
-            // Focus on first input
-            setTimeout(() => {
-                document.getElementById('nombre_grupo').focus();
-            }, 100);
-        }
-
-        // Editar grupo
-        function editGrupo(id) {
-            isEditMode = true;
-            document.getElementById('modalTitle').textContent = '<?php _e('edit_group'); ?>';
-            
-            // Simular obtención de datos del grupo
-            // En una implementación real, esto vendría de la base de datos
-            showToast('Funcionalidad de edición de grupos pendiente de implementar', 'info');
-        }
-
-        // Eliminar grupo
-        function deleteGrupo(id, nombre) {
-            const confirmMessage = `¿Está seguro de que desea eliminar el grupo "${nombre}"?`;
-            if (confirm(confirmMessage)) {
-                // Simular eliminación
-                showToast('Funcionalidad de eliminación de grupos pendiente de implementar', 'info');
-            }
-        }
-
-        // Ver horario del grupo
-        function viewGroupSchedule(id) {
-            // Redirigir a la vista de horarios con filtro por grupo
-            window.location.href = `admin-horarios.php?grupo=${id}`;
-        }
-
-        // Cerrar modal
-        function closeGrupoModal() {
-            const modal = document.getElementById('grupoModal');
-            modal.classList.add('hidden');
-            clearErrors();
-        }
-
-        // Manejar envío del formulario
-        function handleGrupoFormSubmit(e) {
-            e.preventDefault();
-            
-            clearErrors();
-            
-            // Simular creación/actualización
-            showToast('Funcionalidad de grupos pendiente de implementar completamente', 'info');
-            closeGrupoModal();
-        }
-
-        // Limpiar errores de validación
-        function clearErrors() {
-            const errorElements = document.querySelectorAll('[id$="Error"]');
-            errorElements.forEach(element => {
-                element.textContent = '';
-            });
-        }
-
-        // Toast notification functions
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            
-            const icon = getToastIcon(type);
-            toast.innerHTML = `
-                <div class="flex items-center">
-                    ${icon}
-                    <span>${message}</span>
-                </div>
-                <button onclick="hideToast(this)" class="ml-4 text-white hover:text-gray-200">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            `;
-            
-            container.appendChild(toast);
-            
-            // Trigger animation
-            setTimeout(() => toast.classList.add('show'), 100);
-            
-            // Auto hide after 5 seconds
-            setTimeout(() => hideToast(toast), 5000);
-        }
-
-        function getToastIcon(type) {
-            const icons = {
-                success: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
-                error: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
-                warning: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>',
-                info: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+        function generateReport(type) {
+            const reportTypes = {
+                'teachers': '<?php _e('teachers_report'); ?>',
+                'schedules': '<?php _e('schedules_report'); ?>',
+                'subjects': '<?php _e('subjects_report'); ?>',
+                'availability': '<?php _e('availability_report'); ?>'
             };
-            return icons[type] || icons.info;
+            
+            const reportName = reportTypes[type] || type;
+            alert(`Generando reporte: ${reportName}\n\nEsta funcionalidad será implementada en una versión futura.`);
         }
-
-        function hideToast(toast) {
-            if (toast && toast.parentNode) {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.parentNode.removeChild(toast);
-                    }
-                }, 300);
-            }
-        }
-
-        // Cerrar modal al hacer clic fuera
-        document.getElementById('grupoModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeGrupoModal();
-            }
-        });
 
         // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {

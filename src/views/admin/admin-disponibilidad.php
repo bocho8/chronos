@@ -1,6 +1,6 @@
 <?php
 /**
- * Página de gestión de grupos para administradores
+ * Página de gestión de disponibilidad de docentes para administradores
  */
 
 // Include required files
@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
+require_once __DIR__ . '/../../models/Docente.php';
 
 // Initialize secure session
 initSecureSession();
@@ -30,31 +31,47 @@ if (!AuthHelper::checkSessionTimeout()) {
     exit();
 }
 
-// Load database configuration and get grupos
+// Load database configuration and get data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get grupos using Horario model (since it has the getAllGrupos method)
+    // Get models
     $horarioModel = new Horario($database->getConnection());
-    $grupos = $horarioModel->getAllGrupos();
+    $docenteModel = new Docente($database->getConnection());
     
-    if ($grupos === false) {
-        $grupos = [];
+    // Get data
+    $docentes = $docenteModel->getAllDocentes();
+    $bloques = $horarioModel->getAllBloques();
+    
+    // Get selected docente if any
+    $selectedDocenteId = $_GET['docente'] ?? null;
+    $selectedDocente = null;
+    $disponibilidad = [];
+    
+    if ($selectedDocenteId) {
+        foreach ($docentes as $docente) {
+            if ($docente['id_docente'] == $selectedDocenteId) {
+                $selectedDocente = $docente;
+                break;
+            }
+        }
+        if ($selectedDocente) {
+            $disponibilidad = $horarioModel->getDocenteDisponibilidad($selectedDocenteId);
+        }
     }
+    
 } catch (Exception $e) {
-    error_log("Error cargando grupos: " . $e->getMessage());
-    $grupos = [];
+    error_log("Error cargando disponibilidad: " . $e->getMessage());
+    $docentes = [];
+    $bloques = [];
+    $disponibilidad = [];
     $error_message = 'Error interno del servidor';
 }
 
-// Function to get group initials
-function getGroupInitials($nombre) {
-    $words = explode(' ', $nombre);
-    if (count($words) >= 2) {
-        return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
-    }
-    return strtoupper(substr($nombre, 0, 2));
+// Function to get user initials
+function getUserInitials($nombre, $apellido) {
+    return strtoupper(substr($nombre, 0, 1) . substr($apellido, 0, 1));
 }
 ?>
 
@@ -63,7 +80,7 @@ function getGroupInitials($nombre) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?php _e('app_name'); ?> — <?php _e('groups_management'); ?></title>
+    <title><?php _e('app_name'); ?> — <?php _e('teacher_availability'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
     <style type="text/css">
         body {
@@ -86,79 +103,33 @@ function getGroupInitials($nombre) {
             width: 4px;
             background-color: #1f366d;
         }
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            padding: 16px 20px;
-            border-radius: 8px;
+        .disponibilidad-cell {
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 100px;
+        }
+        .disponibilidad-cell:hover {
+            opacity: 0.9;
+            transform: scale(0.97);
+        }
+        .disponible {
+            background-color: #10b981;
             color: white;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transform: translateX(100%);
-            transition: transform 0.3s ease-in-out;
-            max-width: 400px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
         }
-        .toast.show {
-            transform: translateX(0);
+        .no-disponible {
+            background-color: #ef4444;
+            color: white;
         }
-        .toast-success {
-            background: linear-gradient(135deg, #10b981, #059669);
+        .sin-datos {
+            background-color: #6b7280;
+            color: white;
         }
-        .toast-error {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-        }
-        .toast-warning {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-        }
-        .toast-info {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-        }
-        #toastContainer {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-        }
-        
-        /* Modal styles */
-        #grupoModal {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            z-index: 10000 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            background-color: rgba(0, 0, 0, 0.2) !important;
-            backdrop-filter: blur(8px) !important;
-            -webkit-backdrop-filter: blur(8px) !important;
-        }
-        
-        #grupoModal.hidden {
-            display: none !important;
-        }
-        
-        #grupoModal .modal-content {
-            position: relative !important;
-            z-index: 10001 !important;
-            background: white !important;
-            border-radius: 8px !important;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-        }
-        
-        #grupoModal button[type="submit"], 
-        #grupoModal button[type="button"] {
-            z-index: 10002 !important;
-            position: relative !important;
-            background-color: #1f366d !important;
-            color: white !important;
+        @media (max-width: 768px) {
+            .disponibilidad-cell {
+                min-width: 80px;
+                font-size: 0.75rem;
+                padding: 6px 4px;
+            }
         }
     </style>
 </head>
@@ -228,7 +199,7 @@ function getGroupInitials($nombre) {
                     </a>
                 </li>
                 <li>
-                    <a href="admin-grupos.php" class="sidebar-link active flex items-center py-3 px-5 text-gray-800 no-underline transition-all hover:bg-sidebarHover">
+                    <a href="admin-grupos.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 616 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
@@ -251,7 +222,7 @@ function getGroupInitials($nombre) {
                     </div>
                 </li>
                 <li>
-                    <a href="admin-disponibilidad.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+                    <a href="admin-disponibilidad.php" class="sidebar-link active flex items-center py-3 px-5 text-gray-800 no-underline transition-all hover:bg-sidebarHover">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                         </svg>
@@ -284,7 +255,7 @@ function getGroupInitials($nombre) {
                 <li>
                     <a href="admin-mi-horario.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0V3a2 2 0 012-2h4a2 2 0 012 2v4M7 7h10l4 10v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4L7 7z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 712-2h4a2 2 0 712 2v4m-6 0V3a2 2 0 712-2h4a2 2 0 712 2v4M7 7h10l4 10v4a1 1 0 71-1 1H4a1 1 0 71-1-1v-4L7 7z"></path>
                         </svg>
                         <?php _e('my_schedule'); ?>
                     </a>
@@ -325,17 +296,13 @@ function getGroupInitials($nombre) {
             </ul>
         </aside>
 
-        <!-- Main -->
         <main class="flex-1 flex flex-col">
             <!-- Header -->
             <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-                <!-- Espacio para el botón de menú hamburguesa -->
                 <div class="w-8"></div>
                 
-                <!-- Título centrado -->
                 <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
                 
-                <!-- Contenedor de iconos a la derecha -->
                 <div class="flex items-center">
                     <?php echo $languageSwitcher->render('', 'mr-4'); ?>
                     <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
@@ -344,13 +311,11 @@ function getGroupInitials($nombre) {
                         </svg>
                     </button>
                     
-                    <!-- User Menu Dropdown -->
                     <div class="relative group">
                         <button class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-darkblue font-semibold hover:bg-gray-100 transition-colors" id="userMenuButton">
                             <?php echo htmlspecialchars(AuthHelper::getUserInitials()); ?>
                         </button>
                         
-                        <!-- Dropdown Menu -->
                         <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block" id="userMenu">
                             <div class="px-4 py-2 text-sm text-gray-700 border-b">
                                 <div class="font-medium"><?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?></div>
@@ -381,262 +346,205 @@ function getGroupInitials($nombre) {
                 </div>
             </header>
 
-            <!-- Contenido principal - Centrado -->
+            <!-- Contenido principal -->
             <section class="flex-1 px-6 py-8">
                 <div class="max-w-6xl mx-auto">
                     <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('groups_management'); ?></h2>
-                        <p class="text-muted mb-6 text-base"><?php _e('groups_management_description'); ?></p>
+                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('teacher_availability'); ?></h2>
+                        <p class="text-muted mb-6 text-base"><?php _e('teacher_availability_description'); ?></p>
                     </div>
 
-                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
-                        <!-- Header de la tabla -->
-                        <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-                            <h3 class="font-medium text-darktext"><?php _e('groups'); ?></h3>
-                            <div class="flex gap-2">
-                                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                    <?php _e('filter'); ?>
-                                </button>
-                                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50">
-                                    <?php _e('export'); ?>
-                                </button>
-                                <button onclick="showAddGrupoModal()" class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                    <?php _e('add_group'); ?>
+                    <!-- Selector de docente -->
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6 mb-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('select_teacher'); ?></h3>
+                        <div class="flex gap-4">
+                            <select id="docenteSelect" class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue">
+                                <option value=""><?php _e('select_teacher'); ?></option>
+                                <?php foreach ($docentes as $docente): ?>
+                                    <option value="<?php echo $docente['id_docente']; ?>" 
+                                            <?php echo ($selectedDocenteId == $docente['id_docente']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($docente['nombre'] . ' ' . $docente['apellido']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button onclick="loadDocenteDisponibilidad()" 
+                                    class="px-4 py-2 bg-darkblue text-white rounded-md hover:bg-navy transition-colors">
+                                <?php _e('load'); ?>
+                            </button>
+                        </div>
+                    </div>
+
+                    <?php if ($selectedDocente): ?>
+                    <!-- Información del docente seleccionado -->
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6 mb-6">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-darkblue mr-4 flex items-center justify-center text-white font-semibold">
+                                <?php echo getUserInitials($selectedDocente['nombre'], $selectedDocente['apellido']); ?>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    <?php echo htmlspecialchars($selectedDocente['nombre'] . ' ' . $selectedDocente['apellido']); ?>
+                                </h3>
+                                <p class="text-gray-600">
+                                    <?php echo htmlspecialchars($selectedDocente['email']); ?> • 
+                                    CI: <?php echo htmlspecialchars($selectedDocente['cedula']); ?>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de disponibilidad -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder">
+                        <div class="p-4 border-b border-gray-200 bg-gray-50">
+                            <h3 class="font-medium text-darktext"><?php _e('availability_schedule'); ?></h3>
+                            <p class="text-sm text-gray-600 mt-1"><?php _e('click_to_toggle_availability'); ?></p>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse">
+                                <thead>
+                                    <tr>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('time'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('monday'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('tuesday'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('wednesday'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('thursday'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('friday'); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php 
+                                    $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+                                    
+                                    // Organizar disponibilidad por día y bloque
+                                    $disponibilidadGrid = [];
+                                    foreach ($dias as $dia) {
+                                        $disponibilidadGrid[$dia] = [];
+                                        foreach ($bloques as $bloque) {
+                                            $disponibilidadGrid[$dia][$bloque['id_bloque']] = true; // Default disponible
+                                        }
+                                    }
+                                    
+                                    // Llenar con datos reales
+                                    foreach ($disponibilidad as $disp) {
+                                        if (isset($disponibilidadGrid[$disp['dia']][$disp['id_bloque']])) {
+                                            $disponibilidadGrid[$disp['dia']][$disp['id_bloque']] = $disp['disponible'];
+                                        }
+                                    }
+                                    
+                                    foreach ($bloques as $bloque): 
+                                    ?>
+                                        <tr>
+                                            <th class="bg-[#34495e] text-white p-2 text-center font-semibold border border-gray-300">
+                                                <?php echo date('H:i', strtotime($bloque['hora_inicio'])) . ' – ' . date('H:i', strtotime($bloque['hora_fin'])); ?>
+                                            </th>
+                                            <?php foreach ($dias as $dia): ?>
+                                                <?php 
+                                                $isDisponible = $disponibilidadGrid[$dia][$bloque['id_bloque']];
+                                                $cellClass = $isDisponible ? 'disponible' : 'no-disponible';
+                                                $cellText = $isDisponible ? 'Disponible' : 'No disponible';
+                                                ?>
+                                                <td class="disponibilidad-cell <?php echo $cellClass; ?> text-center font-medium p-2 border border-gray-300" 
+                                                    data-docente="<?php echo $selectedDocenteId; ?>"
+                                                    data-bloque="<?php echo $bloque['id_bloque']; ?>" 
+                                                    data-dia="<?php echo $dia; ?>"
+                                                    data-disponible="<?php echo $isDisponible ? 'true' : 'false'; ?>"
+                                                    onclick="toggleDisponibilidad(this)">
+                                                    <?php echo $cellText; ?>
+                                                </td>
+                                            <?php endforeach; ?>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-50 border-t">
+                            <div class="flex justify-between items-center">
+                                <div class="text-sm text-gray-600">
+                                    <span class="inline-block w-4 h-4 bg-green-500 rounded mr-2"></span><?php _e('available'); ?>
+                                    <span class="inline-block w-4 h-4 bg-red-500 rounded mr-2 ml-4"></span><?php _e('not_available'); ?>
+                                </div>
+                                <button onclick="saveAllDisponibilidad()" 
+                                        class="px-4 py-2 bg-darkblue text-white rounded-md hover:bg-navy transition-colors">
+                                    <?php _e('save_changes'); ?>
                                 </button>
                             </div>
                         </div>
-
-                        <!-- Lista de grupos -->
-                        <div class="divide-y divide-gray-200">
-                            <?php if (!empty($grupos)): ?>
-                                <?php foreach ($grupos as $grupo): ?>
-                                    <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
-                                        <div class="flex items-center">
-                                            <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
-                                                <?php echo getGroupInitials($grupo['nombre']); ?>
-                                            </div>
-                                            <div class="meta">
-                                                <div class="font-semibold text-darktext mb-1">
-                                                    <?php echo htmlspecialchars($grupo['nombre']); ?>
-                                                </div>
-                                                <div class="text-muted text-sm">
-                                                    <?php _e('level'); ?>: <?php echo htmlspecialchars($grupo['nivel']); ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center space-x-2">
-                                            <button onclick="viewGroupSchedule(<?php echo $grupo['id_grupo']; ?>)" 
-                                                    class="text-green-600 hover:text-green-800 text-sm font-medium transition-colors">
-                                                <?php _e('view_schedule'); ?>
-                                            </button>
-                                            <button onclick="editGrupo(<?php echo $grupo['id_grupo']; ?>)" 
-                                                    class="text-darkblue hover:text-navy text-sm font-medium transition-colors">
-                                                <?php _e('edit'); ?>
-                                            </button>
-                                            <button onclick="deleteGrupo(<?php echo $grupo['id_grupo']; ?>, '<?php echo htmlspecialchars($grupo['nombre']); ?>')" 
-                                                    class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors">
-                                                <?php _e('delete'); ?>
-                                            </button>
-                                        </div>
-                                    </article>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <div class="p-8 text-center">
-                                    <div class="text-gray-500 text-lg mb-2"><?php _e('no_groups_found'); ?></div>
-                                    <div class="text-gray-400 text-sm"><?php _e('add_first_group'); ?></div>
-                                </div>
-                            <?php endif; ?>
-                        </div>
                     </div>
+                    <?php else: ?>
+                    <!-- Mensaje cuando no hay docente seleccionado -->
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-12 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2"><?php _e('no_teacher_selected'); ?></h3>
+                        <p class="text-gray-500"><?php _e('select_teacher_to_manage_availability'); ?></p>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Modal para agregar/editar grupo -->
-    <div id="grupoModal" class="hidden">
-        <div class="modal-content p-8 w-full max-w-md mx-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_group'); ?></h3>
-                <button onclick="closeGrupoModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <form id="grupoForm" onsubmit="handleGrupoFormSubmit(event)" class="space-y-4">
-                <input type="hidden" id="grupoId" name="id" value="">
-                
-                <div>
-                    <label for="nombre_grupo" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('group_name'); ?></label>
-                    <input type="text" id="nombre_grupo" name="nombre" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
-                           placeholder="Ej: 1º Año A">
-                </div>
-                
-                <div>
-                    <label for="nivel" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('level'); ?></label>
-                    <select id="nivel" name="nivel" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
-                        <option value=""><?php _e('select_level'); ?></option>
-                        <option value="1º Año">1º Año</option>
-                        <option value="2º Año">2º Año</option>
-                        <option value="3º Año">3º Año</option>
-                        <option value="4º Año">4º Año</option>
-                        <option value="5º Año">5º Año</option>
-                        <option value="6º Año">6º Año</option>
-                    </select>
-                </div>
-
-                <div class="flex justify-end space-x-3 pt-4">
-                    <button type="button" onclick="closeGrupoModal()" 
-                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
-                        <?php _e('cancel'); ?>
-                    </button>
-                    <button type="submit" 
-                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkblue hover:bg-navy focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
-                        <?php _e('save'); ?>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Toast Container -->
-    <div id="toastContainer"></div>
-
     <script>
-        let isEditMode = false;
-
-        // Mostrar modal para agregar grupo
-        function showAddGrupoModal() {
-            isEditMode = false;
-            document.getElementById('modalTitle').textContent = '<?php _e('add_group'); ?>';
-            document.getElementById('grupoForm').reset();
-            document.getElementById('grupoId').value = '';
-            
-            clearErrors();
-            document.getElementById('grupoModal').classList.remove('hidden');
-            
-            // Focus on first input
-            setTimeout(() => {
-                document.getElementById('nombre_grupo').focus();
-            }, 100);
-        }
-
-        // Editar grupo
-        function editGrupo(id) {
-            isEditMode = true;
-            document.getElementById('modalTitle').textContent = '<?php _e('edit_group'); ?>';
-            
-            // Simular obtención de datos del grupo
-            // En una implementación real, esto vendría de la base de datos
-            showToast('Funcionalidad de edición de grupos pendiente de implementar', 'info');
-        }
-
-        // Eliminar grupo
-        function deleteGrupo(id, nombre) {
-            const confirmMessage = `¿Está seguro de que desea eliminar el grupo "${nombre}"?`;
-            if (confirm(confirmMessage)) {
-                // Simular eliminación
-                showToast('Funcionalidad de eliminación de grupos pendiente de implementar', 'info');
+        function loadDocenteDisponibilidad() {
+            const docenteId = document.getElementById('docenteSelect').value;
+            if (docenteId) {
+                window.location.href = `admin-disponibilidad.php?docente=${docenteId}`;
             }
         }
 
-        // Ver horario del grupo
-        function viewGroupSchedule(id) {
-            // Redirigir a la vista de horarios con filtro por grupo
-            window.location.href = `admin-horarios.php?grupo=${id}`;
-        }
-
-        // Cerrar modal
-        function closeGrupoModal() {
-            const modal = document.getElementById('grupoModal');
-            modal.classList.add('hidden');
-            clearErrors();
-        }
-
-        // Manejar envío del formulario
-        function handleGrupoFormSubmit(e) {
-            e.preventDefault();
+        function toggleDisponibilidad(cell) {
+            const docente = cell.dataset.docente;
+            const bloque = cell.dataset.bloque;
+            const dia = cell.dataset.dia;
+            const currentState = cell.dataset.disponible === 'true';
+            const newState = !currentState;
             
-            clearErrors();
+            // Update UI immediately
+            cell.dataset.disponible = newState.toString();
+            cell.className = cell.className.replace(currentState ? 'disponible' : 'no-disponible', 
+                                                   newState ? 'disponible' : 'no-disponible');
+            cell.textContent = newState ? 'Disponible' : 'No disponible';
             
-            // Simular creación/actualización
-            showToast('Funcionalidad de grupos pendiente de implementar completamente', 'info');
-            closeGrupoModal();
-        }
-
-        // Limpiar errores de validación
-        function clearErrors() {
-            const errorElements = document.querySelectorAll('[id$="Error"]');
-            errorElements.forEach(element => {
-                element.textContent = '';
+            // Save to database
+            const formData = new FormData();
+            formData.append('action', 'update_disponibilidad');
+            formData.append('id_docente', docente);
+            formData.append('id_bloque', bloque);
+            formData.append('dia', dia);
+            formData.append('disponible', newState);
+            
+            fetch('/src/controllers/horario_handler.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    // Revert UI changes if save failed
+                    cell.dataset.disponible = currentState.toString();
+                    cell.className = cell.className.replace(newState ? 'disponible' : 'no-disponible', 
+                                                           currentState ? 'disponible' : 'no-disponible');
+                    cell.textContent = currentState ? 'Disponible' : 'No disponible';
+                    alert('Error actualizando disponibilidad: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert UI changes
+                cell.dataset.disponible = currentState.toString();
+                cell.className = cell.className.replace(newState ? 'disponible' : 'no-disponible', 
+                                                       currentState ? 'disponible' : 'no-disponible');
+                cell.textContent = currentState ? 'Disponible' : 'No disponible';
+                alert('Error de conexión');
             });
         }
 
-        // Toast notification functions
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            
-            const icon = getToastIcon(type);
-            toast.innerHTML = `
-                <div class="flex items-center">
-                    ${icon}
-                    <span>${message}</span>
-                </div>
-                <button onclick="hideToast(this)" class="ml-4 text-white hover:text-gray-200">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            `;
-            
-            container.appendChild(toast);
-            
-            // Trigger animation
-            setTimeout(() => toast.classList.add('show'), 100);
-            
-            // Auto hide after 5 seconds
-            setTimeout(() => hideToast(toast), 5000);
+        function saveAllDisponibilidad() {
+            alert('Cambios guardados automáticamente al hacer clic en cada celda');
         }
-
-        function getToastIcon(type) {
-            const icons = {
-                success: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
-                error: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
-                warning: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>',
-                info: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
-            };
-            return icons[type] || icons.info;
-        }
-
-        function hideToast(toast) {
-            if (toast && toast.parentNode) {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.parentNode.removeChild(toast);
-                    }
-                }, 300);
-            }
-        }
-
-        // Cerrar modal al hacer clic fuera
-        document.getElementById('grupoModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeGrupoModal();
-            }
-        });
 
         // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
