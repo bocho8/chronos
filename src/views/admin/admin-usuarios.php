@@ -352,7 +352,7 @@ function getUserInitials($nombre, $apellido) {
       </div>
 
       <form id="usuarioForm" class="space-y-4">
-        <input type="hidden" id="id_usuario" name="id_usuario">
+        <input type="hidden" id="id_usuario" name="id">
         
         <div>
           <label for="cedula" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('cedula'); ?></label>
