@@ -4,6 +4,8 @@ require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
+require_once __DIR__ . '/../../models/Database.php';
+require_once __DIR__ . '/../../models/Materia.php';
 
 // Initialize secure session first
 initSecureSession();
@@ -22,6 +24,28 @@ AuthHelper::requireRole('ADMIN');
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
+}
+
+// Load database configuration and get materias
+try {
+    $dbConfig = require __DIR__ . '/../../config/database.php';
+    $database = new Database($dbConfig);
+    
+    // Get materias and related data
+    $materiaModel = new Materia($database->getConnection());
+    $materias = $materiaModel->getAllMaterias();
+    $pautasAnep = $materiaModel->getAllPautasAnep();
+    $grupos = $materiaModel->getAllGrupos();
+    
+    if ($materias === false) {
+        $materias = [];
+    }
+} catch (Exception $e) {
+    error_log("Error cargando materias: " . $e->getMessage());
+    $materias = [];
+    $pautasAnep = [];
+    $grupos = [];
+    $error_message = 'Error interno del servidor';
 }
 ?>
 <!DOCTYPE html>
@@ -265,42 +289,48 @@ if (!AuthHelper::checkSessionTimeout()) {
                             </div>
                         </div>
 
+                        <!-- Lista de materias -->
                         <div class="divide-y divide-gray-200">
-                            <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white font-semibold">M</span>
-                                    </div>
-                                    <div class="meta">
-                                        <div class="font-semibold text-darktext mb-1">Matemáticas</div>
-                                        <div class="text-muted text-sm">Asignatura principal</div>
-                                    </div>
+                            <?php if (!empty($materias)): ?>
+                                <?php foreach ($materias as $materia): ?>
+                                    <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
+                                                <?php echo strtoupper(substr($materia['nombre'], 0, 1)); ?>
+                                            </div>
+                                            <div class="meta">
+                                                <div class="font-semibold text-darktext mb-1">
+                                                    <?php echo htmlspecialchars($materia['nombre']); ?>
+                                                </div>
+                                                <div class="text-muted text-sm">
+                                                    <?php echo $materia['horas_semanales']; ?> horas semanales
+                                                    <?php if ($materia['pauta_anep_nombre']): ?>
+                                                        • <?php echo htmlspecialchars($materia['pauta_anep_nombre']); ?>
+                                                    <?php endif; ?>
+                                                    <?php if ($materia['es_programa_italiano']): ?>
+                                                        • Programa Italiano
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <button onclick="editMateria(<?php echo $materia['id_materia']; ?>)" 
+                                                    class="text-darkblue hover:text-navy text-sm font-medium transition-colors">
+                                                <?php _e('edit'); ?>
+                                            </button>
+                                            <button onclick="deleteMateria(<?php echo $materia['id_materia']; ?>, '<?php echo htmlspecialchars($materia['nombre']); ?>')" 
+                                                    class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors">
+                                                <?php _e('delete'); ?>
+                                            </button>
+                                        </div>
+                                    </article>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="p-8 text-center">
+                                    <div class="text-gray-500 text-lg mb-2"><?php _e('no_subjects_found'); ?></div>
+                                    <div class="text-gray-400 text-sm"><?php _e('add_first_subject'); ?></div>
                                 </div>
-                            </article>
-
-                            <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white font-semibold">P</span>
-                                    </div>
-                                    <div class="meta">
-                                        <div class="font-semibold text-darktext mb-1">Programación</div>
-                                        <div class="text-muted text-sm">Asignatura técnica</div>
-                                    </div>
-                                </div>
-                            </article>
-
-                            <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white font-semibold">S</span>
-                                    </div>
-                                    <div class="meta">
-                                        <div class="font-semibold text-darktext mb-1">Sistemas Operativos</div>
-                                        <div class="text-muted text-sm">Asignatura técnica</div>
-                                    </div>
-                                </div>
-                            </article>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -358,13 +388,142 @@ if (!AuthHelper::checkSessionTimeout()) {
             }
         }
 
+        let isEditMode = false;
+
         // Modal functions
         function openMateriaModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = '<?php _e('add_subject'); ?>';
+            document.getElementById('materiaForm').reset();
+            document.getElementById('materiaId').value = '';
+            document.getElementById('horas_semanales').value = '1';
+            
+            clearErrors();
             document.getElementById('materiaModal').classList.remove('hidden');
+            
+            // Focus on first input
+            setTimeout(() => {
+                document.getElementById('nombre').focus();
+            }, 100);
         }
 
         function closeMateriaModal() {
             document.getElementById('materiaModal').classList.add('hidden');
+            clearErrors();
+        }
+
+        // Edit materia
+        function editMateria(id) {
+            isEditMode = true;
+            document.getElementById('modalTitle').textContent = '<?php _e('edit_subject'); ?>';
+            
+            const formData = new FormData();
+            formData.append('action', 'get');
+            formData.append('id', id);
+            
+            fetch('/src/controllers/materia_handler.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('materiaId').value = data.data.id_materia;
+                    document.getElementById('nombre').value = data.data.nombre;
+                    document.getElementById('horas_semanales').value = data.data.horas_semanales;
+                    document.getElementById('id_pauta_anep').value = data.data.id_pauta_anep;
+                    document.getElementById('en_conjunto').checked = data.data.en_conjunto;
+                    document.getElementById('es_programa_italiano').checked = data.data.es_programa_italiano;
+                    
+                    document.getElementById('materiaModal').classList.remove('hidden');
+                    
+                    // Focus on first input
+                    setTimeout(() => {
+                        document.getElementById('nombre').focus();
+                    }, 100);
+                } else {
+                    showToast('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error cargando datos de la materia', 'error');
+            });
+        }
+
+        // Delete materia
+        function deleteMateria(id, nombre) {
+            const confirmMessage = `¿Está seguro de que desea eliminar la materia "${nombre}"?`;
+            if (confirm(confirmMessage)) {
+                const formData = new FormData();
+                formData.append('action', 'delete');
+                formData.append('id', id);
+                
+                fetch('/src/controllers/materia_handler.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Materia eliminada exitosamente', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast('Error: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error eliminando materia', 'error');
+                });
+            }
+        }
+
+        // Handle form submission
+        function handleMateriaFormSubmit(e) {
+            e.preventDefault();
+            
+            clearErrors();
+            
+            const formData = new FormData(e.target);
+            formData.append('action', isEditMode ? 'update' : 'create');
+            
+            fetch('/src/controllers/materia_handler.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    closeMateriaModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    if (data.data && typeof data.data === 'object') {
+                        // Show validation errors
+                        Object.keys(data.data).forEach(field => {
+                            const errorElement = document.getElementById(field + 'Error');
+                            if (errorElement) {
+                                errorElement.textContent = data.data[field];
+                            }
+                        });
+                    } else {
+                        showToast('Error: ' + data.message, 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error procesando solicitud', 'error');
+            });
+        }
+
+        // Clear validation errors
+        function clearErrors() {
+            const errorElements = document.querySelectorAll('[id$="Error"]');
+            errorElements.forEach(element => {
+                element.textContent = '';
+            });
         }
 
         // Funcionalidad para la barra lateral
@@ -446,19 +605,48 @@ if (!AuthHelper::checkSessionTimeout()) {
                 </button>
             </div>
             
-            <form id="materiaForm" class="space-y-4">
+            <form id="materiaForm" onsubmit="handleMateriaFormSubmit(event)" class="space-y-4">
                 <input type="hidden" id="materiaId" name="id">
                 
                 <div>
-                    <label for="nombre_materia" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('subject_name'); ?></label>
-                    <input type="text" id="nombre_materia" name="nombre_materia" required
+                    <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('subject_name'); ?></label>
+                    <input type="text" id="nombre" name="nombre" required
                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
                 </div>
                 
                 <div>
-                    <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('description'); ?></label>
-                    <textarea id="descripcion" name="descripcion" rows="3"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"></textarea>
+                    <label for="horas_semanales" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('weekly_hours'); ?></label>
+                    <input type="number" id="horas_semanales" name="horas_semanales" min="1" max="40" value="1" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                </div>
+                
+                <div>
+                    <label for="id_pauta_anep" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('anep_guideline'); ?></label>
+                    <select id="id_pauta_anep" name="id_pauta_anep" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                        <option value=""><?php _e('select_guideline'); ?></option>
+                        <?php foreach ($pautasAnep as $pauta): ?>
+                            <option value="<?php echo $pauta['id_pauta_anep']; ?>">
+                                <?php echo htmlspecialchars($pauta['nombre']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="flex items-center">
+                    <input type="checkbox" id="en_conjunto" name="en_conjunto" value="1"
+                           class="h-4 w-4 text-darkblue focus:ring-darkblue border-gray-300 rounded">
+                    <label for="en_conjunto" class="ml-2 block text-sm text-gray-900">
+                        <?php _e('joint_class'); ?>
+                    </label>
+                </div>
+                
+                <div class="flex items-center">
+                    <input type="checkbox" id="es_programa_italiano" name="es_programa_italiano" value="1"
+                           class="h-4 w-4 text-darkblue focus:ring-darkblue border-gray-300 rounded">
+                    <label for="es_programa_italiano" class="ml-2 block text-sm text-gray-900">
+                        <?php _e('italian_program'); ?>
+                    </label>
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-4">
