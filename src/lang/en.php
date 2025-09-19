@@ -216,4 +216,34 @@ return [
     'select_subject' => 'Select subject',
     'select_teacher' => 'Select teacher',
     'admin_panel' => 'Admin Panel',
+    
+    // Navigation sections
+    'administration' => 'Administration',
+    'academic_management' => 'Academic Management',
+    'coordinator_functions' => 'Coordinator Functions',
+    'director_functions' => 'Director Functions',
+    'teacher_functions' => 'Teacher Functions',
+    'parent_functions' => 'Parent Functions',
+    
+    // Menu items
+    'coordinators' => 'Coordinators',
+    'groups' => 'Groups',
+    'teacher_availability' => 'Teacher Availability',
+    'subject_assignments' => 'Subject Assignments',
+    'reports' => 'Reports',
+    'my_schedule' => 'My Schedule',
+    'my_availability' => 'My Availability',
+    'students' => 'Students',
+    'student_schedules' => 'Student Schedules',
+    
+    // Director Functions
+    'publish_schedules' => 'Publish Schedules',
+    'add_new_teachers' => 'Add Teachers',
+    'add_new_subjects' => 'Add Subjects',
+    'publish_schedules_description' => 'Publish generated schedules for viewing',
+    'add_teachers_description' => 'Add new teachers to the system',
+    'add_subjects_description' => 'Add new subjects to the system',
+    'schedule_publication' => 'Schedule Publication',
+    'schedule_published_success' => 'Schedule published successfully',
+    'schedule_publication_failed' => 'Failed to publish schedule',
 ];

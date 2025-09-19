@@ -403,4 +403,96 @@ class Docente {
             return false;
         }
     }
+    
+    /**
+     * Create a new teacher
+     * 
+     * @param string $cedula Teacher's ID number
+     * @param string $nombre Teacher's first name
+     * @param string $apellido Teacher's last name
+     * @param string $email Teacher's email
+     * @param string $telefono Teacher's phone number
+     * @param string $password Teacher's password
+     * @return bool True on success, false on error
+     */
+    public function createTeacher($cedula, $nombre, $apellido, $email, $telefono, $password) {
+        try {
+            $this->db->beginTransaction();
+            
+            // Hash the password
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            
+            // First, create the user
+            $userQuery = "INSERT INTO usuario (cedula, nombre, apellido, email, telefono, password, fecha_creacion) 
+                         VALUES (?, ?, ?, ?, ?, ?, NOW())";
+            
+            $userStmt = $this->db->prepare($userQuery);
+            $userResult = $userStmt->execute([$cedula, $nombre, $apellido, $email, $telefono, $hashedPassword]);
+            
+            if (!$userResult) {
+                $this->db->rollBack();
+                return false;
+            }
+            
+            // Get the newly created user ID
+            $userId = $this->db->lastInsertId();
+            
+            // Create the teacher record
+            $teacherQuery = "INSERT INTO docente (id_usuario, trabaja_otro_liceo, fecha_envio_disponibilidad, 
+                           horas_asignadas, porcentaje_margen) 
+                           VALUES (?, FALSE, NULL, 0, 100.0)";
+            
+            $teacherStmt = $this->db->prepare($teacherQuery);
+            $teacherResult = $teacherStmt->execute([$userId]);
+            
+            if (!$teacherResult) {
+                $this->db->rollBack();
+                return false;
+            }
+            
+            // Assign DOCENTE role
+            $roleQuery = "INSERT INTO usuario_rol (id_usuario, nombre_rol) VALUES (?, 'DOCENTE')";
+            $roleStmt = $this->db->prepare($roleQuery);
+            $roleResult = $roleStmt->execute([$userId]);
+            
+            if (!$roleResult) {
+                $this->db->rollBack();
+                return false;
+            }
+            
+            $this->db->commit();
+            return true;
+            
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            error_log("Error creating teacher: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get recent teachers
+     * 
+     * @param int $limit Number of recent teachers to return
+     * @return array|false Array of recent teachers or false on error
+     */
+    public function getRecentTeachers($limit = 5) {
+        try {
+            $query = "SELECT d.id_docente, 
+                             u.id_usuario, u.cedula, u.nombre, u.apellido, u.email, u.telefono, u.fecha_creacion
+                      FROM docente d
+                      INNER JOIN usuario u ON d.id_usuario = u.id_usuario
+                      ORDER BY u.fecha_creacion DESC
+                      LIMIT ?";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$limit]);
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+        } catch (PDOException $e) {
+            error_log("Error getting recent teachers: " . $e->getMessage());
+            return false;
+        }
+    }
 }

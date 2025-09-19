@@ -435,4 +435,109 @@ class Horario {
             return [];
         }
     }
+    
+    /**
+     * Obtiene horarios no publicados
+     */
+    public function getUnpublishedSchedules() {
+        try {
+            // For now, we'll simulate unpublished schedules based on horario table
+            // In a real implementation, you might have a separate table for schedule generations
+            $query = "SELECT DISTINCT 
+                        1 as id_horario,
+                        'Horario Generado' as nombre,
+                        'Horario generado automáticamente para todos los grupos' as descripcion,
+                        NOW() as fecha_creacion,
+                        0 as publicado
+                     FROM horario 
+                     WHERE EXISTS (SELECT 1 FROM horario)
+                     LIMIT 1";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Check if there are actually unpublished schedules
+            $publishedCheck = $this->db->prepare("SELECT COUNT(*) as count FROM horario_publicado WHERE activo = 1");
+            $publishedCheck->execute();
+            $publishedCount = $publishedCheck->fetch(PDO::FETCH_ASSOC);
+            
+            if ($publishedCount && $publishedCount['count'] > 0) {
+                return []; // Already published
+            }
+            
+            return $result;
+        } catch (PDOException $e) {
+            error_log("Error getting unpublished schedules: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Obtiene horarios publicados
+     */
+    public function getPublishedSchedules() {
+        try {
+            $query = "SELECT hp.*, 
+                            hp.fecha_publicacion,
+                            'Horario Oficial' as nombre,
+                            'Horario publicado y visible para todos los usuarios' as descripcion
+                     FROM horario_publicado hp
+                     WHERE hp.activo = 1
+                     ORDER BY hp.fecha_publicacion DESC";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting published schedules: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Publica un horario
+     */
+    public function publishSchedule($scheduleId) {
+        try {
+            $this->db->beginTransaction();
+            
+            // First, check if table exists, if not create it
+            $createTableQuery = "CREATE TABLE IF NOT EXISTS horario_publicado (
+                id_publicacion SERIAL PRIMARY KEY,
+                id_horario_referencia INTEGER,
+                fecha_publicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                publicado_por INTEGER,
+                activo BOOLEAN DEFAULT TRUE,
+                descripcion TEXT
+            )";
+            $this->db->exec($createTableQuery);
+            
+            // Deactivate any existing published schedules
+            $deactivateQuery = "UPDATE horario_publicado SET activo = FALSE WHERE activo = TRUE";
+            $this->db->exec($deactivateQuery);
+            
+            // Insert new published schedule
+            $publishQuery = "INSERT INTO horario_publicado (id_horario_referencia, descripcion, activo) 
+                           VALUES (?, 'Horario oficial publicado por la dirección', TRUE)";
+            
+            $stmt = $this->db->prepare($publishQuery);
+            $result = $stmt->execute([$scheduleId]);
+            
+            if ($result) {
+                $this->db->commit();
+                return true;
+            } else {
+                $this->db->rollBack();
+                return false;
+            }
+            
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            error_log("Error publishing schedule: " . $e->getMessage());
+            return false;
+        }
+    }
 }

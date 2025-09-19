@@ -165,6 +165,37 @@ try {
                     </a>
                 </li>
                 
+                <!-- Funciones de Dirección -->
+                <li class="mt-4">
+                    <div class="px-5 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <?php _e('director_functions'); ?>
+                    </div>
+                </li>
+                <li>
+                    <a href="admin-publicar-horarios.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                        <?php _e('publish_schedules'); ?>
+                    </a>
+                </li>
+                <li>
+                    <a href="admin-agregar-docentes.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                        </svg>
+                        <?php _e('add_new_teachers'); ?>
+                    </a>
+                </li>
+                <li>
+                    <a href="admin-agregar-materias.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <?php _e('add_new_subjects'); ?>
+                    </a>
+                </li>
+                
                 <!-- Funciones de Coordinador -->
                 <li class="mt-4">
                     <div class="px-5 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -443,6 +474,43 @@ try {
                                 <div>
                                     <p class="font-medium text-gray-900"><?php _e('manage_schedules'); ?></p>
                                     <p class="text-sm text-gray-500"><?php _e('manage_schedules_description'); ?></p>
+                                </div>
+                            </a>
+
+                            <!-- Funciones de Dirección -->
+                            <a href="admin-publicar-horarios.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900"><?php _e('publish_schedules'); ?></p>
+                                    <p class="text-sm text-gray-500"><?php _e('publish_schedules_description'); ?></p>
+                                </div>
+                            </a>
+
+                            <a href="admin-agregar-docentes.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center mr-3">
+                                    <svg class="w-5 h-5 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900"><?php _e('add_new_teachers'); ?></p>
+                                    <p class="text-sm text-gray-500"><?php _e('add_teachers_description'); ?></p>
+                                </div>
+                            </a>
+
+                            <a href="admin-agregar-materias.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center mr-3">
+                                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900"><?php _e('add_new_subjects'); ?></p>
+                                    <p class="text-sm text-gray-500"><?php _e('add_subjects_description'); ?></p>
                                 </div>
                             </a>
 

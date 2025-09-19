@@ -304,6 +304,7 @@ return [
     'administration' => 'Administración',
     'academic_management' => 'Gestión Académica',
     'coordinator_functions' => 'Funciones de Coordinador',
+    'director_functions' => 'Funciones de Dirección',
     'teacher_functions' => 'Funciones de Docente',
     'parent_functions' => 'Funciones de Padre',
     
@@ -317,6 +318,17 @@ return [
     'my_availability' => 'Mi Disponibilidad',
     'students' => 'Estudiantes',
     'student_schedules' => 'Horarios de Estudiantes',
+    
+    // Director Functions
+    'publish_schedules' => 'Publicar Horarios',
+    'add_new_teachers' => 'Agregar Docentes',
+    'add_new_subjects' => 'Agregar Materias',
+    'publish_schedules_description' => 'Publicar horarios generados para su visualización',
+    'add_teachers_description' => 'Agregar nuevos docentes al sistema',
+    'add_subjects_description' => 'Agregar nuevas materias al sistema',
+    'schedule_publication' => 'Publicación de Horarios',
+    'schedule_published_success' => 'Horario publicado exitosamente',
+    'schedule_publication_failed' => 'Error al publicar el horario',
     
     // Coordinators Management
     'coordinators_management' => 'Gestión de Coordinadores',

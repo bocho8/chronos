@@ -210,4 +210,34 @@ return [
     'select_subject' => 'Seleziona materia',
     'select_teacher' => 'Seleziona insegnante',
     'admin_panel' => 'Pannello Admin',
+    
+    // Navigation sections
+    'administration' => 'Amministrazione',
+    'academic_management' => 'Gestione Accademica',
+    'coordinator_functions' => 'Funzioni Coordinatore',
+    'director_functions' => 'Funzioni Direzione',
+    'teacher_functions' => 'Funzioni Docente',
+    'parent_functions' => 'Funzioni Genitore',
+    
+    // Menu items
+    'coordinators' => 'Coordinatori',
+    'groups' => 'Gruppi',
+    'teacher_availability' => 'Disponibilità Docenti',
+    'subject_assignments' => 'Assegnazioni Materie',
+    'reports' => 'Report',
+    'my_schedule' => 'Il Mio Orario',
+    'my_availability' => 'La Mia Disponibilità',
+    'students' => 'Studenti',
+    'student_schedules' => 'Orari Studenti',
+    
+    // Director Functions
+    'publish_schedules' => 'Pubblica Orari',
+    'add_new_teachers' => 'Aggiungi Docenti',
+    'add_new_subjects' => 'Aggiungi Materie',
+    'publish_schedules_description' => 'Pubblicare gli orari generati per la visualizzazione',
+    'add_teachers_description' => 'Aggiungere nuovi docenti al sistema',
+    'add_subjects_description' => 'Aggiungere nuove materie al sistema',
+    'schedule_publication' => 'Pubblicazione Orari',
+    'schedule_published_success' => 'Orario pubblicato con successo',
+    'schedule_publication_failed' => 'Errore nella pubblicazione dell\'orario',
 ];

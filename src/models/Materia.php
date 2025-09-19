@@ -249,4 +249,42 @@ class Materia {
             return [];
         }
     }
+    
+    /**
+     * Get materia by name
+     */
+    public function getMateriaByName($nombre) {
+        try {
+            $query = "SELECT * FROM materia WHERE nombre = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$nombre]);
+            
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting materia by name: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get recent materias
+     */
+    public function getRecentMaterias($limit = 5) {
+        try {
+            $query = "SELECT m.*, p.nombre as pauta_anep_nombre, g.nombre as grupo_nombre 
+                     FROM materia m 
+                     LEFT JOIN pauta_anep p ON m.id_pauta_anep = p.id_pauta_anep 
+                     LEFT JOIN grupo g ON m.id_grupo_compartido = g.id_grupo 
+                     ORDER BY m.fecha_creacion DESC
+                     LIMIT ?";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$limit]);
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting recent materias: " . $e->getMessage());
+            return false;
+        }
+    }
 }

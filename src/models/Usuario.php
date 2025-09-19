@@ -357,5 +357,35 @@ class Usuario {
             error_log("Error registrando log: " . $e->getMessage());
         }
     }
+    
+    /**
+     * Get user by cedula
+     */
+    public function getUserByCedula($cedula) {
+        try {
+            $query = "SELECT * FROM usuario WHERE cedula = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$cedula]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error getting user by cedula: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get user by email
+     */
+    public function getUserByEmail($email) {
+        try {
+            $query = "SELECT * FROM usuario WHERE email = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$email]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error getting user by email: " . $e->getMessage());
+            return false;
+        }
+    }
 }
 ?>
