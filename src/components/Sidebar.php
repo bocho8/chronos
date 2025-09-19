@@ -390,21 +390,39 @@ class Sidebar {
     }
     
     /**
-     * Get dashboard URL based on user role
+     * Get dashboard URL based on user role and current location
      * 
      * @return string Dashboard URL
      */
     private function getDashboardUrl() {
+        $currentDir = basename(dirname($_SERVER['PHP_SELF']));
+        
         switch ($this->userRole) {
             case 'ADMIN':
             case 'DIRECTOR':
-                return 'dashboard.php';
+                if ($currentDir === 'admin') {
+                    return 'dashboard.php';
+                } else {
+                    return '/src/views/admin/dashboard.php';
+                }
             case 'COORDINADOR':
-                return '../coordinador/dashboard.php';
+                if ($currentDir === 'coordinador') {
+                    return 'dashboard.php';
+                } else {
+                    return '/src/views/coordinador/dashboard.php';
+                }
             case 'DOCENTE':
-                return '../docente/dashboard.php';
+                if ($currentDir === 'docente') {
+                    return 'dashboard.php';
+                } else {
+                    return '/src/views/docente/dashboard.php';
+                }
             case 'PADRE':
-                return '../padre/dashboard.php';
+                if ($currentDir === 'padre') {
+                    return 'dashboard.php';
+                } else {
+                    return '/src/views/padre/dashboard.php';
+                }
             default:
                 return 'dashboard.php';
         }
