@@ -346,14 +346,14 @@ class Sidebar {
                 'title' => 'teacher_functions',
                 'items' => [
                     [
-                        'url' => 'admin-mi-horario.php',
-                        'file' => 'admin-mi-horario.php',
+                        'url' => 'mi-horario.php', 
+                        'file' => 'mi-horario.php',
                         'text' => 'my_schedule',
                         'icon' => '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 712-2h4a2 2 0 712 2v4m-6 0V3a2 2 0 712-2h4a2 2 0 712 2v4M7 7h10l4 10v4a1 1 0 71-1 1H4a1 1 0 71-1-1v-4L7 7z"></path></svg>'
                     ],
                     [
-                        'url' => 'admin-mi-disponibilidad.php',
-                        'file' => 'admin-mi-disponibilidad.php',
+                        'url' => 'mi-disponibilidad.php',
+                        'file' => 'mi-disponibilidad.php',
                         'text' => 'my_availability',
                         'icon' => '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
                     ]
