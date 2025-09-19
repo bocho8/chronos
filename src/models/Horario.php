@@ -497,6 +497,7 @@ class Horario {
         }
     }
     
+    
     /**
      * Publica un horario
      */

@@ -387,5 +387,6 @@ class Usuario {
             return false;
         }
     }
+    
 }
 ?>
