@@ -1,8 +1,4 @@
 <?php
-/**
- * Reusable Sidebar Component
- * Generates sidebar navigation based on user roles
- */
 
 require_once __DIR__ . '/../helpers/AuthHelper.php';
 require_once __DIR__ . '/../helpers/Translation.php';
@@ -18,196 +14,125 @@ class Sidebar {
         $this->userRole = AuthHelper::getCurrentUserRole();
     }
     
-    /**
-     * Render the complete sidebar
-     * 
-     * @return string HTML content for the sidebar
-     */
     public function render() {
-        ob_start();
-        ?>
+        return <<<HTML
         <aside class="w-64 bg-sidebar border-r border-border">
-            <?php echo $this->renderHeader(); ?>
-            <?php echo $this->renderNavigation(); ?>
+            {$this->renderHeader()}
+            {$this->renderNavigation()}
         </aside>
-        <?php
-        return ob_get_clean();
+        HTML;
     }
     
-    /**
-     * Render sidebar header with logo
-     * 
-     * @return string HTML content for the header
-     */
     private function renderHeader() {
-        ob_start();
-        ?>
+        return <<<HTML
         <div class="px-5 flex items-center h-[60px] bg-darkblue gap-2.5">
-            <img src="/assets/images/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
-            <span class="text-white font-semibold text-lg"><?php _e('scuola_italiana'); ?></span>
+            <img src="/assets/images/LogoScuola.png" alt="{$this->translation->get('scuola_italiana')}" class="h-9 w-auto">
+            <span class="text-white font-semibold text-lg">{$this->translation->get('scuola_italiana')}</span>
         </div>
-        <?php
-        return ob_get_clean();
+        HTML;
     }
     
-    /**
-     * Render navigation menu based on user role
-     * 
-     * @return string HTML content for the navigation
-     */
     private function renderNavigation() {
-        ob_start();
-        ?>
+        return <<<HTML
         <ul class="py-5 list-none">
-            <?php echo $this->renderDashboardSection(); ?>
-            <?php echo $this->renderRoleBasedSections(); ?>
+            {$this->renderDashboardSection()}
+            {$this->renderRoleBasedSections()}
         </ul>
-        <?php
-        return ob_get_clean();
+        HTML;
     }
     
-    /**
-     * Render dashboard section (always visible)
-     * 
-     * @return string HTML content for dashboard section
-     */
     private function renderDashboardSection() {
         $dashboardUrl = $this->getDashboardUrl();
         $isActive = $this->isActive('dashboard.php');
+        $activeClass = $isActive ? 'active' : '';
+        $textColor = $isActive ? 'text-gray-800' : 'text-gray-600';
         
-        ob_start();
-        ?>
+        return <<<HTML
         <li>
-            <a href="<?php echo $dashboardUrl; ?>" class="sidebar-link <?php echo $isActive ? 'active' : ''; ?> flex items-center py-3 px-5 <?php echo $isActive ? 'text-gray-800' : 'text-gray-600'; ?> no-underline transition-all hover:bg-sidebarHover">
+            <a href="{$dashboardUrl}" class="sidebar-link {$activeClass} flex items-center py-3 px-5 {$textColor} no-underline transition-all hover:bg-sidebarHover">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6a2 2 0 01-2 2H10a2 2 0 01-2-2V5z"></path>
                 </svg>
-                <?php _e('dashboard'); ?>
+                {$this->translation->get('dashboard')}
             </a>
         </li>
-        <?php
-        return ob_get_clean();
+        HTML;
     }
     
-    /**
-     * Render role-based sections
-     * 
-     * @return string HTML content for role-based sections
-     */
     private function renderRoleBasedSections() {
         $sections = $this->getRoleBasedSections();
         
-        ob_start();
+        $html = '';
         foreach ($sections as $section) {
-            echo $this->renderSection($section);
+            $html .= $this->renderSection($section);
         }
-        return ob_get_clean();
+        
+        return $html;
     }
     
-    /**
-     * Render a single section with its items
-     * 
-     * @param array $section Section configuration
-     * @return string HTML content for the section
-     */
     private function renderSection($section) {
-        ob_start();
-        ?>
+        $sectionTitle = $this->translation->get($section['title']);
+        $menuItems = '';
+        
+        foreach ($section['items'] as $item) {
+            $menuItems .= $this->renderMenuItem($item);
+        }
+        
+        return <<<HTML
         <li class="mt-4">
             <div class="px-5 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <?php _e($section['title']); ?>
+                {$sectionTitle}
             </div>
         </li>
-        <?php
-        foreach ($section['items'] as $item) {
-            echo $this->renderMenuItem($item);
-        }
-        return ob_get_clean();
+        {$menuItems}
+        HTML;
     }
     
-    /**
-     * Render a single menu item
-     * 
-     * @param array $item Menu item configuration
-     * @return string HTML content for the menu item
-     */
     private function renderMenuItem($item) {
         $isActive = $this->isActive($item['file']);
+        $activeClass = $isActive ? 'active' : '';
+        $textColor = $isActive ? 'text-gray-800' : 'text-gray-600';
+        $itemText = $this->translation->get($item['text']);
         
-        ob_start();
-        ?>
+        return <<<HTML
         <li>
-            <a href="<?php echo $item['url']; ?>" class="sidebar-link <?php echo $isActive ? 'active' : ''; ?> flex items-center py-3 px-5 <?php echo $isActive ? 'text-gray-800' : 'text-gray-600'; ?> no-underline transition-all hover:bg-sidebarHover">
-                <?php echo $item['icon']; ?>
-                <?php _e($item['text']); ?>
+            <a href="{$item['url']}" class="sidebar-link {$activeClass} flex items-center py-3 px-5 {$textColor} no-underline transition-all hover:bg-sidebarHover">
+                {$item['icon']}
+                {$itemText}
             </a>
         </li>
-        <?php
-        return ob_get_clean();
+        HTML;
     }
     
-    /**
-     * Get sections based on user role
-     * 
-     * @return array Array of sections with their items
-     */
     private function getRoleBasedSections() {
-        $sections = [];
-        
-        switch ($this->userRole) {
-            case 'ADMIN':
-                $sections = array_merge(
-                    $sections,
-                    $this->getAdministrationSections(),
-                    $this->getAcademicSections(),
-                    $this->getDirectorSections(),
-                    $this->getCoordinatorSections(),
-                    $this->getTeacherSections(),
-                    $this->getParentSections()
-                );
-                break;
-                
-            case 'DIRECTOR':
-                $sections = array_merge(
-                    $sections,
-                    $this->getAdministrationSections(),
-                    $this->getAcademicSections(),
-                    $this->getDirectorSections()
-                );
-                break;
-                
-            case 'COORDINADOR':
-                $sections = array_merge(
-                    $sections,
-                    $this->getCoordinatorSections(),
-                    $this->getTeacherSections()
-                );
-                break;
-                
-            case 'DOCENTE':
-                $sections = array_merge(
-                    $sections,
-                    $this->getTeacherSections()
-                );
-                break;
-                
-            case 'PADRE':
-                $sections = array_merge(
-                    $sections,
-                    $this->getParentSections()
-                );
-                break;
-        }
-        
-        return $sections;
+        return match ($this->userRole) {
+            'ADMIN' => array_merge(
+                [],
+                $this->getAdministrationSections(),
+                $this->getAcademicSections(),
+                $this->getDirectorSections(),
+                $this->getCoordinatorSections(),
+                $this->getTeacherSections(),
+                $this->getParentSections()
+            ),
+            'DIRECTOR' => array_merge(
+                [],
+                $this->getAdministrationSections(),
+                $this->getAcademicSections(),
+                $this->getDirectorSections()
+            ),
+            'COORDINADOR' => array_merge(
+                [],
+                $this->getCoordinatorSections(),
+                $this->getTeacherSections()
+            ),
+            'DOCENTE' => array_merge([], $this->getTeacherSections()),
+            'PADRE' => array_merge([], $this->getParentSections()),
+            default => []
+        };
     }
     
-    /**
-     * Get administration sections
-     * 
-     * @return array Administration sections
-     */
     private function getAdministrationSections() {
         return [
             [
@@ -236,11 +161,6 @@ class Sidebar {
         ];
     }
     
-    /**
-     * Get academic sections
-     * 
-     * @return array Academic sections
-     */
     private function getAcademicSections() {
         return [
             [
@@ -269,11 +189,6 @@ class Sidebar {
         ];
     }
     
-    /**
-     * Get director sections
-     * 
-     * @return array Director sections
-     */
     private function getDirectorSections() {
         return [
             [
@@ -302,11 +217,6 @@ class Sidebar {
         ];
     }
     
-    /**
-     * Get coordinator sections
-     * 
-     * @return array Coordinator sections
-     */
     private function getCoordinatorSections() {
         return [
             [
@@ -335,11 +245,6 @@ class Sidebar {
         ];
     }
     
-    /**
-     * Get teacher sections
-     * 
-     * @return array Teacher sections
-     */
     private function getTeacherSections() {
         return [
             [
@@ -362,11 +267,6 @@ class Sidebar {
         ];
     }
     
-    /**
-     * Get parent sections
-     * 
-     * @return array Parent sections
-     */
     private function getParentSections() {
         return [
             [
@@ -389,60 +289,22 @@ class Sidebar {
         ];
     }
     
-    /**
-     * Get dashboard URL based on user role and current location
-     * 
-     * @return string Dashboard URL
-     */
     private function getDashboardUrl() {
         $currentDir = basename(dirname($_SERVER['PHP_SELF']));
         
-        switch ($this->userRole) {
-            case 'ADMIN':
-            case 'DIRECTOR':
-                if ($currentDir === 'admin') {
-                    return 'dashboard.php';
-                } else {
-                    return '/src/views/admin/dashboard.php';
-                }
-            case 'COORDINADOR':
-                if ($currentDir === 'coordinador') {
-                    return 'dashboard.php';
-                } else {
-                    return '/src/views/coordinador/dashboard.php';
-                }
-            case 'DOCENTE':
-                if ($currentDir === 'docente') {
-                    return 'dashboard.php';
-                } else {
-                    return '/src/views/docente/dashboard.php';
-                }
-            case 'PADRE':
-                if ($currentDir === 'padre') {
-                    return 'dashboard.php';
-                } else {
-                    return '/src/views/padre/dashboard.php';
-                }
-            default:
-                return 'dashboard.php';
-        }
+        return match ($this->userRole) {
+            'ADMIN', 'DIRECTOR' => $currentDir === 'admin' ? 'dashboard.php' : '/src/views/admin/dashboard.php',
+            'COORDINADOR' => $currentDir === 'coordinador' ? 'dashboard.php' : '/src/views/coordinador/dashboard.php',
+            'DOCENTE' => $currentDir === 'docente' ? 'dashboard.php' : '/src/views/docente/dashboard.php',
+            'PADRE' => $currentDir === 'padre' ? 'dashboard.php' : '/src/views/padre/dashboard.php',
+            default => 'dashboard.php'
+        };
     }
     
-    /**
-     * Check if current page matches the given file
-     * 
-     * @param string $file File to check
-     * @return bool True if current page matches
-     */
     private function isActive($file) {
         return basename($_SERVER['PHP_SELF']) === $file || $this->currentPage === $file;
     }
     
-    /**
-     * Add CSS styles for the sidebar
-     * 
-     * @return string CSS styles
-     */
     public static function getStyles() {
         return '
         <style>

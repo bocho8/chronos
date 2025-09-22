@@ -1,8 +1,5 @@
 <?php
-/**
- * Materia Model
- * Maneja operaciones CRUD para materias
- */
+
 class Materia {
     private $db;
     
@@ -10,9 +7,6 @@ class Materia {
         $this->db = $database;
     }
     
-    /**
-     * Obtiene todas las materias
-     */
     public function getAllMaterias() {
         try {
             $query = "SELECT m.*, p.nombre as pauta_anep_nombre, g.nombre as grupo_nombre 
@@ -31,9 +25,6 @@ class Materia {
         }
     }
     
-    /**
-     * Obtiene una materia por ID
-     */
     public function getMateriaById($id) {
         try {
             $query = "SELECT m.*, p.nombre as pauta_anep_nombre, g.nombre as grupo_nombre 

@@ -1,6 +1,5 @@
 <?php
-// Move all PHP logic to the top before any HTML output
-// Include required files
+
 require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/../models/Database.php';
 require_once __DIR__ . '/../models/Auth.php';
@@ -8,17 +7,13 @@ require_once __DIR__ . '/../helpers/Translation.php';
 require_once __DIR__ . '/../helpers/AuthHelper.php';
 require_once __DIR__ . '/../components/LanguageSwitcher.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Redirect if already logged in
 AuthHelper::redirectIfLoggedIn();
 
 $errors = [];
@@ -28,18 +23,18 @@ $role = '';
 $loginMessage = '';
 $successMessage = '';
 
-// Handle logout messages
 if (isset($_GET['message'])) {
-    switch ($_GET['message']) {
-        case 'logout_success':
-            $successMessage = $translation->get('logout_success');
-            break;
-        case 'logout_error':
-            $errors['system'] = $translation->get('logout_error');
-            break;
-        case 'session_expired':
-            $errors['system'] = $translation->get('session_expired');
-            break;
+    $message = match ($_GET['message']) {
+        'logout_success' => $translation->get('logout_success'),
+        'logout_error' => $translation->get('logout_error'),
+        'session_expired' => $translation->get('session_expired'),
+        default => ''
+    };
+    
+    if ($_GET['message'] === 'logout_success') {
+        $successMessage = $message;
+    } else {
+        $errors['system'] = $message;
     }
 }
 
@@ -51,12 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (empty($ci)) {
     $errors['ci'] = $translation->get('validation_ci_required');
   } elseif (!preg_match('/^\d{7,8}$/', $ci)) {
-    // Patrón regex: ^\d{7,8}$
-    // ^ = inicio de la cadena
-    // \d = cualquier dígito del 0-9
-    // {7,8} = entre 7 y 8 caracteres
-    // $ = fin de la cadena
-    // Valida que el CI tenga exactamente 7 u 8 dígitos numéricos
     $errors['ci'] = $translation->get('validation_ci_format');
   }
   
@@ -72,25 +61,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   
   if (empty($errors)) {
     try {
-      // Load database configuration
       $dbConfig = require __DIR__ . '/../config/database.php';
       
-      // Initialize database and auth
       $database = new Database($dbConfig);
       $auth = new Auth($database->getConnection());
       
-      // Attempt authentication
       $user = $auth->authenticate($ci, $password, $role);
       
       if ($user) {
-        // Store user data (session already started by Translation class)
         $_SESSION['user'] = $user;
         $_SESSION['logged_in'] = true;
         
-        // Set last activity timestamp for session timeout
         updateLastActivity();
         
-        // Redirect based on role
         $redirectUrl = getRedirectUrl($role);
         header("Location: $redirectUrl");
         exit();
@@ -105,22 +88,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 }
 
-// Helper function to get redirect URL based on role
 function getRedirectUrl($role) {
-  switch ($role) {
-    case 'ADMIN':
-      return '/src/views/admin/';
-    case 'DIRECTOR':
-      return '/src/views/director/';
-    case 'COORDINADOR':
-      return '/src/views/coordinador/';
-    case 'DOCENTE':
-      return '/src/views/docente/';
-    case 'PADRE':
-      return '/src/views/padre/';
-    default:
-      return '/src/views/login.php';
-  }
+  return match ($role) {
+    'ADMIN' => '/src/views/admin/',
+    'DIRECTOR' => '/src/views/director/',
+    'COORDINADOR' => '/src/views/coordinador/',
+    'DOCENTE' => '/src/views/docente/',
+    'PADRE' => '/src/views/padre/',
+    default => '/src/views/login.php'
+  };
 }
 ?>
 <!DOCTYPE html>

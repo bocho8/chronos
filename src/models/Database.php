@@ -1,9 +1,5 @@
 <?php
 
-/**
- * Database connection class for PostgreSQL
- * Handles connection to the database and provides PDO instance
- */
 class Database {
     private $host;
     private $port;
@@ -13,7 +9,6 @@ class Database {
     private $pdo;
     
     public function __construct($config = []) {
-        // Default configuration for PostgreSQL
         $this->host = $config['host'] ?? 'localhost';
         $this->port = $config['port'] ?? '5432';
         $this->dbname = $config['dbname'] ?? 'chronos';
@@ -21,12 +16,6 @@ class Database {
         $this->password = $config['password'] ?? '';
     }
     
-    /**
-     * Get PDO connection instance
-     * 
-     * @return PDO PDO instance
-     * @throws PDOException If connection fails
-     */
     public function getConnection() {
         if ($this->pdo === null) {
             try {
@@ -50,18 +39,10 @@ class Database {
         return $this->pdo;
     }
     
-    /**
-     * Close database connection
-     */
     public function closeConnection() {
         $this->pdo = null;
     }
     
-    /**
-     * Test database connection
-     * 
-     * @return bool True if connection successful, false otherwise
-     */
     public function testConnection() {
         try {
             $pdo = $this->getConnection();

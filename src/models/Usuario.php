@@ -1,9 +1,5 @@
 <?php
 
-/**
- * Modelo para gestión general de usuarios
- * Maneja operaciones CRUD para todos los tipos de usuarios
- */
 class Usuario {
     private $db;
     
@@ -11,9 +7,6 @@ class Usuario {
         $this->db = $database;
     }
     
-    /**
-     * Obtener todos los usuarios con sus roles
-     */
     public function getAllUsuarios() {
         try {
             $query = "SELECT u.*, 
@@ -35,9 +28,6 @@ class Usuario {
         }
     }
     
-    /**
-     * Obtener usuario por ID
-     */
     public function getUsuarioById($id) {
         try {
             $query = "SELECT u.*, 

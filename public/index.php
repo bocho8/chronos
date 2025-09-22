@@ -1,9 +1,10 @@
 <?php
+
 header("Location: ../src/views/login.php");
 exit();
 
 $host = getenv('POSTGRES_HOST');
-$db   = getenv('POSTGRES_DB');
+$db = getenv('POSTGRES_DB');
 $user = getenv('POSTGRES_USER');
 $pass = getenv('POSTGRES_PASSWORD');
 

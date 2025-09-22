@@ -1,8 +1,4 @@
 <?php
-/**
- * Language Switcher Component
- * Componente para cambiar idioma en la interfaz
- */
 
 require_once __DIR__ . '/../helpers/Translation.php';
 
@@ -15,13 +11,6 @@ class LanguageSwitcher
         $this->translation = Translation::getInstance();
     }
     
-    /**
-     * Render language switcher dropdown
-     * 
-     * @param string $currentUrl Current page URL
-     * @param string $class Additional CSS classes
-     * @return string HTML output
-     */
     public function render($currentUrl = '', $class = '')
     {
         $currentLang = $this->translation->getCurrentLanguage();
@@ -70,28 +59,16 @@ class LanguageSwitcher
         return $html;
     }
     
-    /**
-     * Get language flag emoji
-     * 
-     * @param string $langCode Language code
-     * @return string Flag emoji
-     */
     private function getLanguageFlag($langCode)
     {
-        $flags = [
+        return match ($langCode) {
             'es' => '🇪🇸',
             'it' => '🇮🇹',
-            'en' => '🇺🇸'
-        ];
-        
-        return $flags[$langCode] ?? '🌐';
+            'en' => '🇺🇸',
+            default => '🌐'
+        };
     }
     
-    /**
-     * Get JavaScript for language switcher functionality
-     * 
-     * @return string JavaScript code
-     */
     private function getJavaScript()
     {
         return '
@@ -142,11 +119,6 @@ class LanguageSwitcher
         </script>';
     }
     
-    /**
-     * Handle language change request
-     * 
-     * @return bool Success status
-     */
     public function handleLanguageChange()
     {
         if (isset($_POST['change_language'])) {
