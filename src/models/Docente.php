@@ -1,9 +1,5 @@
 <?php
 
-/**
- * Docente Model Class
- * Handles CRUD operations for teachers (docentes) in the system
- */
 class Docente {
     private $db;
     
@@ -11,11 +7,6 @@ class Docente {
         $this->db = $database;
     }
     
-    /**
-     * Get all teachers with their user information
-     * 
-     * @return array|false Array of teachers or false on error
-     */
     public function getAllDocentes() {
         try {
             $query = "SELECT d.id_docente, d.trabaja_otro_liceo, d.fecha_envio_disponibilidad, 
@@ -36,12 +27,6 @@ class Docente {
         }
     }
     
-    /**
-     * Get teacher by ID
-     * 
-     * @param int $id_docente Teacher ID
-     * @return array|false Teacher data or false on error
-     */
     public function getDocenteById($id_docente) {
         try {
             $query = "SELECT d.id_docente, d.trabaja_otro_liceo, d.fecha_envio_disponibilidad, 

@@ -1,8 +1,5 @@
 <?php
-/**
- * Horario Model
- * Maneja operaciones CRUD para horarios y disponibilidad
- */
+
 class Horario {
     private $db;
     
@@ -10,9 +7,6 @@ class Horario {
         $this->db = $database;
     }
     
-    /**
-     * Obtiene todos los horarios con información relacionada
-     */
     public function getAllHorarios() {
         try {
             $query = "SELECT h.*, 
@@ -38,9 +32,6 @@ class Horario {
         }
     }
     
-    /**
-     * Obtiene horarios por grupo
-     */
     public function getHorariosByGrupo($idGrupo) {
         try {
             $query = "SELECT h.*, 

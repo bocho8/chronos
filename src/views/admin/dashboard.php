@@ -1,9 +1,5 @@
 <?php
-/**
- * Dashboard principal del administrador
- */
 
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -11,38 +7,30 @@ require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('dashboard.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Load database configuration and get statistics
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get statistics
     $totalDocentes = $database->queryCount("SELECT COUNT(*) FROM docente");
     $totalUsuarios = $database->queryCount("SELECT COUNT(*) FROM usuario");
     $totalCoordinadores = $database->queryCount("SELECT COUNT(*) FROM usuario_rol ur JOIN rol r ON ur.nombre_rol = r.nombre_rol WHERE r.nombre_rol = 'COORDINADOR'");
     $totalPadres = $database->queryCount("SELECT COUNT(*) FROM usuario_rol ur JOIN rol r ON ur.nombre_rol = r.nombre_rol WHERE r.nombre_rol = 'PADRE'");
     
-    // Get recent activity (last 10 log entries)
     $recentActivity = $database->query("SELECT l.*, u.nombre, u.apellido FROM log l LEFT JOIN usuario u ON l.id_usuario = u.id_usuario ORDER BY l.fecha DESC LIMIT 10");
     
     if ($recentActivity === false) {

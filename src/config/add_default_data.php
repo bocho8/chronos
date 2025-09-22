@@ -1,8 +1,4 @@
 <?php
-/**
- * Script to add default data for pautas ANEP and grupos
- * Run this script once to populate the database with initial data
- */
 
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/../models/Database.php';
@@ -12,7 +8,6 @@ try {
     $database = new Database($dbConfig);
     $pdo = $database->getConnection();
     
-    // Insert default pautas ANEP
     $pautas = [
         ['nombre' => 'Pauta Estándar', 'dias_minimos' => 1, 'dias_maximos' => 5, 'condiciones_especiales' => 'Distribución normal durante la semana'],
         ['nombre' => 'Pauta Intensiva', 'dias_minimos' => 2, 'dias_maximos' => 3, 'condiciones_especiales' => 'Clases concentradas en pocos días'],
