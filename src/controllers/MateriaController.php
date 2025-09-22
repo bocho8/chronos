@@ -1,9 +1,7 @@
 <?php
-/**
- * MateriaController
- * Controlador para manejar operaciones CRUD de materias
- */
 
+require_once __DIR__ . '/../helpers/ResponseHelper.php';
+require_once __DIR__ . '/../helpers/ValidationHelper.php';
 require_once __DIR__ . '/../models/Materia.php';
 
 class MateriaController {
@@ -15,92 +13,49 @@ class MateriaController {
         $this->materiaModel = new Materia($database);
     }
     
-    /**
-     * Maneja las peticiones HTTP
-     */
     public function handleRequest() {
-        $method = $_SERVER['REQUEST_METHOD'];
         $action = $_POST['action'] ?? $_GET['action'] ?? '';
         
-        error_log("MateriaController handling request - Method: $method, Action: $action");
-        
         try {
-            switch ($action) {
-                case 'get':
-                    $this->getMateria();
-                    break;
-                case 'list':
-                    $this->listMaterias();
-                    break;
-                case 'create':
-                    $this->createMateria();
-                    break;
-                case 'update':
-                    $this->updateMateria();
-                    break;
-                case 'delete':
-                    $this->deleteMateria();
-                    break;
-                case 'get_pautas':
-                    $this->getPautasAnep();
-                    break;
-                case 'get_grupos':
-                    $this->getGrupos();
-                    break;
-                default:
-                    throw new Exception("Acción no válida: $action");
-            }
+            match ($action) {
+                'get' => $this->getMateria(),
+                'list' => $this->listMaterias(),
+                'create' => $this->createMateria(),
+                'update' => $this->updateMateria(),
+                'delete' => $this->deleteMateria(),
+                'get_pautas' => $this->getPautasAnep(),
+                'get_grupos' => $this->getGrupos(),
+                default => throw new Exception("Acción no válida: $action")
+            };
         } catch (Exception $e) {
             error_log("Error in MateriaController: " . $e->getMessage());
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'message' => $e->getMessage()
-            ]);
+            ResponseHelper::error($e->getMessage());
         }
     }
     
-    /**
-     * Obtiene una materia específica
-     */
     private function getMateria() {
         $id = $_POST['id'] ?? $_GET['id'] ?? null;
-        
         if (!$id) {
-            throw new Exception("ID de materia requerido");
+            ResponseHelper::error("ID de materia requerido");
         }
         
         $materia = $this->materiaModel->getMateriaById($id);
-        
         if (!$materia) {
-            throw new Exception("Materia no encontrada");
+            ResponseHelper::notFound("Materia");
         }
         
-        echo json_encode([
-            'success' => true,
-            'data' => $materia
-        ]);
+        ResponseHelper::success("Materia obtenida exitosamente", $materia);
     }
     
-    /**
-     * Lista todas las materias
-     */
     private function listMaterias() {
         $materias = $this->materiaModel->getAllMaterias();
-        
         if ($materias === false) {
-            throw new Exception("Error al obtener las materias");
+            ResponseHelper::error("Error al obtener las materias");
         }
         
-        echo json_encode([
-            'success' => true,
-            'data' => $materias
-        ]);
+        ResponseHelper::success("Materias obtenidas exitosamente", $materias);
     }
     
-    /**
-     * Crea una nueva materia
-     */
     private function createMateria() {
         $data = $this->validateMateriaData($_POST);
         
@@ -108,21 +63,14 @@ class MateriaController {
             $this->db->beginTransaction();
             
             $id = $this->materiaModel->createMateria($data);
-            
             if (!$id) {
                 throw new Exception("Error al crear la materia");
             }
             
-            // Registrar en el log
             $this->logActivity("Creó la materia: " . $data['nombre']);
-            
             $this->db->commit();
             
-            echo json_encode([
-                'success' => true,
-                'message' => 'Materia creada exitosamente',
-                'data' => ['id' => $id]
-            ]);
+            ResponseHelper::success('Materia creada exitosamente', ['id' => $id]);
             
         } catch (Exception $e) {
             $this->db->rollback();
@@ -130,14 +78,10 @@ class MateriaController {
         }
     }
     
-    /**
-     * Actualiza una materia existente
-     */
     private function updateMateria() {
         $id = $_POST['id'] ?? null;
-        
         if (!$id) {
-            throw new Exception("ID de materia requerido");
+            ResponseHelper::error("ID de materia requerido");
         }
         
         $data = $this->validateMateriaData($_POST, false);
@@ -146,20 +90,14 @@ class MateriaController {
             $this->db->beginTransaction();
             
             $success = $this->materiaModel->updateMateria($id, $data);
-            
             if (!$success) {
                 throw new Exception("Error al actualizar la materia");
             }
             
-            // Registrar en el log
             $this->logActivity("Actualizó la materia ID: $id");
-            
             $this->db->commit();
             
-            echo json_encode([
-                'success' => true,
-                'message' => 'Materia actualizada exitosamente'
-            ]);
+            ResponseHelper::success('Materia actualizada exitosamente');
             
         } catch (Exception $e) {
             $this->db->rollback();
@@ -167,40 +105,29 @@ class MateriaController {
         }
     }
     
-    /**
-     * Elimina una materia
-     */
     private function deleteMateria() {
         $id = $_POST['id'] ?? $_POST['id_materia'] ?? null;
-        
         if (!$id) {
-            throw new Exception("ID de materia requerido");
+            ResponseHelper::error("ID de materia requerido");
         }
         
         try {
             $this->db->beginTransaction();
             
-            // Obtener información de la materia antes de eliminarla
             $materia = $this->materiaModel->getMateriaById($id);
             if (!$materia) {
                 throw new Exception("Materia no encontrada");
             }
             
             $success = $this->materiaModel->deleteMateria($id);
-            
             if (!$success) {
                 throw new Exception("Error al eliminar la materia");
             }
             
-            // Registrar en el log
             $this->logActivity("Eliminó la materia: " . $materia['nombre']);
-            
             $this->db->commit();
             
-            echo json_encode([
-                'success' => true,
-                'message' => 'Materia eliminada exitosamente'
-            ]);
+            ResponseHelper::success('Materia eliminada exitosamente');
             
         } catch (Exception $e) {
             $this->db->rollback();
@@ -208,90 +135,76 @@ class MateriaController {
         }
     }
     
-    /**
-     * Obtiene todas las pautas ANEP
-     */
     private function getPautasAnep() {
         $pautas = $this->materiaModel->getAllPautasAnep();
-        
-        echo json_encode([
-            'success' => true,
-            'data' => $pautas
-        ]);
+        ResponseHelper::success("Pautas ANEP obtenidas exitosamente", $pautas);
     }
     
-    /**
-     * Obtiene todos los grupos
-     */
     private function getGrupos() {
         $grupos = $this->materiaModel->getAllGrupos();
-        
-        echo json_encode([
-            'success' => true,
-            'data' => $grupos
-        ]);
+        ResponseHelper::success("Grupos obtenidos exitosamente", $grupos);
     }
     
-    /**
-     * Valida los datos de una materia
-     */
     private function validateMateriaData($data, $required = true) {
+        $errors = [];
+        
+        if ($required && empty($data['nombre'])) {
+            $errors['nombre'] = "El nombre de la materia es requerido";
+        } elseif (!empty($data['nombre'])) {
+            $nombre = trim($data['nombre']);
+            if (strlen($nombre) > 200) {
+                $errors['nombre'] = "El nombre de la materia no puede exceder 200 caracteres";
+            }
+        }
+        
+        if (isset($data['horas_semanales'])) {
+            $error = ValidationHelper::validateNumericRange($data['horas_semanales'], 'horas_semanales', 1, 40);
+            if ($error) {
+                $errors['horas_semanales'] = $error;
+            }
+        }
+        
         $validated = [];
         
-        // Nombre (requerido)
-        if ($required && empty($data['nombre'])) {
-            throw new Exception("El nombre de la materia es requerido");
-        }
         if (!empty($data['nombre'])) {
             $validated['nombre'] = trim($data['nombre']);
-            if (strlen($validated['nombre']) > 200) {
-                throw new Exception("El nombre de la materia no puede exceder 200 caracteres");
-            }
         }
         
-        // Horas semanales
         if (isset($data['horas_semanales'])) {
-            $horas = intval($data['horas_semanales']);
-            if ($horas < 1 || $horas > 40) {
-                throw new Exception("Las horas semanales deben estar entre 1 y 40");
-            }
-            $validated['horas_semanales'] = $horas;
+            $validated['horas_semanales'] = intval($data['horas_semanales']);
         }
         
-        // ID Pauta ANEP
         if (isset($data['id_pauta_anep'])) {
             $validated['id_pauta_anep'] = intval($data['id_pauta_anep']);
         }
         
-        // En conjunto (boolean)
         if (isset($data['en_conjunto'])) {
             $validated['en_conjunto'] = filter_var($data['en_conjunto'], FILTER_VALIDATE_BOOLEAN);
         }
         
-        // ID Grupo compartido
         if (isset($data['id_grupo_compartido']) && !empty($data['id_grupo_compartido'])) {
             $validated['id_grupo_compartido'] = intval($data['id_grupo_compartido']);
         }
         
-        // Es programa italiano (boolean)
         if (isset($data['es_programa_italiano'])) {
             $validated['es_programa_italiano'] = filter_var($data['es_programa_italiano'], FILTER_VALIDATE_BOOLEAN);
+        }
+        
+        if (!empty($errors)) {
+            ResponseHelper::validationError($errors);
         }
         
         return $validated;
     }
     
-    /**
-     * Registra una actividad en el log del sistema
-     */
     private function logActivity($accion) {
         try {
             require_once __DIR__ . '/../helpers/AuthHelper.php';
-            $userId = AuthHelper::getCurrentUserId();
+            $user = AuthHelper::getCurrentUser();
             
-            if ($userId) {
+            if ($user && isset($user['id_usuario'])) {
                 $stmt = $this->db->prepare("INSERT INTO log (id_usuario, accion, fecha) VALUES (?, ?, NOW())");
-                $stmt->execute([$userId, $accion]);
+                $stmt->execute([$user['id_usuario'], $accion]);
             }
         } catch (Exception $e) {
             error_log("Error logging activity: " . $e->getMessage());

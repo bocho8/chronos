@@ -1,72 +1,42 @@
 <?php
 
-/**
- * Controlador para gestión de usuarios
- * Maneja la lógica de negocio para operaciones CRUD de usuarios
- */
+require_once __DIR__ . '/../helpers/ResponseHelper.php';
+require_once __DIR__ . '/../helpers/ValidationHelper.php';
+require_once __DIR__ . '/../models/Usuario.php';
+
 class UserController {
     private $usuarioModel;
     
     public function __construct($database) {
-        require_once __DIR__ . '/../models/Usuario.php';
         $this->usuarioModel = new Usuario($database);
     }
     
-    /**
-     * Manejar peticiones HTTP
-     */
     public function handleRequest() {
         $action = $_POST['action'] ?? $_GET['action'] ?? '';
         
-        switch ($action) {
-            case 'create':
-                $this->createUsuario();
-                break;
-            case 'update':
-                $this->updateUsuario();
-                break;
-            case 'delete':
-                $this->deleteUsuario();
-                break;
-            case 'get':
-                $this->getUsuario();
-                break;
-            case 'search':
-                $this->searchUsuarios();
-                break;
-            case 'list':
-            default:
-                $this->listUsuarios();
-                break;
+        try {
+            match ($action) {
+                'create' => $this->createUsuario(),
+                'update' => $this->updateUsuario(),
+                'delete' => $this->deleteUsuario(),
+                'get' => $this->getUsuario(),
+                'search' => $this->searchUsuarios(),
+                default => $this->listUsuarios()
+            };
+        } catch (Exception $e) {
+            error_log("Error in UserController: " . $e->getMessage());
+            ResponseHelper::error('Error interno del servidor', null, 500);
         }
     }
     
-    /**
-     * Crear nuevo usuario
-     */
     private function createUsuario() {
-        try {
-            $usuarioData = $this->validateUsuarioData($_POST);
-            
-            if ($usuarioData === false) {
-                return;
-            }
-            
-            $userId = $this->usuarioModel->createUsuario($usuarioData);
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Usuario creado exitosamente',
-                'data' => ['id' => $userId]
-            ]);
-            
-        } catch (Exception $e) {
-            error_log("Error creando usuario: " . $e->getMessage());
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error creando usuario: ' . $e->getMessage()
-            ]);
+        $usuarioData = $this->validateUsuarioData($_POST);
+        if ($usuarioData === false) {
+            return;
         }
+        
+        $userId = $this->usuarioModel->createUsuario($usuarioData);
+        ResponseHelper::success('Usuario creado exitosamente', ['id' => $userId]);
     }
     
     /**

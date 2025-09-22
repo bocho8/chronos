@@ -1,13 +1,9 @@
 <?php
 
-/**
- * CoordinadorController
- * 
- * This controller handles the business logic for coordinator management.
- */
-
-require_once __DIR__ . '/../models/Coordinador.php';
+require_once __DIR__ . '/../helpers/ResponseHelper.php';
+require_once __DIR__ . '/../helpers/ValidationHelper.php';
 require_once __DIR__ . '/../helpers/Translation.php';
+require_once __DIR__ . '/../models/Coordinador.php';
 
 class CoordinadorController {
     private $coordinadorModel;
@@ -15,260 +11,109 @@ class CoordinadorController {
     
     public function __construct($database) {
         $this->coordinadorModel = new Coordinador($database);
-        $this->translation = new Translation();
+        $this->translation = Translation::getInstance();
     }
     
-    /**
-     * Obtener todos los coordinadores
-     */
     public function getAllCoordinadores() {
-        try {
-            $coordinadores = $this->coordinadorModel->getAllCoordinadores();
-            
-            if ($coordinadores === false) {
-                return [
-                    'success' => false,
-                    'message' => $this->translation->get('error_loading_coordinators')
-                ];
-            }
-            
-            return [
-                'success' => true,
-                'data' => $coordinadores
-            ];
-        } catch (Exception $e) {
-            error_log("Error en CoordinadorController::getAllCoordinadores: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => $this->translation->get('error_loading_coordinators')
-            ];
+        $coordinadores = $this->coordinadorModel->getAllCoordinadores();
+        if ($coordinadores === false) {
+            ResponseHelper::error($this->translation->get('error_loading_coordinators'));
         }
+        ResponseHelper::success('Coordinadores obtenidos exitosamente', $coordinadores);
     }
     
-    /**
-     * Obtener coordinador por ID
-     */
     public function getCoordinador($id) {
-        try {
-            $coordinador = $this->coordinadorModel->getCoordinadorById($id);
-            
-            if (!$coordinador) {
-                return [
-                    'success' => false,
-                    'message' => $this->translation->get('coordinator_not_found')
-                ];
-            }
-            
-            // Convertir roles string a array
-            $coordinador['roles'] = !empty($coordinador['roles']) ? explode(', ', $coordinador['roles']) : [];
-            $coordinador['role_names'] = !empty($coordinador['role_names']) ? explode(', ', $coordinador['role_names']) : [];
-            
-            return [
-                'success' => true,
-                'data' => $coordinador
-            ];
-        } catch (Exception $e) {
-            error_log("Error en CoordinadorController::getCoordinador: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => $this->translation->get('error_loading_coordinator')
-            ];
+        $coordinador = $this->coordinadorModel->getCoordinadorById($id);
+        if (!$coordinador) {
+            ResponseHelper::notFound('Coordinador');
         }
+        
+        $coordinador['roles'] = !empty($coordinador['roles']) ? explode(', ', $coordinador['roles']) : [];
+        $coordinador['role_names'] = !empty($coordinador['role_names']) ? explode(', ', $coordinador['role_names']) : [];
+        
+        ResponseHelper::success('Coordinador obtenido exitosamente', $coordinador);
     }
     
-    /**
-     * Crear nuevo coordinador
-     */
     public function createCoordinador($data) {
-        try {
-            // Validar datos requeridos
-            $requiredFields = ['cedula', 'nombre', 'apellido', 'email', 'contrasena'];
-            foreach ($requiredFields as $field) {
-                if (empty($data[$field])) {
-                    return [
-                        'success' => false,
-                        'message' => $this->translation->get('all_fields_required')
-                    ];
-                }
-            }
-            
-            // Validar formato de email
-            if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-                return [
-                    'success' => false,
-                    'message' => $this->translation->get('invalid_email')
-                ];
-            }
-            
-            // Validar longitud de contraseña
-            if (strlen($data['contrasena']) < 6) {
-                return [
-                    'success' => false,
-                    'message' => $this->translation->get('password_too_short')
-                ];
-            }
-            
-            $result = $this->coordinadorModel->createCoordinador($data);
-            
-            if ($result) {
-                return [
-                    'success' => true,
-                    'message' => $this->translation->get('coordinator_created_successfully')
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'message' => $this->translation->get('error_creating_coordinator')
-                ];
-            }
-        } catch (Exception $e) {
-            error_log("Error en CoordinadorController::createCoordinador: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => $e->getMessage()
-            ];
+        $errors = [];
+        
+        $errors['cedula'] = ValidationHelper::validateCedula($data['cedula'] ?? '');
+        $errors['nombre'] = ValidationHelper::validateName($data['nombre'] ?? '', 'nombre');
+        $errors['apellido'] = ValidationHelper::validateName($data['apellido'] ?? '', 'apellido');
+        $errors['email'] = ValidationHelper::validateEmail($data['email'] ?? '', true);
+        $errors['contrasena'] = ValidationHelper::validatePassword($data['contrasena'] ?? '', true);
+        
+        $errors = array_filter($errors);
+        if (!empty($errors)) {
+            ResponseHelper::validationError($errors);
         }
+        
+        $result = $this->coordinadorModel->createCoordinador($data);
+        if (!$result) {
+            ResponseHelper::error($this->translation->get('error_creating_coordinator'));
+        }
+        
+        ResponseHelper::success($this->translation->get('coordinator_created_successfully'));
     }
     
-    /**
-     * Actualizar coordinador
-     */
     public function updateCoordinador($id, $data) {
-        try {
-            // Validar datos requeridos
-            $requiredFields = ['cedula', 'nombre', 'apellido', 'email'];
-            foreach ($requiredFields as $field) {
-                if (empty($data[$field])) {
-                    return [
-                        'success' => false,
-                        'message' => $this->translation->get('all_fields_required')
-                    ];
-                }
-            }
-            
-            // Validar formato de email
-            if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-                return [
-                    'success' => false,
-                    'message' => $this->translation->get('invalid_email')
-                ];
-            }
-            
-            // Validar longitud de contraseña si se proporciona
-            if (!empty($data['contrasena']) && strlen($data['contrasena']) < 6) {
-                return [
-                    'success' => false,
-                    'message' => $this->translation->get('password_too_short')
-                ];
-            }
-            
-            $result = $this->coordinadorModel->updateCoordinador($id, $data);
-            
-            if ($result) {
-                return [
-                    'success' => true,
-                    'message' => $this->translation->get('coordinator_updated_successfully')
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'message' => $this->translation->get('error_updating_coordinator')
-                ];
-            }
-        } catch (Exception $e) {
-            error_log("Error en CoordinadorController::updateCoordinador: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => $e->getMessage()
-            ];
+        $errors = [];
+        
+        $errors['cedula'] = ValidationHelper::validateCedula($data['cedula'] ?? '');
+        $errors['nombre'] = ValidationHelper::validateName($data['nombre'] ?? '', 'nombre');
+        $errors['apellido'] = ValidationHelper::validateName($data['apellido'] ?? '', 'apellido');
+        $errors['email'] = ValidationHelper::validateEmail($data['email'] ?? '', true);
+        
+        if (!empty($data['contrasena'])) {
+            $errors['contrasena'] = ValidationHelper::validatePassword($data['contrasena'], false);
         }
+        
+        $errors = array_filter($errors);
+        if (!empty($errors)) {
+            ResponseHelper::validationError($errors);
+        }
+        
+        $result = $this->coordinadorModel->updateCoordinador($id, $data);
+        if (!$result) {
+            ResponseHelper::error($this->translation->get('error_updating_coordinator'));
+        }
+        
+        ResponseHelper::success($this->translation->get('coordinator_updated_successfully'));
     }
     
-    /**
-     * Eliminar coordinador
-     */
     public function deleteCoordinador($id) {
-        try {
-            $result = $this->coordinadorModel->deleteCoordinador($id);
-            
-            if ($result) {
-                return [
-                    'success' => true,
-                    'message' => $this->translation->get('coordinator_deleted_successfully')
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'message' => $this->translation->get('error_deleting_coordinator')
-                ];
-            }
-        } catch (Exception $e) {
-            error_log("Error en CoordinadorController::deleteCoordinador: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => $e->getMessage()
-            ];
+        $result = $this->coordinadorModel->deleteCoordinador($id);
+        if (!$result) {
+            ResponseHelper::error($this->translation->get('error_deleting_coordinator'));
         }
+        
+        ResponseHelper::success($this->translation->get('coordinator_deleted_successfully'));
     }
     
-    /**
-     * Buscar coordinadores
-     */
     public function searchCoordinadores($searchTerm) {
-        try {
-            $coordinadores = $this->coordinadorModel->searchCoordinadores($searchTerm);
-            
-            if ($coordinadores === false) {
-                return [
-                    'success' => false,
-                    'message' => $this->translation->get('error_searching_coordinators')
-                ];
-            }
-            
-            return [
-                'success' => true,
-                'data' => $coordinadores
-            ];
-        } catch (Exception $e) {
-            error_log("Error en CoordinadorController::searchCoordinadores: " . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => $this->translation->get('error_searching_coordinators')
-            ];
+        $coordinadores = $this->coordinadorModel->searchCoordinadores($searchTerm);
+        if ($coordinadores === false) {
+            ResponseHelper::error($this->translation->get('error_searching_coordinators'));
         }
+        
+        ResponseHelper::success('Búsqueda completada', $coordinadores);
     }
     
-    /**
-     * Manejar solicitudes AJAX
-     */
     public function handleRequest() {
         $action = $_POST['action'] ?? $_GET['action'] ?? '';
         
-        switch ($action) {
-            case 'create':
-                return $this->createCoordinador($_POST);
-                
-            case 'get':
-                $id = $_POST['id'] ?? $_GET['id'] ?? 0;
-                return $this->getCoordinador($id);
-                
-            case 'update':
-                $id = $_POST['id'] ?? 0;
-                return $this->updateCoordinador($id, $_POST);
-                
-            case 'delete':
-                $id = $_POST['id'] ?? $_GET['id'] ?? 0;
-                return $this->deleteCoordinador($id);
-                
-            case 'search':
-                $searchTerm = $_POST['search'] ?? $_GET['search'] ?? '';
-                return $this->searchCoordinadores($searchTerm);
-                
-            default:
-                return [
-                    'success' => false,
-                    'message' => $this->translation->get('invalid_action')
-                ];
+        try {
+            match ($action) {
+                'create' => $this->createCoordinador($_POST),
+                'get' => $this->getCoordinador($_POST['id'] ?? $_GET['id'] ?? 0),
+                'update' => $this->updateCoordinador($_POST['id'] ?? 0, $_POST),
+                'delete' => $this->deleteCoordinador($_POST['id'] ?? $_GET['id'] ?? 0),
+                'search' => $this->searchCoordinadores($_POST['search'] ?? $_GET['search'] ?? ''),
+                default => ResponseHelper::error($this->translation->get('invalid_action'))
+            };
+        } catch (Exception $e) {
+            error_log("Error in CoordinadorController: " . $e->getMessage());
+            ResponseHelper::error('Error interno del servidor', null, 500);
         }
     }
 }

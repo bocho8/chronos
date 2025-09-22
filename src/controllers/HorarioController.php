@@ -1,9 +1,7 @@
 <?php
-/**
- * HorarioController
- * Controlador para manejar operaciones CRUD de horarios y disponibilidad
- */
 
+require_once __DIR__ . '/../helpers/ResponseHelper.php';
+require_once __DIR__ . '/../helpers/ValidationHelper.php';
 require_once __DIR__ . '/../models/Horario.php';
 
 class HorarioController {
@@ -15,154 +13,83 @@ class HorarioController {
         $this->horarioModel = new Horario($database);
     }
     
-    /**
-     * Maneja las peticiones HTTP
-     */
     public function handleRequest() {
-        $method = $_SERVER['REQUEST_METHOD'];
         $action = $_POST['action'] ?? $_GET['action'] ?? '';
         
-        error_log("HorarioController handling request - Method: $method, Action: $action");
-        
         try {
-            switch ($action) {
-                case 'get':
-                    $this->getHorario();
-                    break;
-                case 'list':
-                    $this->listHorarios();
-                    break;
-                case 'list_by_grupo':
-                    $this->listHorariosByGrupo();
-                    break;
-                case 'list_by_docente':
-                    $this->listHorariosByDocente();
-                    break;
-                case 'create':
-                    $this->createHorario();
-                    break;
-                case 'update':
-                    $this->updateHorario();
-                    break;
-                case 'delete':
-                    $this->deleteHorario();
-                    break;
-                case 'get_disponibilidad':
-                    $this->getDocenteDisponibilidad();
-                    break;
-                case 'update_disponibilidad':
-                    $this->updateDocenteDisponibilidad();
-                    break;
-                case 'get_bloques':
-                    $this->getBloques();
-                    break;
-                case 'get_grupos':
-                    $this->getGrupos();
-                    break;
-                case 'get_materias':
-                    $this->getMaterias();
-                    break;
-                case 'get_docentes':
-                    $this->getDocentes();
-                    break;
-                default:
-                    throw new Exception("Acción no válida: $action");
-            }
+            match ($action) {
+                'get' => $this->getHorario(),
+                'list' => $this->listHorarios(),
+                'list_by_grupo' => $this->listHorariosByGrupo(),
+                'list_by_docente' => $this->listHorariosByDocente(),
+                'create' => $this->createHorario(),
+                'update' => $this->updateHorario(),
+                'delete' => $this->deleteHorario(),
+                'get_disponibilidad' => $this->getDocenteDisponibilidad(),
+                'update_disponibilidad' => $this->updateDocenteDisponibilidad(),
+                'get_bloques' => $this->getBloques(),
+                'get_grupos' => $this->getGrupos(),
+                'get_materias' => $this->getMaterias(),
+                'get_docentes' => $this->getDocentes(),
+                default => throw new Exception("Acción no válida: $action")
+            };
         } catch (Exception $e) {
             error_log("Error in HorarioController: " . $e->getMessage());
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'message' => $e->getMessage()
-            ]);
+            ResponseHelper::error($e->getMessage());
         }
     }
     
-    /**
-     * Obtiene un horario específico
-     */
     private function getHorario() {
         $id = $_POST['id'] ?? $_GET['id'] ?? null;
-        
         if (!$id) {
-            throw new Exception("ID de horario requerido");
+            ResponseHelper::error("ID de horario requerido");
         }
         
         $horario = $this->horarioModel->getHorarioById($id);
-        
         if (!$horario) {
-            throw new Exception("Horario no encontrado");
+            ResponseHelper::notFound("Horario");
         }
         
-        echo json_encode([
-            'success' => true,
-            'data' => $horario
-        ]);
+        ResponseHelper::success("Horario obtenido exitosamente", $horario);
     }
     
-    /**
-     * Lista todos los horarios
-     */
     private function listHorarios() {
         $horarios = $this->horarioModel->getAllHorarios();
-        
         if ($horarios === false) {
-            throw new Exception("Error al obtener los horarios");
+            ResponseHelper::error("Error al obtener los horarios");
         }
         
-        echo json_encode([
-            'success' => true,
-            'data' => $horarios
-        ]);
+        ResponseHelper::success("Horarios obtenidos exitosamente", $horarios);
     }
     
-    /**
-     * Lista horarios por grupo
-     */
     private function listHorariosByGrupo() {
         $idGrupo = $_POST['id_grupo'] ?? $_GET['id_grupo'] ?? null;
-        
         if (!$idGrupo) {
-            throw new Exception("ID de grupo requerido");
+            ResponseHelper::error("ID de grupo requerido");
         }
         
         $horarios = $this->horarioModel->getHorariosByGrupo($idGrupo);
-        
         if ($horarios === false) {
-            throw new Exception("Error al obtener los horarios del grupo");
+            ResponseHelper::error("Error al obtener los horarios del grupo");
         }
         
-        echo json_encode([
-            'success' => true,
-            'data' => $horarios
-        ]);
+        ResponseHelper::success("Horarios del grupo obtenidos exitosamente", $horarios);
     }
     
-    /**
-     * Lista horarios por docente
-     */
     private function listHorariosByDocente() {
         $idDocente = $_POST['id_docente'] ?? $_GET['id_docente'] ?? null;
-        
         if (!$idDocente) {
-            throw new Exception("ID de docente requerido");
+            ResponseHelper::error("ID de docente requerido");
         }
         
         $horarios = $this->horarioModel->getHorariosByDocente($idDocente);
-        
         if ($horarios === false) {
-            throw new Exception("Error al obtener los horarios del docente");
+            ResponseHelper::error("Error al obtener los horarios del docente");
         }
         
-        echo json_encode([
-            'success' => true,
-            'data' => $horarios
-        ]);
+        ResponseHelper::success("Horarios del docente obtenidos exitosamente", $horarios);
     }
     
-    /**
-     * Crea un nuevo horario
-     */
     private function createHorario() {
         $data = $this->validateHorarioData($_POST);
         
@@ -170,21 +97,14 @@ class HorarioController {
             $this->db->beginTransaction();
             
             $id = $this->horarioModel->createHorario($data);
-            
             if (!$id) {
                 throw new Exception("Error al crear el horario");
             }
             
-            // Registrar en el log
             $this->logActivity("Creó asignación de horario ID: $id");
-            
             $this->db->commit();
             
-            echo json_encode([
-                'success' => true,
-                'message' => 'Horario creado exitosamente',
-                'data' => ['id' => $id]
-            ]);
+            ResponseHelper::success('Horario creado exitosamente', ['id' => $id]);
             
         } catch (Exception $e) {
             $this->db->rollback();
@@ -192,14 +112,10 @@ class HorarioController {
         }
     }
     
-    /**
-     * Actualiza un horario existente
-     */
     private function updateHorario() {
         $id = $_POST['id'] ?? null;
-        
         if (!$id) {
-            throw new Exception("ID de horario requerido");
+            ResponseHelper::error("ID de horario requerido");
         }
         
         $data = $this->validateHorarioData($_POST, false);
@@ -208,20 +124,14 @@ class HorarioController {
             $this->db->beginTransaction();
             
             $success = $this->horarioModel->updateHorario($id, $data);
-            
             if (!$success) {
                 throw new Exception("Error al actualizar el horario");
             }
             
-            // Registrar en el log
             $this->logActivity("Actualizó asignación de horario ID: $id");
-            
             $this->db->commit();
             
-            echo json_encode([
-                'success' => true,
-                'message' => 'Horario actualizado exitosamente'
-            ]);
+            ResponseHelper::success('Horario actualizado exitosamente');
             
         } catch (Exception $e) {
             $this->db->rollback();
@@ -229,40 +139,29 @@ class HorarioController {
         }
     }
     
-    /**
-     * Elimina un horario
-     */
     private function deleteHorario() {
         $id = $_POST['id'] ?? $_POST['id_horario'] ?? null;
-        
         if (!$id) {
-            throw new Exception("ID de horario requerido");
+            ResponseHelper::error("ID de horario requerido");
         }
         
         try {
             $this->db->beginTransaction();
             
-            // Obtener información del horario antes de eliminarlo
             $horario = $this->horarioModel->getHorarioById($id);
             if (!$horario) {
                 throw new Exception("Horario no encontrado");
             }
             
             $success = $this->horarioModel->deleteHorario($id);
-            
             if (!$success) {
                 throw new Exception("Error al eliminar el horario");
             }
             
-            // Registrar en el log
             $this->logActivity("Eliminó asignación de horario: " . $horario['grupo_nombre'] . " - " . $horario['materia_nombre']);
-            
             $this->db->commit();
             
-            echo json_encode([
-                'success' => true,
-                'message' => 'Horario eliminado exitosamente'
-            ]);
+            ResponseHelper::success('Horario eliminado exitosamente');
             
         } catch (Exception $e) {
             $this->db->rollback();
@@ -270,27 +169,16 @@ class HorarioController {
         }
     }
     
-    /**
-     * Obtiene la disponibilidad de un docente
-     */
     private function getDocenteDisponibilidad() {
         $idDocente = $_POST['id_docente'] ?? $_GET['id_docente'] ?? null;
-        
         if (!$idDocente) {
-            throw new Exception("ID de docente requerido");
+            ResponseHelper::error("ID de docente requerido");
         }
         
         $disponibilidad = $this->horarioModel->getDocenteDisponibilidad($idDocente);
-        
-        echo json_encode([
-            'success' => true,
-            'data' => $disponibilidad
-        ]);
+        ResponseHelper::success("Disponibilidad obtenida exitosamente", $disponibilidad);
     }
     
-    /**
-     * Actualiza la disponibilidad de un docente
-     */
     private function updateDocenteDisponibilidad() {
         $idDocente = $_POST['id_docente'] ?? null;
         $idBloque = $_POST['id_bloque'] ?? null;
@@ -298,28 +186,22 @@ class HorarioController {
         $disponible = isset($_POST['disponible']) ? filter_var($_POST['disponible'], FILTER_VALIDATE_BOOLEAN) : null;
         
         if (!$idDocente || !$idBloque || !$dia || $disponible === null) {
-            throw new Exception("Todos los parámetros son requeridos");
+            ResponseHelper::error("Todos los parámetros son requeridos");
         }
         
         try {
             $this->db->beginTransaction();
             
             $success = $this->horarioModel->updateDocenteDisponibilidad($idDocente, $idBloque, $dia, $disponible);
-            
             if (!$success) {
                 throw new Exception("Error al actualizar la disponibilidad");
             }
             
-            // Registrar en el log
             $disponibilidadText = $disponible ? 'disponible' : 'no disponible';
             $this->logActivity("Marcó docente ID $idDocente como $disponibilidadText para $dia bloque $idBloque");
-            
             $this->db->commit();
             
-            echo json_encode([
-                'success' => true,
-                'message' => 'Disponibilidad actualizada exitosamente'
-            ]);
+            ResponseHelper::success('Disponibilidad actualizada exitosamente');
             
         } catch (Exception $e) {
             $this->db->rollback();
@@ -327,119 +209,92 @@ class HorarioController {
         }
     }
     
-    /**
-     * Obtiene todos los bloques horarios
-     */
     private function getBloques() {
         $bloques = $this->horarioModel->getAllBloques();
-        
-        echo json_encode([
-            'success' => true,
-            'data' => $bloques
-        ]);
+        ResponseHelper::success("Bloques obtenidos exitosamente", $bloques);
     }
     
-    /**
-     * Obtiene todos los grupos
-     */
     private function getGrupos() {
         $grupos = $this->horarioModel->getAllGrupos();
-        
-        echo json_encode([
-            'success' => true,
-            'data' => $grupos
-        ]);
+        ResponseHelper::success("Grupos obtenidos exitosamente", $grupos);
     }
     
-    /**
-     * Obtiene todas las materias
-     */
     private function getMaterias() {
         $materias = $this->horarioModel->getAllMaterias();
-        
-        echo json_encode([
-            'success' => true,
-            'data' => $materias
-        ]);
+        ResponseHelper::success("Materias obtenidas exitosamente", $materias);
     }
     
-    /**
-     * Obtiene todos los docentes
-     */
     private function getDocentes() {
         $docentes = $this->horarioModel->getAllDocentes();
-        
-        echo json_encode([
-            'success' => true,
-            'data' => $docentes
-        ]);
+        ResponseHelper::success("Docentes obtenidos exitosamente", $docentes);
     }
     
-    /**
-     * Valida los datos de un horario
-     */
     private function validateHorarioData($data, $required = true) {
-        $validated = [];
+        $errors = [];
         $dias_validos = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'];
         
-        // ID Grupo (requerido)
         if ($required && empty($data['id_grupo'])) {
-            throw new Exception("El grupo es requerido");
+            $errors['id_grupo'] = "El grupo es requerido";
         }
+        
+        if ($required && empty($data['id_docente'])) {
+            $errors['id_docente'] = "El docente es requerido";
+        }
+        
+        if ($required && empty($data['id_materia'])) {
+            $errors['id_materia'] = "La materia es requerida";
+        }
+        
+        if ($required && empty($data['id_bloque'])) {
+            $errors['id_bloque'] = "El bloque horario es requerido";
+        }
+        
+        if ($required && empty($data['dia'])) {
+            $errors['dia'] = "El día es requerido";
+        } elseif (!empty($data['dia'])) {
+            $dia = strtoupper($data['dia']);
+            if (!in_array($dia, $dias_validos)) {
+                $errors['dia'] = "Día no válido";
+            }
+        }
+        
+        if (!empty($errors)) {
+            ResponseHelper::validationError($errors);
+        }
+        
+        $validated = [];
+        
         if (!empty($data['id_grupo'])) {
             $validated['id_grupo'] = intval($data['id_grupo']);
         }
         
-        // ID Docente (requerido)
-        if ($required && empty($data['id_docente'])) {
-            throw new Exception("El docente es requerido");
-        }
         if (!empty($data['id_docente'])) {
             $validated['id_docente'] = intval($data['id_docente']);
         }
         
-        // ID Materia (requerido)
-        if ($required && empty($data['id_materia'])) {
-            throw new Exception("La materia es requerida");
-        }
         if (!empty($data['id_materia'])) {
             $validated['id_materia'] = intval($data['id_materia']);
         }
         
-        // ID Bloque (requerido)
-        if ($required && empty($data['id_bloque'])) {
-            throw new Exception("El bloque horario es requerido");
-        }
         if (!empty($data['id_bloque'])) {
             $validated['id_bloque'] = intval($data['id_bloque']);
         }
         
-        // Día (requerido)
-        if ($required && empty($data['dia'])) {
-            throw new Exception("El día es requerido");
-        }
         if (!empty($data['dia'])) {
-            $dia = strtoupper($data['dia']);
-            if (!in_array($dia, $dias_validos)) {
-                throw new Exception("Día no válido");
-            }
-            $validated['dia'] = $dia;
+            $validated['dia'] = strtoupper($data['dia']);
         }
         
         return $validated;
     }
     
-    /**
-     * Registra una actividad en el log del sistema
-     */
     private function logActivity($accion) {
         try {
             require_once __DIR__ . '/../helpers/AuthHelper.php';
-            $userId = AuthHelper::getCurrentUserId();
+            $user = AuthHelper::getCurrentUser();
             
-            if ($userId) {
+            if ($user && isset($user['id_usuario'])) {
                 $stmt = $this->db->prepare("INSERT INTO log (id_usuario, accion, fecha) VALUES (?, ?, NOW())");
-                $stmt->execute([$userId, $accion]);
+                $stmt->execute([$user['id_usuario'], $accion]);
             }
         } catch (Exception $e) {
             error_log("Error logging activity: " . $e->getMessage());
