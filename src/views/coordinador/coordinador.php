@@ -1,12 +1,14 @@
 <?php
-// Move all PHP logic to the top before any HTML output
+/**
+ * Dashboard principal del Coordinador
+ */
+
 // Include required files
-require_once __DIR__ . '/../config/session.php';
-require_once __DIR__ . '/../models/Database.php';
-require_once __DIR__ . '/../models/Auth.php';
-require_once __DIR__ . '/../helpers/Translation.php';
-require_once __DIR__ . '/../helpers/AuthHelper.php';
-require_once __DIR__ . '/../components/LanguageSwitcher.php';
+require_once __DIR__ . '/../../config/session.php';
+require_once __DIR__ . '/../../helpers/Translation.php';
+require_once __DIR__ . '/../../helpers/AuthHelper.php';
+require_once __DIR__ . '/../../components/LanguageSwitcher.php';
+require_once __DIR__ . '/../../models/Database.php';
 
 // Initialize secure session first
 initSecureSession();
@@ -18,442 +20,201 @@ $languageSwitcher = new LanguageSwitcher();
 // Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Redirect if already logged in
-AuthHelper::redirectIfLoggedIn();
+// Require authentication and COORDINADOR role
+AuthHelper::requireRole('COORDINADOR');
 
-$errors = [];
-$ci = '';
-$password = '';
-$role = '';
-$loginMessage = '';
-$successMessage = '';
-
-// Handle logout messages
-if (isset($_GET['message'])) {
-    switch ($_GET['message']) {
-        case 'logout_success':
-            $successMessage = $translation->get('logout_success');
-            break;
-        case 'logout_error':
-            $errors['system'] = $translation->get('logout_error');
-            break;
-        case 'session_expired':
-            $errors['system'] = $translation->get('session_expired');
-            break;
-    }
+// Check session timeout
+if (!AuthHelper::checkSessionTimeout()) {
+    header("Location: /src/views/login.php?message=session_expired");
+    exit();
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $ci = trim($_POST['ci'] ?? '');
-  $password = trim($_POST['password'] ?? '');
-  $role = trim($_POST['role'] ?? '');
-  
-  if (empty($ci)) {
-    $errors['ci'] = $translation->get('validation_ci_required');
-  } elseif (!preg_match('/^\d{7,8}$/', $ci)) {
-    // Patrón regex: ^\d{7,8}$
-    // ^ = inicio de la cadena
-    // \d = cualquier dígito del 0-9
-    // {7,8} = entre 7 y 8 caracteres
-    // $ = fin de la cadena
-    // Valida que el CI tenga exactamente 7 u 8 dígitos numéricos
-    $errors['ci'] = $translation->get('validation_ci_format');
-  }
-  
-  if (empty($password)) {
-    $errors['password'] = $translation->get('validation_password_required');
-  } elseif (strlen($password) < 6) {
-    $errors['password'] = $translation->get('validation_password_length');
-  }
-  
-  if (empty($role) || $role === 'Roles') {
-    $errors['role'] = $translation->get('validation_role_required');
-  }
-  
-  if (empty($errors)) {
-    try {
-      // Load database configuration
-      $dbConfig = require __DIR__ . '/../config/database.php';
-      
-      // Initialize database and auth
-      $database = new Database($dbConfig);
-      $auth = new Auth($database->getConnection());
-      
-      // Attempt authentication
-      $user = $auth->authenticate($ci, $password, $role);
-      
-      if ($user) {
-        // Store user data (session already started by Translation class)
-        $_SESSION['user'] = $user;
-        $_SESSION['logged_in'] = true;
-        
-        // Set last activity timestamp for session timeout
-        updateLastActivity();
-        
-        // Redirect based on role
-        $redirectUrl = getRedirectUrl($role);
-        header("Location: $redirectUrl");
-        exit();
-      } else {
-        $errors['auth'] = $translation->get('validation_auth_failed');
-      }
-      
-    } catch (Exception $e) {
-      $errors['system'] = $translation->get('validation_system_error');
-      error_log("Login error: " . $e->getMessage());
-    }
-  }
-}
+// Load database configuration and get coordinator data
+try {
+    $dbConfig = require __DIR__ . '/../../config/database.php';
+    $database = new Database($dbConfig);
+    
+    // OBTENER LISTA DE COORDINADORES (EJEMPLO)
+    // Deberías ajustar esta consulta para obtener los coordinadores de tu base de datos
+    // He añadido datos de ejemplo para que coincida con tu wireframe.
+    $coordinadores = $database->query(
+        "SELECT u.nombre, u.apellido FROM usuario u 
+         JOIN usuario_rol ur ON u.id_usuario = ur.id_usuario 
+         WHERE ur.nombre_rol = 'COORDINADOR'"
+    );
 
-// Helper function to get redirect URL based on role
-function getRedirectUrl($role) {
-  switch ($role) {
-    case 'ADMIN':
-      return '/src/views/admin/';
-    case 'DIRECTOR':
-      return '/src/views/director/';
-    case 'COORDINADOR':
-      return '/src/views/coordinador/';
-    case 'DOCENTE':
-      return '/src/views/docente/';
-    case 'PADRE':
-      return '/src/views/padre/';
-    default:
-      return '/src/views/login.php';
-  }
+    // Si la consulta falla o no devuelve resultados, usamos datos de ejemplo para el diseño
+    if (empty($coordinadores)) {
+        $coordinadores = [
+            ['nombre' => 'Alberto', 'apellido' => 'De Mattos', 'experiencia' => 15],
+            ['nombre' => 'Patricia', 'apellido' => 'Molinari', 'experiencia' => 12]
+        ];
+    }
+
+} catch (Exception $e) {
+    error_log("Error cargando datos del coordinador: " . $e->getMessage());
+    $coordinadores = [ // Datos de fallback en caso de error de DB
+        ['nombre' => 'Alberto', 'apellido' => 'De Mattos', 'experiencia' => 15],
+        ['nombre' => 'Patricia', 'apellido' => 'Molinari', 'experiencia' => 12]
+    ];
+    $error_message = 'Error interno del servidor';
 }
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $translation->getCurrentLanguage(); ?>"<?php echo $translation->isRTL() ? ' dir="rtl"' : ''; ?>>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title><?php _e('app_name'); ?> — <?php _e('login_title'); ?></title>
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style type="text/css">
-    .select__icon {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      pointer-events: none;
-      width: 0;
-      height: 0;
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      border-top: 8px solid #111827;
-    }
-    .hamburger span {
-      width: 25px;
-      height: 3px;
-      background-color: white;
-      margin: 3px 0;
-      border-radius: 2px;
-      transition: all 0.3s;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><?php _e('app_name'); ?> — <?php _e('coordinator_dashboard'); ?></title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        /* Estilo para el enlace activo en el sidebar */
+        .sidebar-link {
+            position: relative;
+            transition: all 0.3s;
+        }
+        .sidebar-link.active {
+            background-color: #e4e6eb;
+            font-weight: 600;
+        }
+        .sidebar-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: #1f366d; /* Color azul oscuro principal */
+        }
+    </style>
 </head>
-<body class="bg-bg font-sans text-gray-800 leading-relaxed">
-  <!-- BARRA SUPERIOR -->
-  <header class="bg-navy text-white h-[60px] flex items-center">
-    <div class="w-full grid grid-cols-3 items-center px-4 h-full">
-      
-      <!-- IZQUIERDA -->
-      <div class="flex items-center gap-2.5">
-          <img src="/upload/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
-          <span class="text-white font-semibold text-lg"><?php _e('scuola_italiana'); ?></span>
-      </div>
+<body class="bg-gray-100 font-sans text-gray-800 leading-relaxed">
+    <div class="flex min-h-screen">
+        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+            <div class="px-5 flex items-center h-[60px] border-b border-gray-200 bg-darkblue">
+                 <img src="/assets/images/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
+                 <span class="text-white font-semibold text-lg ml-2.5"><?php _e('scuola_italiana'); ?></span>
+            </div>
 
-      <!-- CENTRO -->
-      <h1 class="m-0 text-center text-xl md:text-[22px] font-bold"><?php _e('app_name'); ?></h1>
+            <ul class="py-5 list-none flex-grow">
+                <li>
+                    <a href="coordinador-dashboard.php" class="sidebar-link active flex items-center py-3 px-5 text-gray-800 no-underline transition-all hover:bg-gray-100">
+                        <svg class="w-5 h-5 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        <?php _e('home'); // Inicio ?>
+                    </a>
+                </li>
+                <li>
+                    <a href="coordinador-docentes.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-gray-100">
+                        <svg class="w-5 h-5 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path></svg>
+                        <?php _e('teachers'); // Docentes ?>
+                    </a>
+                </li>
+                <li>
+                    <a href="coordinador-calendario.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-gray-100">
+                        <svg class="w-5 h-5 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <?php _e('calendar'); // Calendario ?>
+                    </a>
+                </li>
+            </ul>
+        </aside>
 
-      <!-- DERECHA -->
-      <div class="flex items-center gap-2 justify-end">
-        <?php echo $languageSwitcher->render(); ?>
-        <button class="w-11 h-11 grid place-content-center gap-1.5 bg-transparent border-0 cursor-pointer hamburger" aria-label="Menú">
-          <span></span><span></span><span></span>
-        </button>
-      </div>
+        <main class="flex-1 flex flex-col">
+            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-gray-200">
+                <div class="flex items-center">
+                    <button class="text-white focus:outline-none lg:hidden">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                    <h1 class="text-white text-xl font-semibold ml-4">Bienvenido (<?php _e('role_coordinator'); ?>)</h1>
+                </div>
+                
+                <div class="flex items-center">
+                    <?php echo $languageSwitcher->render('', 'mr-4'); ?>
+                    
+                    <div class="relative group">
+                        <button class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-darkblue font-semibold hover:bg-gray-100 transition-colors" id="userMenuButton">
+                            <?php echo htmlspecialchars(AuthHelper::getUserInitials()); ?>
+                        </button>
+                        
+                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block" id="userMenu">
+                            <div class="px-4 py-2 text-sm text-gray-700 border-b">
+                                <div class="font-medium"><?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?></div>
+                                <div class="text-gray-500"><?php _e('role_coordinator'); ?></div>
+                            </div>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                <?php _e('profile'); ?>
+                            </a>
+                            <div class="border-t"></div>
+                            <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" id="logoutButton">
+                                <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                <?php _e('logout'); ?>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="flex-1 px-8 py-10 bg-gray-50">
+                <div class="max-w-5xl mx-auto">
+                    
+                    <div class="mb-12">
+                        <h2 class="text-3xl font-bold text-gray-800">Bienvenido al Panel Coordinador</h2>
+                        <p class="text-gray-500 mt-1">Gestione docentes y horarios.</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <?php foreach ($coordinadores as $coordinador): ?>
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-16 h-16 bg-gray-200 rounded-full mr-6 flex-shrink-0">
+                                    </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-900">
+                                        Coordinador/a <?php echo htmlspecialchars($coordinador['nombre'] . ' ' . $coordinador['apellido']); ?>
+                                    </h3>
+                                    <p class="text-gray-500 text-sm mt-1">
+                                        Experiencia: <?php echo htmlspecialchars($coordinador['experiencia']); ?> años
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Cerrar Sesión
+                                </button>
+                                <button class="px-4 py-2 text-sm font-medium text-white bg-darkblue border border-transparent rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
+                                    Perfil
+                                </button>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    
+                    <div class="mt-16 text-center bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+                        <h2 class="text-2xl font-bold text-gray-800">Panel de Coordinación de Horarios</h2>
+                        <p class="text-gray-500 mt-2 mb-8 max-w-xl mx-auto">Gestione y asigne horarios para los docentes y grupos de forma manual o deje que el sistema los genere automáticamente.</p>
+                        <div class="flex justify-center space-x-4">
+                            <button class="px-8 py-3 font-semibold text-darkblue bg-white border-2 border-darkblue rounded-lg hover:bg-gray-50 transition-colors">
+                                Asignar Manual
+                            </button>
+                            <button class="px-8 py-3 font-semibold text-white bg-darkblue rounded-lg hover:bg-opacity-90 transition-colors">
+                                Generar Automático
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
     </div>
-  </header>
 
-  <!-- CONTENEDOR CENTRAL -->
-  <main class="flex items-center justify-center min-h-[calc(100vh-60px)] p-6">
-    <div class="w-full flex justify-center">
-      <section class="bg-card rounded-3xl p-10 md:px-16 md:py-10 w-full max-w-[500px] shadow-lg" aria-labelledby="titulo-login">
-      <h2 id="titulo-login" class="text-center text-2xl md:text-[28px] font-extrabold text-navy mb-6"><?php _e('login_title'); ?></h2>
-
-      <form method="POST" autocomplete="off" id="loginForm" class="flex flex-col gap-5">
-        <!-- C.I -->
-        <label class="flex flex-col gap-1.5">
-          <span class="font-semibold"><?php _e('ci_label'); ?></span>
-          <input type="text" id="ci" name="ci" placeholder="<?php _e('ci_placeholder'); ?>" autocomplete="off" 
-                 value="<?php echo htmlspecialchars($ci); ?>"
-                 class="h-[42px] px-3 py-2.5 border border-gray-300 rounded-lg bg-white font-sans <?php echo isset($errors['ci']) ? 'input-error' : ''; ?>">
-          <div class="error-message text-red-600 text-sm mt-1" id="ciError">
-            <?php echo isset($errors['ci']) ? htmlspecialchars($errors['ci']) : ''; ?>
-          </div>
-        </label>
-
-        <!-- Contraseña -->
-        <label class="flex flex-col gap-1.5">
-          <span class="font-semibold"><?php _e('password_label'); ?></span>
-          <input type="password" id="password" name="password" placeholder="<?php _e('password_placeholder'); ?>" autocomplete="off"
-                 class="h-[42px] px-3 py-2.5 border border-gray-300 rounded-lg bg-white font-sans <?php echo isset($errors['password']) ? 'input-error' : ''; ?>">
-          <div class="error-message text-red-600 text-sm mt-1" id="passwordError">
-            <?php echo isset($errors['password']) ? htmlspecialchars($errors['password']) : ''; ?>
-          </div>
-        </label>
-
-        <!-- Selección de Rol -->
-        <label class="flex flex-col gap-1.5">
-          <span class="font-semibold"><?php _e('role_label'); ?></span>
-          <div class="relative">
-            <select name="role" id="role" class="appearance-none w-full h-[42px] px-3 py-2.5 pr-10 border border-gray-300 rounded-lg bg-white font-sans text-gray-900 <?php echo isset($errors['role']) ? 'input-error' : ''; ?>">
-              <option value=""><?php _e('role_placeholder'); ?></option>
-              <option value="ADMIN" <?php echo $role === 'ADMIN' ? 'selected' : ''; ?>><?php _e('role_admin'); ?></option>
-              <option value="DIRECTOR" <?php echo $role === 'DIRECTOR' ? 'selected' : ''; ?>><?php _e('role_director'); ?></option>
-              <option value="COORDINADOR" <?php echo $role === 'COORDINADOR' ? 'selected' : ''; ?>><?php _e('role_coordinator'); ?></option>
-              <option value="DOCENTE" <?php echo $role === 'DOCENTE' ? 'selected' : ''; ?>><?php _e('role_teacher'); ?></option>
-              <option value="PADRE" <?php echo $role === 'PADRE' ? 'selected' : ''; ?>><?php _e('role_parent'); ?></option>
-            </select>
-            <span class="select__icon" aria-hidden="true"></span>
-          </div>
-          <div class="error-message text-red-600 text-sm mt-1" id="roleError">
-            <?php echo isset($errors['role']) ? htmlspecialchars($errors['role']) : ''; ?>
-          </div>
-        </label>
-
-        <?php if (isset($errors['auth'])): ?>
-          <div class="text-red-600 p-2 bg-red-100 rounded text-center">
-            <?php echo htmlspecialchars($errors['auth']); ?>
-          </div>
-        <?php endif; ?>
-        
-        <?php if (isset($errors['system'])): ?>
-          <div class="text-red-600 p-2 bg-red-100 rounded text-center">
-            <?php echo htmlspecialchars($errors['system']); ?>
-          </div>
-        <?php endif; ?>
-        
-        <?php if (!empty($successMessage)): ?>
-          <div class="text-green-600 p-2 bg-green-100 rounded text-center">
-            <?php echo htmlspecialchars($successMessage); ?>
-          </div>
-        <?php endif; ?>
-
-        <!-- Botón -->
-        <button type="submit" class="h-11 px-4 py-2.5 rounded-lg border-0 font-bold cursor-pointer bg-navy text-white w-full hover:bg-[#142852]"><?php _e('login'); ?></button>
-
-        <!-- Link para olvidar contraseña -->
-        <div class="mt-1.5 flex items-center justify-end">
-          <a class="text-navy no-underline font-semibold text-sm hover:underline" href="#" tabindex="0"><?php _e('forgot_password'); ?></a>
-        </div>
-      </form>
-      </section>
-    </div>
-  </main>
-
-  <script>
-    // Validación JavaScript del lado del cliente
-    document.addEventListener('DOMContentLoaded', function() {
-      const form = document.getElementById('loginForm');
-      const ciInput = document.getElementById('ci');
-      const passwordInput = document.getElementById('password');
-      const roleSelect = document.getElementById('role');
-      
-      const ciError = document.getElementById('ciError');
-      const passwordError = document.getElementById('passwordError');
-      const roleError = document.getElementById('roleError');
-      
-      /**
-       * Función para mostrar errores de validación en los campos del formulario
-       * @param {HTMLElement} input - Elemento de entrada que contiene el error
-       * @param {HTMLElement} errorElement - Elemento donde se mostrará el mensaje de error
-       * @param {string} message - Mensaje de error a mostrar
-       */
-      function showError(input, errorElement, message) {
-        input.classList.add('input-error');
-        input.classList.remove('input-success');
-        errorElement.textContent = message;
-        errorElement.style.display = 'block';
-      }
-      
-      /**
-       * Función para mostrar éxito en la validación de los campos del formulario
-       * @param {HTMLElement} input - Elemento de entrada que se validó correctamente
-       * @param {HTMLElement} errorElement - Elemento de error que se ocultará
-       */
-      function showSuccess(input, errorElement) {
-        input.classList.remove('input-error');
-        input.classList.add('input-success');
-        errorElement.style.display = 'none';
-      }
-      
-      // Translation messages for JavaScript validation
-      const translations = {
-        ci_required: '<?php _e('validation_ci_required'); ?>',
-        ci_format: '<?php _e('validation_ci_format'); ?>',
-        password_required: '<?php _e('validation_password_required'); ?>',
-        password_length: '<?php _e('validation_password_length'); ?>',
-        role_required: '<?php _e('validation_role_required'); ?>',
-        correct_errors: '<?php _e('validation_correct_errors'); ?>'
-      };
-      
-      /**
-       * Función para validar el formato del C.I (Cédula de Identidad)
-       * @param {string} ci - Valor del C.I a validar
-       * @returns {string} - Mensaje de error vacío si es válido, o mensaje de error si no es válido
-       */
-      function validateCI(ci) {
-        if (ci.trim() === '') {
-          return translations.ci_required;
-        }
-        if (!/^\d{7,8}$/.test(ci.trim())) {
-          return translations.ci_format;
-        }
-        return '';
-      }
-      
-      /**
-       * Función para validar la contraseña del usuario
-       * @param {string} password - Contraseña a validar
-       * @returns {string} - Mensaje de error vacío si es válida, o mensaje de error si no es válida
-       */
-      function validatePassword(password) {
-        if (password.trim() === '') {
-          return translations.password_required;
-        }
-        if (password.length < 6) {
-          return translations.password_length;
-        }
-        return '';
-      }
-      
-      /**
-       * Función para validar la selección del rol del usuario
-       * @param {string} role - Rol seleccionado a validar
-       * @returns {string} - Mensaje de error vacío si es válido, o mensaje de error si no es válido
-       */
-      function validateRole(role) {
-        if (role === '' || role === '<?php _e('role_placeholder'); ?>') {
-          return translations.role_required;
-        }
-        return '';
-      }
-      
-      // Event listeners para validación en tiempo real
-      /**
-       * Event listener para validar el C.I cuando el usuario sale del campo (evento blur)
-       * Realiza validación inmediata y muestra/oculta errores según corresponda
-       */
-      ciInput.addEventListener('blur', function() {
-        const error = validateCI(this.value);
-        if (error) {
-          showError(this, ciError, error);
-        } else {
-          showSuccess(this, ciError);
-        }
-      });
-      
-      /**
-       * Event listener para validar la contraseña cuando el usuario sale del campo (evento blur)
-       * Realiza validación inmediata y muestra/oculta errores según corresponda
-       */
-      passwordInput.addEventListener('blur', function() {
-        const error = validatePassword(this.value);
-        if (error) {
-          showError(this, passwordError, error);
-        } else {
-          showSuccess(this, passwordError);
-        }
-      });
-      
-      /**
-       * Event listener para validar el rol cuando el usuario cambia la selección (evento change)
-       * Realiza validación inmediata y muestra/oculta errores según corresponda
-       */
-      roleSelect.addEventListener('change', function() {
-        const error = validateRole(this.value);
-        if (error) {
-          showError(this, roleError, error);
-        } else {
-          showSuccess(this, roleError);
-        }
-      });
-      
-      /**
-       * Event listener para validar todo el formulario antes del envío (evento submit)
-       * Previene el envío si hay errores de validación y muestra alerta al usuario
-       * @param {Event} e - Evento de envío del formulario
-       */
-      form.addEventListener('submit', function(e) {
-        let hasErrors = false;
-        
-        // Validar CI
-        const ciErrorMsg = validateCI(ciInput.value);
-        if (ciErrorMsg) {
-          showError(ciInput, ciError, ciErrorMsg);
-          hasErrors = true;
-        } else {
-          showSuccess(ciInput, ciError);
-        }
-        
-        // Validar contraseña
-        const passwordErrorMsg = validatePassword(passwordInput.value);
-        if (passwordErrorMsg) {
-          showError(passwordInput, passwordError, passwordErrorMsg);
-          hasErrors = true;
-        } else {
-          showSuccess(passwordInput, passwordError);
-        }
-        
-        // Validar rol
-        const roleErrorMsg = validateRole(roleSelect.value);
-        if (roleErrorMsg) {
-          showError(roleSelect, roleError, roleErrorMsg);
-          hasErrors = true;
-        } else {
-          showSuccess(roleSelect, roleError);
-        }
-        
-        // Si hay errores, prevenir el envío del formulario
-        if (hasErrors) {
-          e.preventDefault();
-          alert(translations.correct_errors);
-        }
-      });
-      
-      // Limpiar errores cuando el usuario empiece a escribir/seleccionar
-      /**
-       * Event listener para limpiar errores del C.I mientras el usuario escribe (evento input)
-       * Si el campo tenía error y ahora es válido, se muestra el estado de éxito
-       */
-      ciInput.addEventListener('input', function() {
-        if (this.classList.contains('input-error')) {
-          const error = validateCI(this.value);
-          if (!error) {
-            showSuccess(this, ciError);
-          }
-        }
-      });
-      
-      /**
-       * Event listener para limpiar errores de la contraseña mientras el usuario escribe (evento input)
-       * Si el campo tenía error y ahora es válido, se muestra el estado de éxito
-       */
-      passwordInput.addEventListener('input', function() {
-        if (this.classList.contains('input-error')) {
-          const error = validatePassword(this.value);
-          if (!error) {
-            showSuccess(this, passwordError);
-          }
-        }
-      });
-    });
-  </script>
+    <script src="/js/menu.js"></script>
+    <script>
+        // Logout functionality
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            if (confirm('<?php _e('confirm_logout'); ?>')) {
+                window.location.href = '/src/controllers/LogoutController.php';
+            }
+        });
+    </script>
 </body>
 </html>
