@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
+require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Usuario.php';
 
@@ -13,6 +14,7 @@ initSecureSession();
 // Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
+$sidebar = new Sidebar('admin-usuarios.php');
 
 // Handle language change
 $languageSwitcher->handleLanguageChange();
@@ -47,6 +49,7 @@ function getUserInitials($nombre, $apellido) {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title><?php _e('app_name'); ?> — <?php _e('admin_panel'); ?> · <?php _e('users'); ?></title>
   <link rel="stylesheet" href="/css/styles.css">
+    <?php echo Sidebar::getStyles(); ?>
   <style type="text/css">
     .hamburger span {
       width: 25px;
@@ -165,41 +168,7 @@ function getUserInitials($nombre, $apellido) {
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">
   <div class="flex min-h-screen">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-sidebar border-r border-border">
-      <div class="px-5 flex items-center h-[60px] bg-darkblue gap-2.5">
-        <img src="/assets/images/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
-        <span class="text-white font-semibold text-lg"><?php _e('scuola_italiana'); ?></span>
-      </div>
-
-      <ul class="py-5 list-none">
-        <li>
-          <a href="index.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-            <?php _e('dashboard'); ?>
-          </a>
-        </li>
-        <li>
-          <a href="admin-usuarios.php" class="sidebar-link active flex items-center py-3 px-5 text-gray-800 no-underline transition-all hover:bg-sidebarHover">
-            <?php _e('users'); ?>
-          </a>
-        </li>
-        <li>
-          <a href="admin-docentes.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-            <?php _e('teachers'); ?>
-          </a>
-        </li>
-        <li>
-          <a href="admin-materias.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-            <?php _e('subjects'); ?>
-          </a>
-        </li>
-        <li>
-          <a href="admin-horarios.php" class="sidebar-link flex items-center py-3 px-5 text-gray-600 no-underline transition-all hover:bg-sidebarHover">
-            <?php _e('schedules'); ?>
-          </a>
-        </li>
-      </ul>
-    </aside>
+    <?php echo $sidebar->render(); ?>
 
     <!-- Main -->
     <main class="flex-1 flex flex-col">
@@ -352,7 +321,7 @@ function getUserInitials($nombre, $apellido) {
       </div>
 
       <form id="usuarioForm" class="space-y-4">
-        <input type="hidden" id="id_usuario" name="id_usuario">
+        <input type="hidden" id="id_usuario" name="id">
         
         <div>
           <label for="cedula" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('cedula'); ?></label>

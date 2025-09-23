@@ -1,12 +1,5 @@
 <?php
 
-/**
- * Database Configuration
- * 
- * This file contains the database connection settings for the application.
- * Modify these values according to your PostgreSQL setup.
- */
-
 return [
     'host' => 'postgres',
     'port' => '5432',
@@ -14,7 +7,6 @@ return [
     'username' => 'chronos_user',
     'password' => 'chronos_pass',
     
-    // Connection options
     'options' => [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,

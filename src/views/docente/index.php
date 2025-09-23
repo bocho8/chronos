@@ -1,6 +1,6 @@
 <?php
 /**
- * Redirección al dashboard principal del administrador
+ * Redirección al dashboard principal del docente
  */
 
 // Include required files
@@ -10,8 +10,8 @@ require_once __DIR__ . '/../../helpers/AuthHelper.php';
 // Initialize secure session first
 initSecureSession();
 
-// Require authentication and admin role
-AuthHelper::requireRole('ADMIN');
+// Require authentication and docente role
+AuthHelper::requireRole('DOCENTE');
 
 // Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {

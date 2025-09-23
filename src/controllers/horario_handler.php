@@ -23,11 +23,11 @@ try {
         throw new Exception("No se pudo conectar a la base de datos");
     }
     
-    require_once __DIR__ . '/DocenteController.php';
-    $controller = new DocenteController($database->getConnection());
+    require_once __DIR__ . '/HorarioController.php';
+    $controller = new HorarioController($database->getConnection());
     $controller->handleRequest();
     
 } catch (Exception $e) {
-    error_log("Error en docente_handler: " . $e->getMessage());
+    error_log("Error en horario_handler: " . $e->getMessage());
     ResponseHelper::error('Error interno del servidor: ' . $e->getMessage(), null, 500);
 }

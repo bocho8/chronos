@@ -1,4 +1,8 @@
 <?php
+/**
+ * Página de gestión de coordinadores para administradores
+ */
+
 // Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
@@ -6,15 +10,15 @@ require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
-require_once __DIR__ . '/../../models/Materia.php';
+require_once __DIR__ . '/../../models/Coordinador.php';
 
-// Initialize secure session first
+// Initialize secure session
 initSecureSession();
 
 // Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
-$sidebar = new Sidebar('admin-materias.php');
+$sidebar = new Sidebar('admin-coordinadores.php');
 
 // Handle language change
 $languageSwitcher->handleLanguageChange();
@@ -24,49 +28,43 @@ AuthHelper::requireRole('ADMIN');
 
 // Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
-    header("Location: /src/views/login.php?message=session_expired");
+    header('Location: /src/views/login.php');
     exit();
 }
 
-// Load database configuration and get materias
+// Load database configuration and get coordinadores
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get materias and related data
-    $materiaModel = new Materia($database->getConnection());
-    $materias = $materiaModel->getAllMaterias();
-    $pautasAnep = $materiaModel->getAllPautasAnep();
-    $grupos = $materiaModel->getAllGrupos();
+    // Get coordinadores
+    $coordinadorModel = new Coordinador($database->getConnection());
+    $coordinadores = $coordinadorModel->getAllCoordinadores();
     
-    if ($materias === false) {
-        $materias = [];
+    if ($coordinadores === false) {
+        $coordinadores = [];
     }
 } catch (Exception $e) {
-    error_log("Error cargando materias: " . $e->getMessage());
-    $materias = [];
-    $pautasAnep = [];
-    $grupos = [];
+    error_log("Error cargando coordinadores: " . $e->getMessage());
+    $coordinadores = [];
     $error_message = 'Error interno del servidor';
 }
+
+// Function to get user initials
+function getUserInitials($nombre, $apellido) {
+    return strtoupper(substr($nombre, 0, 1) . substr($apellido, 0, 1));
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="<?php echo $translation->getCurrentLanguage(); ?>"<?php echo $translation->isRTL() ? ' dir="rtl"' : ''; ?>>
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?php _e('app_name'); ?> — <?php _e('admin_panel'); ?> · <?php _e('subjects'); ?></title>
+    <title><?php _e('app_name'); ?> — <?php _e('coordinators_management'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
     <?php echo Sidebar::getStyles(); ?>
     <style type="text/css">
-        .hamburger span {
-            width: 25px;
-            height: 3px;
-            background-color: white;
-            margin: 3px 0;
-            border-radius: 2px;
-            transition: all 0.3s;
-        }
         body {
             overflow-x: hidden;
         }
@@ -75,7 +73,7 @@ try {
             transition: all 0.3s;
         }
         .sidebar-link.active {
-            background-color: #dee2e6;
+            background-color: #e4e6eb;
             font-weight: 600;
         }
         .sidebar-link.active::before {
@@ -127,7 +125,7 @@ try {
         }
         
         /* Modal styles */
-        #materiaModal {
+        #coordinadorModal {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
@@ -142,11 +140,11 @@ try {
             -webkit-backdrop-filter: blur(8px) !important;
         }
         
-        #materiaModal.hidden {
+        #coordinadorModal.hidden {
             display: none !important;
         }
         
-        #materiaModal .modal-content {
+        #coordinadorModal .modal-content {
             position: relative !important;
             z-index: 10001 !important;
             background: white !important;
@@ -154,8 +152,8 @@ try {
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
         }
         
-        #materiaModal button[type="submit"], 
-        #materiaModal button[type="button"] {
+        #coordinadorModal button[type="submit"], 
+        #coordinadorModal button[type="button"] {
             z-index: 10002 !important;
             position: relative !important;
             background-color: #1f366d !important;
@@ -167,6 +165,7 @@ try {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
+        <!-- Main -->
         <main class="flex-1 flex flex-col">
             <!-- Header -->
             <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
@@ -226,13 +225,14 @@ try {
             <section class="flex-1 px-6 py-8">
                 <div class="max-w-6xl mx-auto">
                     <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('subjects_management'); ?></h2>
-                        <p class="text-muted mb-6 text-base"><?php _e('subjects_management_description'); ?></p>
+                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('coordinators_management'); ?></h2>
+                        <p class="text-muted mb-6 text-base"><?php _e('coordinators_management_description'); ?></p>
                     </div>
 
                     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
+                        <!-- Header de la tabla -->
                         <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-                            <h3 class="font-medium text-darktext"><?php _e('subjects'); ?></h3>
+                            <h3 class="font-medium text-darktext"><?php _e('coordinators'); ?></h3>
                             <div class="flex gap-2">
                                 <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -249,45 +249,40 @@ try {
                                     </svg>
                                     <?php _e('delete_selected'); ?>
                                 </button>
-                                <button onclick="openMateriaModal()" class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
+                                <button onclick="showAddCoordinadorModal()" class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                     </svg>
-                                    <?php _e('add_subject'); ?>
+                                    <?php _e('add_coordinator'); ?>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Lista de materias -->
+                        <!-- Lista de coordinadores -->
                         <div class="divide-y divide-gray-200">
-                            <?php if (!empty($materias)): ?>
-                                <?php foreach ($materias as $materia): ?>
+                            <?php if (!empty($coordinadores)): ?>
+                                <?php foreach ($coordinadores as $coordinador): ?>
                                     <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
                                         <div class="flex items-center">
-                                            <div class="w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
-                                                <?php echo strtoupper(substr($materia['nombre'], 0, 1)); ?>
+                                            <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
+                                                <?php echo getUserInitials($coordinador['nombre'], $coordinador['apellido']); ?>
                                             </div>
                                             <div class="meta">
                                                 <div class="font-semibold text-darktext mb-1">
-                                                    <?php echo htmlspecialchars($materia['nombre']); ?>
+                                                    <?php echo htmlspecialchars($coordinador['nombre'] . ' ' . $coordinador['apellido']); ?>
                                                 </div>
                                                 <div class="text-muted text-sm">
-                                                    <?php echo $materia['horas_semanales']; ?> horas semanales
-                                                    <?php if ($materia['pauta_anep_nombre']): ?>
-                                                        • <?php echo htmlspecialchars($materia['pauta_anep_nombre']); ?>
-                                                    <?php endif; ?>
-                                                    <?php if ($materia['es_programa_italiano']): ?>
-                                                        • Programa Italiano
-                                                    <?php endif; ?>
+                                                    <?php echo htmlspecialchars($coordinador['email']); ?> • 
+                                                    CI: <?php echo htmlspecialchars($coordinador['cedula']); ?>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="flex items-center space-x-2">
-                                            <button onclick="editMateria(<?php echo $materia['id_materia']; ?>)" 
+                                            <button onclick="editCoordinador(<?php echo $coordinador['id_usuario']; ?>)" 
                                                     class="text-darkblue hover:text-navy text-sm font-medium transition-colors">
                                                 <?php _e('edit'); ?>
                                             </button>
-                                            <button onclick="deleteMateria(<?php echo $materia['id_materia']; ?>, '<?php echo htmlspecialchars($materia['nombre']); ?>')" 
+                                            <button onclick="deleteCoordinador(<?php echo $coordinador['id_usuario']; ?>, '<?php echo htmlspecialchars($coordinador['nombre'] . ' ' . $coordinador['apellido']); ?>')" 
                                                     class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors">
                                                 <?php _e('delete'); ?>
                                             </button>
@@ -296,8 +291,8 @@ try {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <div class="p-8 text-center">
-                                    <div class="text-gray-500 text-lg mb-2"><?php _e('no_subjects_found'); ?></div>
-                                    <div class="text-gray-400 text-sm"><?php _e('add_first_subject'); ?></div>
+                                    <div class="text-gray-500 text-lg mb-2"><?php _e('no_coordinators_found'); ?></div>
+                                    <div class="text-gray-400 text-sm"><?php _e('add_first_coordinator'); ?></div>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -307,7 +302,221 @@ try {
         </main>
     </div>
 
+    <!-- Modal para agregar/editar coordinador -->
+    <div id="coordinadorModal" class="hidden">
+        <div class="modal-content p-8 w-full max-w-md mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_coordinator'); ?></h3>
+                <button onclick="closeCoordinadorModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="coordinadorForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <input type="hidden" id="id_coordinador" name="id" value="">
+                
+                <div>
+                    <label for="cedula" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('cedula'); ?></label>
+                    <input type="text" id="cedula" name="cedula" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                </div>
+                
+                <div>
+                    <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('name'); ?></label>
+                    <input type="text" id="nombre" name="nombre" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                </div>
+                
+                <div>
+                    <label for="apellido" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('lastname'); ?></label>
+                    <input type="text" id="apellido" name="apellido" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                </div>
+                
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('email'); ?></label>
+                    <input type="email" id="email" name="email" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                </div>
+                
+                <div>
+                    <label for="telefono" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('phone'); ?></label>
+                    <input type="text" id="telefono" name="telefono"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                </div>
+                
+                <div>
+                    <label for="contrasena" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('password'); ?></label>
+                    <input type="password" id="contrasena" name="contrasena"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                    <p class="text-xs text-gray-500 mt-1"><?php _e('password_leave_blank'); ?></p>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeCoordinadorModal()" 
+                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
+                        <?php _e('cancel'); ?>
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkblue hover:bg-navy focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
+                        <?php _e('save'); ?>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
     <script>
+        let isEditMode = false;
+
+        // Mostrar modal para agregar coordinador
+        function showAddCoordinadorModal() {
+            isEditMode = false;
+            document.getElementById('modalTitle').textContent = '<?php _e('add_coordinator'); ?>';
+            document.getElementById('coordinadorForm').reset();
+            
+            // Hacer contraseña requerida para nuevo coordinador
+            document.getElementById('contrasena').required = true;
+            
+            clearErrors();
+            document.getElementById('coordinadorModal').classList.remove('hidden');
+            
+            // Focus on first input
+            setTimeout(() => {
+                document.getElementById('cedula').focus();
+            }, 100);
+        }
+
+        // Editar coordinador
+        function editCoordinador(id) {
+            isEditMode = true;
+            document.getElementById('modalTitle').textContent = '<?php _e('edit_coordinator'); ?>';
+            
+            const formData = new FormData();
+            formData.append('action', 'get');
+            formData.append('id', id);
+            
+            fetch('/src/controllers/coordinador_handler.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('id_coordinador').value = data.data.id_usuario;
+                    document.getElementById('cedula').value = data.data.cedula;
+                    document.getElementById('nombre').value = data.data.nombre;
+                    document.getElementById('apellido').value = data.data.apellido;
+                    document.getElementById('email').value = data.data.email;
+                    document.getElementById('telefono').value = data.data.telefono || '';
+                    
+                    // No hacer contraseña requerida para edición
+                    document.getElementById('contrasena').required = false;
+                    document.getElementById('contrasena').value = '';
+                    
+                    document.getElementById('coordinadorModal').classList.remove('hidden');
+                    
+                    // Focus on first input
+                    setTimeout(() => {
+                        document.getElementById('cedula').focus();
+                    }, 100);
+                } else {
+                    showToast('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error cargando datos del coordinador', 'error');
+            });
+        }
+
+        // Eliminar coordinador
+        function deleteCoordinador(id, nombre) {
+            const confirmMessage = `¿Está seguro de que desea eliminar al coordinador "${nombre}"?`;
+            if (confirm(confirmMessage)) {
+                const formData = new FormData();
+                formData.append('action', 'delete');
+                formData.append('id', id);
+                
+                fetch('/src/controllers/coordinador_handler.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Coordinador eliminado exitosamente', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast('Error: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error eliminando coordinador', 'error');
+                });
+            }
+        }
+
+        // Cerrar modal
+        function closeCoordinadorModal() {
+            const modal = document.getElementById('coordinadorModal');
+            modal.classList.add('hidden');
+            clearErrors();
+        }
+
+        // Manejar envío del formulario
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            clearErrors();
+            
+            const formData = new FormData(e.target);
+            formData.append('action', isEditMode ? 'update' : 'create');
+            
+            fetch('/src/controllers/coordinador_handler.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    closeCoordinadorModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    if (data.data && typeof data.data === 'object') {
+                        // Show validation errors
+                        Object.keys(data.data).forEach(field => {
+                            const errorElement = document.getElementById(field + 'Error');
+                            if (errorElement) {
+                                errorElement.textContent = data.data[field];
+                            }
+                        });
+                    } else {
+                        showToast('Error: ' + data.message, 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error procesando solicitud', 'error');
+            });
+        }
+
+        // Limpiar errores de validación
+        function clearErrors() {
+            const errorElements = document.querySelectorAll('[id$="Error"]');
+            errorElements.forEach(element => {
+                element.textContent = '';
+            });
+        }
+
         // Toast notification functions
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
@@ -357,282 +566,19 @@ try {
             }
         }
 
-        let isEditMode = false;
-
-        // Modal functions
-        function openMateriaModal() {
-            isEditMode = false;
-            document.getElementById('modalTitle').textContent = '<?php _e('add_subject'); ?>';
-            document.getElementById('materiaForm').reset();
-            document.getElementById('materiaId').value = '';
-            document.getElementById('horas_semanales').value = '1';
-            
-            clearErrors();
-            document.getElementById('materiaModal').classList.remove('hidden');
-            
-            // Focus on first input
-            setTimeout(() => {
-                document.getElementById('nombre').focus();
-            }, 100);
-        }
-
-        function closeMateriaModal() {
-            document.getElementById('materiaModal').classList.add('hidden');
-            clearErrors();
-        }
-
-        // Edit materia
-        function editMateria(id) {
-            isEditMode = true;
-            document.getElementById('modalTitle').textContent = '<?php _e('edit_subject'); ?>';
-            
-            const formData = new FormData();
-            formData.append('action', 'get');
-            formData.append('id', id);
-            
-            fetch('/src/controllers/materia_handler.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('materiaId').value = data.data.id_materia;
-                    document.getElementById('nombre').value = data.data.nombre;
-                    document.getElementById('horas_semanales').value = data.data.horas_semanales;
-                    document.getElementById('id_pauta_anep').value = data.data.id_pauta_anep;
-                    document.getElementById('en_conjunto').checked = data.data.en_conjunto;
-                    document.getElementById('es_programa_italiano').checked = data.data.es_programa_italiano;
-                    
-                    document.getElementById('materiaModal').classList.remove('hidden');
-                    
-                    // Focus on first input
-                    setTimeout(() => {
-                        document.getElementById('nombre').focus();
-                    }, 100);
-                } else {
-                    showToast('Error: ' + data.message, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Error cargando datos de la materia', 'error');
-            });
-        }
-
-        // Delete materia
-        function deleteMateria(id, nombre) {
-            const confirmMessage = `¿Está seguro de que desea eliminar la materia "${nombre}"?`;
-            if (confirm(confirmMessage)) {
-                const formData = new FormData();
-                formData.append('action', 'delete');
-                formData.append('id', id);
-                
-                fetch('/src/controllers/materia_handler.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showToast('Materia eliminada exitosamente', 'success');
-                        setTimeout(() => location.reload(), 1000);
-                    } else {
-                        showToast('Error: ' + data.message, 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('Error eliminando materia', 'error');
-                });
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('coordinadorModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCoordinadorModal();
             }
-        }
+        });
 
-        // Handle form submission
-        function handleMateriaFormSubmit(e) {
-            e.preventDefault();
-            
-            clearErrors();
-            
-            const formData = new FormData(e.target);
-            formData.append('action', isEditMode ? 'update' : 'create');
-            
-            fetch('/src/controllers/materia_handler.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(data.message, 'success');
-                    closeMateriaModal();
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    if (data.data && typeof data.data === 'object') {
-                        // Show validation errors
-                        Object.keys(data.data).forEach(field => {
-                            const errorElement = document.getElementById(field + 'Error');
-                            if (errorElement) {
-                                errorElement.textContent = data.data[field];
-                            }
-                        });
-                    } else {
-                        showToast('Error: ' + data.message, 'error');
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Error procesando solicitud', 'error');
-            });
-        }
-
-        // Clear validation errors
-        function clearErrors() {
-            const errorElements = document.querySelectorAll('[id$="Error"]');
-            errorElements.forEach(element => {
-                element.textContent = '';
-            });
-        }
-
-        // Funcionalidad para la barra lateral
-        document.addEventListener('DOMContentLoaded', function() {
-            // Obtener todos los enlaces de la barra lateral
-            const sidebarLinks = document.querySelectorAll('.sidebar-link');
-            
-            // Función para manejar el clic en los enlaces
-            function handleSidebarClick(event) {
-                // Remover la clase active de todos los enlaces
-                sidebarLinks.forEach(link => {
-                    link.classList.remove('active');
-                });
-                
-                // Agregar la clase active al enlace clickeado
-                this.classList.add('active');
-            }
-            
-            // Agregar event listener a cada enlace
-            sidebarLinks.forEach(link => {
-                link.addEventListener('click', handleSidebarClick);
-            });
-            
-            // Logout functionality
-            const logoutButton = document.getElementById('logoutButton');
-            if (logoutButton) {
-                logoutButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // Show confirmation dialog
-                    const confirmMessage = '<?php _e('confirm_logout'); ?>';
-                    if (confirm(confirmMessage)) {
-                        // Create form and submit logout request
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = '/src/controllers/LogoutController.php';
-                        
-                        const actionInput = document.createElement('input');
-                        actionInput.type = 'hidden';
-                        actionInput.name = 'action';
-                        actionInput.value = 'logout';
-                        
-                        form.appendChild(actionInput);
-                        document.body.appendChild(form);
-                        form.submit();
-                    }
-                });
-            }
-            
-            // User menu toggle
-            const userMenuButton = document.getElementById('userMenuButton');
-            const userMenu = document.getElementById('userMenu');
-            
-            if (userMenuButton && userMenu) {
-                userMenuButton.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    userMenu.classList.toggle('hidden');
-                });
-                
-                // Close menu when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
-                        userMenu.classList.add('hidden');
-                    }
-                });
+        // Logout functionality
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            if (confirm('<?php _e('confirm_logout'); ?>')) {
+                window.location.href = '/src/controllers/LogoutController.php';
             }
         });
     </script>
-
-    <!-- Modal para agregar/editar materia -->
-    <div id="materiaModal" class="hidden">
-        <div class="modal-content p-8 w-full max-w-md mx-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_subject'); ?></h3>
-                <button onclick="closeMateriaModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <form id="materiaForm" onsubmit="handleMateriaFormSubmit(event)" class="space-y-4">
-                <input type="hidden" id="materiaId" name="id">
-                
-                <div>
-                    <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('subject_name'); ?></label>
-                    <input type="text" id="nombre" name="nombre" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
-                </div>
-                
-                <div>
-                    <label for="horas_semanales" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('weekly_hours'); ?></label>
-                    <input type="number" id="horas_semanales" name="horas_semanales" min="1" max="40" value="1" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
-                </div>
-                
-                <div>
-                    <label for="id_pauta_anep" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('anep_guideline'); ?></label>
-                    <select id="id_pauta_anep" name="id_pauta_anep" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
-                        <option value=""><?php _e('select_guideline'); ?></option>
-                        <?php foreach ($pautasAnep as $pauta): ?>
-                            <option value="<?php echo $pauta['id_pauta_anep']; ?>">
-                                <?php echo htmlspecialchars($pauta['nombre']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="flex items-center">
-                    <input type="checkbox" id="en_conjunto" name="en_conjunto" value="1"
-                           class="h-4 w-4 text-darkblue focus:ring-darkblue border-gray-300 rounded">
-                    <label for="en_conjunto" class="ml-2 block text-sm text-gray-900">
-                        <?php _e('joint_class'); ?>
-                    </label>
-                </div>
-                
-                <div class="flex items-center">
-                    <input type="checkbox" id="es_programa_italiano" name="es_programa_italiano" value="1"
-                           class="h-4 w-4 text-darkblue focus:ring-darkblue border-gray-300 rounded">
-                    <label for="es_programa_italiano" class="ml-2 block text-sm text-gray-900">
-                        <?php _e('italian_program'); ?>
-                    </label>
-                </div>
-
-                <div class="flex justify-end space-x-3 pt-4">
-                    <button type="button" onclick="closeMateriaModal()" 
-                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
-                        <?php _e('cancel'); ?>
-                    </button>
-                    <button type="submit" 
-                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkblue hover:bg-navy focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
-                        <?php _e('save'); ?>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Toast Container -->
-    <div id="toastContainer"></div>
 </body>
 </html>

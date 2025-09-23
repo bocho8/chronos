@@ -1,0 +1,288 @@
+<?php
+/**
+ * Visualización de Horario del Docente
+ * Consulta de horarios de clases asignados
+ */
+
+// Include required files
+require_once __DIR__ . '/../../config/session.php';
+require_once __DIR__ . '/../../helpers/Translation.php';
+require_once __DIR__ . '/../../helpers/AuthHelper.php';
+require_once __DIR__ . '/../../components/LanguageSwitcher.php';
+require_once __DIR__ . '/../../components/Sidebar.php';
+require_once __DIR__ . '/../../models/Database.php';
+
+// Initialize secure session first
+initSecureSession();
+
+// Initialize translation system
+$translation = Translation::getInstance();
+$languageSwitcher = new LanguageSwitcher();
+$sidebar = new Sidebar('mi-horario.php');
+
+// Handle language change
+$languageSwitcher->handleLanguageChange();
+
+// Require authentication and docente role
+AuthHelper::requireRole('DOCENTE');
+
+// Check session timeout
+if (!AuthHelper::checkSessionTimeout()) {
+    header("Location: /src/views/login.php?message=session_expired");
+    exit();
+}
+
+// Load published schedules for this docente (ESRE 4.3.166)
+$currentUser = AuthHelper::getCurrentUser();
+$userId = $currentUser['id_usuario'] ?? null;
+$miHorario = [];
+$cargaHoraria = 0;
+$porcentajeMargen = 0;
+
+try {
+    $dbConfig = require __DIR__ . '/../../config/database.php';
+    $database = new Database($dbConfig);
+    
+    // Get docente ID and basic info
+    $docenteQuery = "SELECT d.*, u.nombre, u.apellido FROM docente d 
+                     INNER JOIN usuario u ON d.id_usuario = u.id_usuario 
+                     WHERE d.id_usuario = :id_usuario";
+    $stmt = $database->getConnection()->prepare($docenteQuery);
+    $stmt->bindParam(':id_usuario', $userId, PDO::PARAM_INT);
+    $stmt->execute();
+    $docenteInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($docenteInfo) {
+        $cargaHoraria = $docenteInfo['horas_asignadas'] ?? 0;
+        $porcentajeMargen = $docenteInfo['porcentaje_margen'] ?? 0;
+        
+        // Get schedules using the same structure as admin views
+        $scheduleQuery = "SELECT h.*, m.nombre as materia_nombre, g.nombre as grupo_nombre,
+                                 b.hora_inicio, b.hora_fin
+                         FROM horario h
+                         INNER JOIN materia m ON h.id_materia = m.id_materia
+                         INNER JOIN grupo g ON h.id_grupo = g.id_grupo
+                         INNER JOIN bloque_horario b ON h.id_bloque = b.id_bloque
+                         WHERE h.id_docente = :id_docente
+                         ORDER BY h.dia, b.hora_inicio";
+        $stmt = $database->getConnection()->prepare($scheduleQuery);
+        $stmt->bindParam(':id_docente', $docenteInfo['id_docente'], PDO::PARAM_INT);
+        $stmt->execute();
+        $miHorario = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Get time blocks for table structure
+        $blocksQuery = "SELECT id_bloque, hora_inicio, hora_fin FROM bloque_horario ORDER BY hora_inicio";
+        $stmt = $database->getConnection()->prepare($blocksQuery);
+        $stmt->execute();
+        $timeBlocks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+} catch (Exception $e) {
+    error_log("Error cargando horario del docente: " . $e->getMessage());
+}
+
+// Helper function to generate schedule table using proper time blocks (ESRE 4.4.8)
+function generateScheduleTable($horario, $timeBlocks) {
+    if (empty($horario)) {
+        return '<div class="text-center py-8">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-500">No hay horarios publicados disponibles</p>
+                    <p class="text-xs text-gray-400">Los horarios serán visibles una vez que la Dirección los publique</p>
+                </div>';
+    }
+    
+    // Generate weekly schedule table according to ESRE 4.4.8 (same as admin views)
+    $html = '<div class="overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr>
+                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300">Hora</th>
+                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300">Lunes</th>
+                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300">Martes</th>
+                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300">Miércoles</th>
+                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300">Jueves</th>
+                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300">Viernes</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+    
+    $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+    
+    foreach ($timeBlocks as $bloque) {
+        $html .= '<tr>
+                    <th class="bg-[#34495e] text-white p-2 text-center font-semibold border border-gray-300">
+                        ' . substr($bloque['hora_inicio'], 0, 5) . ' – ' . substr($bloque['hora_fin'], 0, 5) . '
+                    </th>';
+        
+        foreach ($dias as $dia) {
+            $assignment = getAssignmentForBlock($horario, $dia, $bloque['id_bloque']);
+            $html .= '<td class="border border-gray-300 p-2 text-center horario-cell" style="min-width: 100px;">';
+            
+            if ($assignment) {
+                $html .= '<div class="bg-blue-100 text-blue-800 p-1 rounded text-xs">
+                            <div class="font-semibold">' . htmlspecialchars($assignment['grupo_nombre']) . '</div>
+                            <div>' . htmlspecialchars($assignment['materia_nombre']) . '</div>
+                          </div>';
+            } else {
+                $html .= '<span class="text-gray-400 text-xs">Libre</span>';
+            }
+            
+            $html .= '</td>';
+        }
+        
+        $html .= '</tr>';
+    }
+    
+    $html .= '</tbody></table></div>';
+    return $html;
+}
+
+function getAssignmentForBlock($horario, $dia, $idBloque) {
+    foreach ($horario as $assignment) {
+        if (strtoupper($assignment['dia']) === $dia && $assignment['id_bloque'] == $idBloque) {
+            return $assignment;
+        }
+    }
+    return null;
+}
+?>
+<!DOCTYPE html>
+<html lang="<?php echo $translation->getCurrentLanguage(); ?>"<?php echo $translation->isRTL() ? ' dir="rtl"' : ''; ?>>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><?php _e('app_name'); ?> — Mi Horario</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <?php echo Sidebar::getStyles(); ?>
+</head>
+<body class="bg-bg font-sans text-gray-800 leading-relaxed">
+    <div class="flex min-h-screen">
+        <?php echo $sidebar->render(); ?>
+
+        <main class="flex-1 flex flex-col">
+            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+                <div class="w-8"></div>
+                
+                <div class="text-white text-xl font-semibold text-center">
+                    <?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_teacher'); ?>)
+                </div>
+                
+                <div class="flex items-center">
+                    <?php echo $languageSwitcher->render('', 'mr-4'); ?>
+                    <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                    </button>
+                    
+                    <div class="relative group">
+                        <button class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-darkblue font-semibold hover:bg-gray-100 transition-colors" id="userMenuButton">
+                            <?php echo htmlspecialchars(AuthHelper::getUserInitials()); ?>
+                        </button>
+                        
+                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block" id="userMenu">
+                            <div class="px-4 py-2 text-sm text-gray-700 border-b">
+                                <div class="font-medium"><?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?></div>
+                                <div class="text-gray-500"><?php _e('role_teacher'); ?></div>
+                            </div>
+                            <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" id="logoutButton">
+                                <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 713-3h4a3 3 0 713 3v1"></path>
+                                </svg>
+                                <?php _e('logout'); ?>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="flex-1 px-6 py-8">
+                <div class="max-w-6xl mx-auto">
+                    <div class="mb-8">
+                        <h2 class="text-darktext text-2xl font-semibold mb-2.5">Mi Horario</h2>
+                        <p class="text-muted mb-6 text-base">Consulte sus horarios de clases y carga horaria asignada</p>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500">Carga Horaria</p>
+                                    <p class="text-2xl font-semibold text-gray-900"><?php echo $cargaHoraria; ?> horas</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 712-2h2a2 2 0 712 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 712-2h2a2 2 0 712 2v14a2 2 0 71-2 2h-2a2 2 0 71-2-2z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500">Porcentaje de Margen</p>
+                                    <p class="text-2xl font-semibold text-gray-900"><?php echo $porcentajeMargen; ?>%</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 <?php echo $cargaHoraria > 16 ? 'bg-orange-100' : 'bg-green-100'; ?> rounded-full flex items-center justify-center">
+                                        <svg class="w-5 h-5 <?php echo $cargaHoraria > 16 ? 'text-orange-600' : 'text-green-600'; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500">Estado</p>
+                                    <p class="text-lg font-semibold <?php echo $cargaHoraria > 16 ? 'text-orange-600' : 'text-green-600'; ?>">
+                                        <?php echo $cargaHoraria > 16 ? 'Más de 16h' : 'Normal'; ?>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Schedule Table -->
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-medium text-gray-900">Mi Horario de Clases</h3>
+                            <button onclick="window.print()" 
+                                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                                </svg>
+                                Imprimir
+                            </button>
+                        </div>
+                        <?php echo generateScheduleTable($miHorario, $timeBlocks ?? []); ?>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            if (confirm('<?php _e('confirm_logout'); ?>')) {
+                window.location.href = '/src/controllers/LogoutController.php';
+            }
+        });
+    </script>
+</body>
+</html>

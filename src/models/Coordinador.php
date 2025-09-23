@@ -1,12 +1,5 @@
 <?php
 
-/**
- * Coordinador Model
- * 
- * This model handles all database operations related to coordinators.
- * Coordinators are users with the COORDINADOR role.
- */
-
 class Coordinador {
     private $db;
     
@@ -14,9 +7,6 @@ class Coordinador {
         $this->db = $database;
     }
     
-    /**
-     * Obtener todos los coordinadores con sus roles
-     */
     public function getAllCoordinadores() {
         try {
             $query = "SELECT u.*, 
@@ -39,9 +29,6 @@ class Coordinador {
         }
     }
     
-    /**
-     * Obtener coordinador por ID
-     */
     public function getCoordinadorById($id) {
         try {
             $query = "SELECT u.*, 

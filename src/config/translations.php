@@ -1,8 +1,4 @@
 <?php
-/**
- * Translation Configuration
- * Sistema de traducciones para Chronos - Soporte para Español, Italiano e Inglés
- */
 
 return [
     'default_language' => 'es',
@@ -12,6 +8,6 @@ return [
         'it' => 'Italiano', 
         'en' => 'English'
     ],
-    'rtl_languages' => [], // Idiomas de derecha a izquierda
+    'rtl_languages' => [],
     'fallback_language' => 'es'
 ];

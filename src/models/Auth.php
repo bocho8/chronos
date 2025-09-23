@@ -6,22 +6,12 @@ class Auth {
         $this->db = $database;
     }
     
-    /**
-     * Authenticate user using cedula and password
-     * 
-     * @param string $cedula User's cedula (7-8 digits)
-     * @param string $password User's password
-     * @param string $role User's role
-     * @return array|false User data if successful, false if failed
-     */
     public function authenticate($cedula, $password, $role) {
         try {
-            // Validate cedula format
             if (!$this->validateCedula($cedula)) {
                 return false;
             }
             
-            // Prepare query to get user by cedula and role using the new junction table structure
             $query = "SELECT u.id_usuario, u.cedula, u.nombre, u.apellido, u.email, u.telefono, 
                              u.contrasena_hash, ur.nombre_rol, r.descripcion as rol_descripcion
                       FROM usuario u 
@@ -37,15 +27,11 @@ class Auth {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($user && password_verify($password, $user['contrasena_hash'])) {
-                // Log successful login
                 $this->logLogin($cedula, 'LOGIN_EXITOSO', 'Inicio de sesión exitoso');
-                
-                // Return user data without password hash
                 unset($user['contrasena_hash']);
                 return $user;
             }
             
-            // Log failed login attempt
             $this->logLogin($cedula, 'LOGIN_FALLIDO', 'Intento de inicio de sesión fallido');
             
             return false;
