@@ -6,10 +6,13 @@
 // Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
-require_once __DIR__ . '/../../config/translations.php';
+require_once __DIR__ . '/../../helpers/Translation.php';
 
 // Initialize secure session first
 initSecureSession();
+
+// Initialize translation system
+$translation = Translation::getInstance();
 
 // Require authentication and director role
 AuthHelper::requireRole('DIRECTOR');
@@ -21,64 +24,108 @@ if (!AuthHelper::checkSessionTimeout()) {
 }
 
 // Get user data
-$user = $_SESSION['user'];
-$translation = new Translation();
+$user = AuthHelper::getCurrentUser();
 ?>
 
 <!DOCTYPE html>
-<html lang="<?php echo $translation->getCurrentLanguage(); ?>"<?php echo $translation->isRTL() ? ' dir="rtl"' : ''; ?>>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php _e('app_name'); ?> — <?php _e('dashboard_title'); ?></title>
-    <link rel="stylesheet" href="/css/styles.css">
+    <title>Bienvenido (Director)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-bg font-sans text-gray-800 leading-relaxed">
-    <div class="min-h-screen flex">
-        <!-- Sidebar -->
-        <?php include __DIR__ . '/../../components/Sidebar.php'; ?>
-        
-        <!-- Main Content -->
+<body class="bg-gray-100 font-sans text-gray-800">
+
+    <div class="flex h-screen">
+        <aside class="w-64 bg-white shadow-lg p-6 flex flex-col items-center">
+            <div class="flex items-center space-x-2 mb-8">
+                <img src="assets/images/LogoScuola.png" alt="Logo" class="h-10 w-10">
+                <span class="text-xl font-bold text-gray-800">Scuola Italiana<br>di Montevideo</span>
+            </div>
+            <nav class="w-full">
+                <ul>
+                    <li class="mb-4">
+                        <a href="director-inicio.php" class="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded-md">
+                            <span class="mr-3">🏠</span>
+                            Inicio
+                        </a>
+                    </li>
+                    <li class="mb-4">
+                        <a href="director-horarios.php" class="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded-md bg-blue-100 text-blue-800">
+                            <span class="mr-3">✅</span>
+                            Horarios Semanales
+                        </a>
+                    </li>
+                    <li class="mb-4">
+                        <a href="director-asignacion.php" class="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded-md">
+                            <span class="mr-3">📝</span>
+                            Asignación Docentes
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
         <div class="flex-1 flex flex-col">
-            <!-- Header -->
-            <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <h1 class="text-2xl font-bold text-gray-900"><?php _e('dashboard_title'); ?></h1>
-                    <div class="flex items-center space-x-4">
-                        <span class="text-sm text-gray-600"><?php echo htmlspecialchars($user['nombre'] . ' ' . $user['apellido']); ?></span>
-                        <a href="/src/views/logout.php" class="text-sm text-red-600 hover:text-red-800"><?php _e('logout'); ?></a>
-                    </div>
-                </div>
+            <header class="flex justify-between items-center px-8 py-4 bg-white shadow-md">
+                <h1 class="text-3xl font-bold text-gray-800">Bienvenido (Director)</h1>
+                <button class="text-gray-600 hover:text-gray-800">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
             </header>
-            
-            <!-- Dashboard Content -->
-            <main class="flex-1 p-6">
-                <div class="max-w-7xl mx-auto">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Welcome Card -->
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <h2 class="text-lg font-semibold text-gray-900 mb-2"><?php _e('welcome'); ?></h2>
-                            <p class="text-gray-600"><?php echo htmlspecialchars($user['nombre'] . ' ' . $user['apellido']); ?></p>
-                            <p class="text-sm text-gray-500 mt-1"><?php _e('role_director'); ?></p>
+
+            <main class="flex-1 p-8 overflow-y-auto">
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex flex-col items-center mb-12">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-4">DIRECTORA: <?php echo htmlspecialchars($user['nombre'] . ' ' . $user['apellido']); ?></h2>
+                        <div class="flex items-center space-x-4">
+                            <input type="text" class="px-4 py-2 border rounded-md text-gray-700" placeholder="Julio 2025" readonly>
+                            <button class="px-6 py-2 bg-blue-900 text-white font-medium rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-opacity-50">
+                                Firma Digital
+                            </button>
                         </div>
-                        
-                        <!-- Quick Actions -->
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <h2 class="text-lg font-semibold text-gray-900 mb-4"><?php _e('quick_actions'); ?></h2>
-                            <div class="space-y-2">
-                                <a href="#" class="block text-blue-600 hover:text-blue-800"><?php _e('view_reports'); ?></a>
-                                <a href="#" class="block text-blue-600 hover:text-blue-800"><?php _e('manage_schedules'); ?></a>
-                                <a href="#" class="block text-blue-600 hover:text-blue-800"><?php _e('view_statistics'); ?></a>
+                    </div>
+
+                    <div class="mb-12">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-6">Resumen de Estado</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 text-center">
+                                <p class="text-gray-500 text-sm">Horarios por Aprobar</p>
+                                <p class="text-4xl font-bold text-gray-800 mt-2">3</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 text-center">
+                                <p class="text-gray-500 text-sm">Docentes sin Grupo</p>
+                                <p class="text-4xl font-bold text-gray-800 mt-2">2</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 text-center">
+                                <p class="text-gray-500 text-sm">Próximos Vencimientos</p>
+                                <p class="text-4xl font-bold text-gray-800 mt-2">3</p>
                             </div>
                         </div>
-                        
-                        <!-- Recent Activity -->
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <h2 class="text-lg font-semibold text-gray-900 mb-4"><?php _e('recent_activity'); ?></h2>
-                            <p class="text-gray-600 text-sm"><?php _e('no_recent_activity'); ?></p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-6">Próximos Vencimientos</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                                <p class="text-gray-800 font-medium text-lg">Certificado de Inscripción</p>
+                                <p class="text-sm text-gray-500 mt-1">Vence en 10 días</p>
+                                <p class="text-red-600 font-semibold text-xs mt-2">Urgente</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                                <p class="text-gray-800 font-medium text-lg">Informe de Inspección</p>
+                                <p class="text-sm text-gray-500 mt-1">Vence en 15 días</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                                <p class="text-gray-800 font-medium text-lg">Documentación ANEP</p>
+                                <p class="text-sm text-gray-500 mt-1">Vence en 30 días</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -87,4 +134,3 @@ $translation = new Translation();
     </div>
 </body>
 </html>
-
