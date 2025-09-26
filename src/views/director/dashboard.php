@@ -25,6 +25,10 @@ if (!AuthHelper::checkSessionTimeout()) {
 
 // Get user data
 $user = AuthHelper::getCurrentUser();
+
+// Definimos la variable para saber en qué archivo estamos.
+// Usaremos esta variable para resaltar el botón activo.
+$current_page = basename($_SERVER['PHP_SELF']); 
 ?>
 
 <!DOCTYPE html>
@@ -41,28 +45,28 @@ $user = AuthHelper::getCurrentUser();
 <body class="bg-gray-100 font-sans text-gray-800">
 
     <div class="flex h-screen">
-        <aside class="w-64 bg-white shadow-lg p-6 flex flex-col items-center">
-            <div class="flex items-center space-x-2 mb-8">
-                <img src="assets/images/LogoScuola.png" alt="Logo" class="h-10 w-10">
-                <span class="text-xl font-bold text-gray-800">Scuola Italiana<br>di Montevideo</span>
+        <aside class="w-64 bg-white shadow-lg flex flex-col items-center">
+            
+            <div class="flex items-center space-x-2 w-full pl-6 bg-blue-900 text-white h-20">
+                <img src="/assets/images/LogoScuola.png" alt="Logo" class="h-8 w-auto">
+                <span class="text-xl font-bold leading-tight">Scuola Italiana<br>di Montevideo</span>
             </div>
-            <nav class="w-full">
+            
+            <nav class="w-full p-6">
                 <ul>
                     <li class="mb-4">
-                        <a href="director-inicio.php" class="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded-md">
-                            <span class="mr-3">🏠</span>
+                        <a href="dashboard.php" class="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded-md 
+                            <?php echo ($current_page == 'dashboard.php' || $current_page == 'index.php') ? 'bg-blue-100 text-blue-800 font-semibold' : ''; ?>">
                             Inicio
                         </a>
                     </li>
                     <li class="mb-4">
-                        <a href="director-horarios.php" class="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded-md bg-blue-100 text-blue-800">
-                            <span class="mr-3">✅</span>
+                        <a href="director-horarios.php" class="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded-md">
                             Horarios Semanales
                         </a>
                     </li>
                     <li class="mb-4">
                         <a href="director-asignacion.php" class="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded-md">
-                            <span class="mr-3">📝</span>
                             Asignación Docentes
                         </a>
                     </li>
@@ -71,15 +75,14 @@ $user = AuthHelper::getCurrentUser();
         </aside>
 
         <div class="flex-1 flex flex-col">
-            <header class="flex justify-between items-center px-8 py-4 bg-white shadow-md">
-                <h1 class="text-3xl font-bold text-gray-800">Bienvenido (Director)</h1>
-                <button class="text-gray-600 hover:text-gray-800">
+            <header class="flex justify-center items-center px-8 shadow-md bg-blue-900 h-20">
+                <h1 class="text-3xl font-bold text-white">Bienvenido (Director)</h1>
+                <button class="absolute right-8 text-white hover:text-gray-300 h-full flex items-center"> 
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                     </svg>
                 </button>
             </header>
-
             <main class="flex-1 p-8 overflow-y-auto">
                 <div class="max-w-6xl mx-auto">
                     <div class="flex flex-col items-center mb-12">
