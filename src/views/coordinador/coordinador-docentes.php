@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Coordinador</title>
+    <title>Docentes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Puedes añadir aquí pequeñas personalizaciones si es necesario */
@@ -22,13 +22,13 @@
             <nav class="flex-1 px-4 py-4">
                 <ul class="space-y-2">
                     <li>
-                        <a href="dashboard.php" class="flex items-center p-2 text-base font-normal text-blue-800 bg-blue-100 rounded-lg">
+                        <a href="dashboard.php" class="flex items-center p-2 text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                             <span class="ml-3">Inicio</span>
                         </a>
                     </li>
                     <li>
-                        <a href="coordinador-docentes.php" class="flex items-center p-2 text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
+                        <a href="coordinador-docentes.php" class="flex items-center p-2 text-base font-normal text-blue-800 bg-blue-100 rounded-lg">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197m0 0A6.995 6.995 0 0012 12a6.995 6.995 0 00-3-5.197M15 21a9 9 0 00-9-9"></path></svg>
                             <span class="ml-3">Docentes</span>
                         </a>
@@ -56,54 +56,49 @@
             </header>
 
             <main class="flex-1 p-8 overflow-y-auto">
-                
-                <div>
-                    <h2 class="text-3xl font-bold text-gray-800">Bienvenido al Panel Coordinador</h2>
-                    <p class="text-gray-500 mt-1">Gestiona docentes y horarios.</p>
+                <div class="max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800">Registros de Docentes</h2>
+                    <p class="text-gray-500 mt-1">Lista de todos los docentes registrados.</p>
                     
+                    <div class="mt-6 flex space-x-4">
+                        <button class="px-6 py-3 font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Eliminar Seleccionados</button>
+                        <button class="px-6 py-3 font-medium text-white bg-[#002366] rounded-md hover:bg-blue-900">Agregar Docente</button>
+                    </div>
+
                     <div class="mt-8 space-y-4">
-                        <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between">
-                            <div class="flex items-center space-x-4">
-                                <div class="w-16 h-16 bg-gray-200 rounded-full"></div>
-                                <div>
-                                    <h3 class="font-bold text-gray-800">Coordinador Alberto De Mattos</h3>
-                                    <p class="text-sm text-gray-500">Experiencia: 18 años.</p>
-                                </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm flex items-center">
+                            <div class="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center text-blue-700">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             </div>
-                            <div class="flex space-x-3">
-                                <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cerrar Sesión</button>
-                                <button class="px-4 py-2 text-sm font-medium text-white bg-[#002366] rounded-md hover:bg-blue-900">Perfil</button>
+                            <div class="ml-4">
+                                <h3 class="font-bold text-gray-800">Juan Pérez</h3>
+                                <p class="text-sm text-gray-500">Matemáticas</p>
                             </div>
                         </div>
 
-                        <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between">
-                            <div class="flex items-center space-x-4">
-                                <div class="w-16 h-16 bg-gray-200 rounded-full"></div>
-                                <div>
-                                    <h3 class="font-bold text-gray-800">Coordinadora Patricia Molinari</h3>
-                                    <p class="text-sm text-gray-500">Experiencia: 12 años.</p>
-                                </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm flex items-center">
+                            <div class="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center text-blue-700">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             </div>
-                            <div class="flex space-x-3">
-                                <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cerrar Sesión</button>
-                                <button class="px-4 py-2 text-sm font-medium text-white bg-[#002366] rounded-md hover:bg-blue-900">Perfil</button>
+                            <div class="ml-4">
+                                <h3 class="font-bold text-gray-800">Ana Gómez</h3>
+                                <p class="text-sm text-gray-500">Historia</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-sm flex items-center">
+                            <div class="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center text-blue-700">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="font-bold text-gray-800">Luis Rodríguez</h3>
+                                <p class="text-sm text-gray-500">Biología</p>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="mt-12">
-                     <h2 class="text-3xl font-bold text-gray-800">Panel de Coordinación de Horarios</h2>
-                     <p class="text-gray-500 mt-1">Crea y asigna horarios para los docentes y grupos.</p>
-                     <div class="mt-6 flex space-x-4">
-                          <button class="px-6 py-3 font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Asignar Manual</button>
-                          <button class="px-6 py-3 font-medium text-white bg-[#002366] rounded-md hover:bg-blue-900">Generar Automático</button>
-                     </div>
-                </div>
-
             </main>
         </div>
     </div>
-
 </body>
 </html>

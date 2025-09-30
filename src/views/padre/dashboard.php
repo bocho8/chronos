@@ -1,60 +1,161 @@
-<?php
-/**
- * Dashboard del Padre - Using BaseView component
- */
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido (Padre/Madre)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-require_once __DIR__ . '/../../components/BaseView.php';
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'school-blue-dark': '#0f3c7a', // El azul oscuro de la imagen
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
 
-// Page-specific logic for padre dashboard
-$currentUser = AuthHelper::getCurrentUser();
-
-// Prepare main content
-$content = '
-<div class="max-w-6xl mx-auto">
-    <div class="mb-8">
-        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e(\'parent_dashboard\'); ?></h2>
-        <p class="text-muted mb-6 text-base"><?php _e(\'parent_dashboard_description\'); ?></p>
-    </div>
-
-    <!-- Parent Quick Actions -->
-    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e(\'parent_actions\'); ?></h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <a href="/src/views/admin/admin-estudiantes.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <p class="font-medium text-gray-900"><?php _e(\'students\'); ?></p>
-                    <p class="text-sm text-gray-500"><?php _e(\'view_my_children\'); ?></p>
-                </div>
-            </a>
+    <div class="flex h-screen">
+        <aside class="w-64 bg-white shadow-xl flex flex-col">
             
-            <a href="/src/views/admin/admin-horarios-estudiante.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 616 0z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            <div class="flex items-center space-x-2 w-full pl-6 py-5 h-20 bg-school-blue-dark text-white border-b border-blue-900/50">
+                <img src="/assets/images/LogoScuola.png" alt="Logo" class="h-8 w-auto"> 
+                <span class="text-xl font-bold leading-tight">Scuola Italiana<br>di Montevideo</span>
+            </div>
+            
+            <nav class="w-full mt-2 p-4">
+                <ul>
+                    <li class="mb-2">
+                        <a href="dashboard.php" class="flex items-center p-3 text-school-blue-dark font-semibold rounded-md shadow-md bg-blue-100">
+                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Horario de mi hijo
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <div class="flex-1 flex flex-col">
+            <header class="flex justify-between items-center px-8 shadow-md bg-school-blue-dark h-20">
+                <div class="flex-1 flex justify-center items-center">
+                    <h1 class="text-3xl font-bold text-white">Bienvenido (Padre/Madre)</h1>
+                </div>
+                <button class="text-white hover:text-gray-300 h-full flex items-center absolute right-4"> 
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                     </svg>
+                </button>
+            </header>
+
+            <main class="flex-1 p-8 overflow-y-auto">
+                <div class="max-w-6xl mx-auto flex flex-col items-center"> 
+                    
+                    <div class="mb-12 w-full">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">Bienvenido al Panel de Seguimiento</h2>
+                        <p class="text-gray-600 mb-8 text-center">Aquí puedes monitorear el progreso académico de tu hijo.</p>
+                        
+                        <div class="mb-16">
+                            
+                            <h3 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Calendario semanal</h3>
+                            
+                            <div class="flex justify-center w-full"> 
+                                <div class="w-full max-w-sm p-4 bg-white rounded-lg shadow-lg border border-gray-200">
+                                    <div class="text-center font-bold text-white bg-school-blue-dark p-2 rounded-t-lg">Horarios semanales</div>
+                                    <div class="grid grid-cols-5 text-center text-sm font-semibold text-gray-700 border-b border-gray-300">
+                                        <div class="py-2 border-r border-gray-200">Lunes</div>
+                                        <div class="py-2 border-r border-gray-200">Martes</div>
+                                        <div class="py-2 border-r border-gray-200">Miércoles</div>
+                                        <div class="py-2 border-r border-gray-200">Jueves</div>
+                                        <div class="py-2">Viernes</div>
+                                    </div>
+                                    <?php for ($i = 0; $i < 5; $i++): ?>
+                                        <div class="grid grid-cols-5 text-center text-xs text-gray-600 border-b border-gray-200">
+                                            <div class="py-2 border-r border-gray-200">Text</div>
+                                            <div class="py-2 border-r border-gray-200">Text</div>
+                                            <div class="py-2 border-r border-gray-200">Text</div>
+                                            <div class="py-2 border-r border-gray-200">Text</div>
+                                            <div class="py-2">Text</div>
+                                        </div>
+                                    <?php endfor; ?>
+                                    
+                                    <div class="grid grid-cols-5 text-center text-xs font-semibold text-white bg-gray-500">
+                                        <div class="py-2 col-span-5">ALMUERZO</div>
+                                    </div>
+
+                                    <?php for ($i = 0; $i < 3; $i++): ?>
+                                        <div class="grid grid-cols-5 text-center text-xs text-gray-600 border-b border-gray-200">
+                                            <div class="py-2 border-r border-gray-200">Text</div>
+                                            <div class="py-2 border-r border-gray-200">Text</div>
+                                            <div class="py-2 border-r border-gray-200">Text</div>
+                                            <div class="py-2 border-r border-gray-200">Text</div>
+                                            <div class="py-2">Text</div>
+                                        </div>
+                                    <?php endfor; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center mb-8 w-full">
+                            <span class="text-3xl text-gray-400">...</span>
+                        </div>
+
+                        <div class="w-full">
+                            <h3 class="text-3xl font-semibold text-gray-800 mb-6">Próximas Evaluaciones</h3>
+                            
+                            <div class="space-y-4">
+                                
+                                <div class="flex items-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
+                                    <div class="flex flex-col items-center justify-center w-12 h-12 bg-red-500 text-white rounded-full flex-shrink-0">
+                                        <span class="text-lg font-bold">17</span>
+                                    </div>
+                                    <div class="ml-4 flex-grow">
+                                        <p class="text-lg font-medium text-gray-800">Matemáticas</p>
+                                        <p class="text-sm text-gray-500">Examen Final</p>
+                                    </div>
+                                    <div class="text-right text-sm font-semibold text-gray-600">
+                                        Fecha: 25/10/2023
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
+                                    <div class="flex flex-col items-center justify-center w-12 h-12 bg-red-500 text-white rounded-full flex-shrink-0">
+                                        <span class="text-lg font-bold">17</span>
+                                    </div>
+                                    <div class="ml-4 flex-grow">
+                                        <p class="text-lg font-medium text-gray-800">Programación</p>
+                                        <p class="text-sm text-gray-500">Trabajo Práctico</p>
+                                    </div>
+                                    <div class="text-right text-sm font-semibold text-gray-600">
+                                        Fecha: 27/10/2023
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
+                                    <div class="flex flex-col items-center justify-center w-12 h-12 bg-red-500 text-white rounded-full flex-shrink-0">
+                                        <span class="text-lg font-bold">17</span>
+                                    </div>
+                                    <div class="ml-4 flex-grow">
+                                        <p class="text-lg font-medium text-gray-800">Sistemas Operativos</p>
+                                        <p class="text-sm text-gray-500">Presentación de Proyecto</p>
+                                    </div>
+                                    <div class="text-right text-sm font-semibold text-gray-600">
+                                        Fecha: 30/10/2023
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <p class="font-medium text-gray-900"><?php _e(\'student_schedules\'); ?></p>
-                    <p class="text-sm text-gray-500"><?php _e(\'view_children_schedules\'); ?></p>
-                </div>
-            </a>
+            </main>
         </div>
     </div>
-</div>
-';
-
-// Render the complete page using BaseView
-$view = new BaseView('dashboard.php', 'Dashboard Padre', 'PADRE');
-echo $view->renderPage(
-    '<?php _e(\'app_name\'); ?> — Dashboard Padre',
-    '<section class="flex-1 px-6 py-8">' . $content . '</section>',
-    ['toast' => false, 'modal' => false, 'logout' => true, 'userMenu' => true]
-);
-?>
+</body>
+</html>
