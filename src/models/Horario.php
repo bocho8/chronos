@@ -392,6 +392,23 @@ class Horario {
     }
     
     /**
+     * Obtiene un grupo por ID
+     */
+    public function getGrupoById($idGrupo) {
+        try {
+            $query = "SELECT * FROM grupo WHERE id_grupo = :id_grupo";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_grupo', $idGrupo, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting grupo by ID: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
      * Obtiene todas las materias
      */
     public function getAllMaterias() {

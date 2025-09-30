@@ -434,4 +434,24 @@ return [
     'group' => 'Grupo',
     'view_schedule' => 'Ver Horario',
     'export' => 'Exportar',
+    
+    // Parent Dashboard specific translations
+    'parent_dashboard' => 'Panel de Seguimiento',
+    'parent_dashboard_description' => 'Aquí puedes monitorear el progreso académico de tu hijo',
+    'weekly_schedule' => 'Horario Semanal',
+    'upcoming_evaluations' => 'Próximas Evaluaciones',
+    'child_schedule' => 'Horario de mi hijo',
+    'notifications' => 'Notificaciones',
+    'parent_functions' => 'Funciones de Padre',
+    'parent_functions_description' => 'Acceso a funciones específicas para padres',
+    
+    // Parent Views specific translations
+    'no_students_found' => 'No se encontraron estudiantes',
+    'try_adjusting_your_search' => 'Intenta ajustar tu búsqueda o filtros',
+    'type' => 'Tipo',
+    'no_schedule_found' => 'No se encontró horario',
+    'no_schedule_available_for_group' => 'No hay horario disponible para este grupo',
+    'try_again' => 'Intente nuevamente',
+    'clear' => 'Limpiar',
+    'no_schedule_available' => 'No hay horario disponible',
 ];

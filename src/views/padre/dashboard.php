@@ -1,161 +1,237 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenido (Padre/Madre)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<?php
+/**
+ * Dashboard del Padre
+ * Panel de control para seguimiento académico
+ */
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'school-blue-dark': '#0f3c7a', // El azul oscuro de la imagen
-                    }
-                }
-            }
+require_once __DIR__ . '/../../config/session.php'; 
+require_once __DIR__ . '/../../helpers/Translation.php';
+require_once __DIR__ . '/../../helpers/AuthHelper.php';
+require_once __DIR__ . '/../../components/LanguageSwitcher.php';
+require_once __DIR__ . '/../../components/Sidebar.php';
+require_once __DIR__ . '/../../models/Database.php';
+require_once __DIR__ . '/../../models/Horario.php';
+
+// Initialize secure session
+initSecureSession();
+
+// Initialize components
+$translation = Translation::getInstance();
+$languageSwitcher = new LanguageSwitcher();
+$sidebar = new Sidebar('dashboard.php');
+
+// Handle language change
+$languageSwitcher->handleLanguageChange();
+
+// Require authentication and padre role
+AuthHelper::requireRole('PADRE'); 
+
+// Check session timeout
+if (!AuthHelper::checkSessionTimeout()) {
+    header("Location: /src/views/login.php?message=session_expired");
+    exit();
+}
+
+// Load current user info
+$currentUser = AuthHelper::getCurrentUser();
+
+// Load database configuration and get data
+try {
+    $dbConfig = require __DIR__ . '/../../config/database.php';
+    $database = new Database($dbConfig);
+    
+    // Get models
+    $horarioModel = new Horario($database->getConnection());
+    
+    // Get grupos (to show as students for parents)
+    $grupos = $horarioModel->getAllGrupos();
+    
+    // Get sample horarios for demonstration (first grupo if exists)
+    $sampleHorarios = [];
+    if (!empty($grupos)) {
+        $firstGrupo = $grupos[0];
+        $sampleHorarios = $horarioModel->getHorariosByGrupo($firstGrupo['id_grupo']);
+    }
+    
+    // Get bloques horarios
+    $bloques = $horarioModel->getAllBloques();
+    
+} catch (Exception $e) {
+    error_log("Error loading dashboard data: " . $e->getMessage());
+    $grupos = [];
+    $sampleHorarios = [];
+    $bloques = [];
+}
+
+function generate_class_row($horarios, $bloqueId, $dia) {
+    // Buscar horario para este bloque y día
+    $horarioEncontrado = null;
+    foreach ($horarios as $horario) {
+        if ($horario['id_bloque'] == $bloqueId && $horario['dia'] == $dia) {
+            $horarioEncontrado = $horario;
+            break;
         }
-    </script>
+    }
+    
+    if ($horarioEncontrado) {
+        $materia = htmlspecialchars($horarioEncontrado['materia_nombre'] ?? 'Sin asignar');
+        return '<div class="py-2 px-1 border-r border-b border-gray-200 text-gray-700 bg-blue-50 text-xs" title="' . $materia . '">' . substr($materia, 0, 8) . '</div>';
+    } else {
+        return '<div class="py-2 px-1 border-r border-b border-gray-200 text-gray-700 bg-gray-50 text-xs">Libre</div>';
+    }
+}
+
+function generate_weekly_schedule($horarios, $bloques) {
+    $dias = [1, 2, 3, 4, 5]; // Lunes a Viernes
+    $rows = '';
+    
+    foreach ($bloques as $bloque) {
+        $rows .= '<div class="grid grid-cols-5 gap-0 text-center text-xs text-gray-600 border-b border-gray-200">';
+        
+        foreach ($dias as $dia) {
+            $rows .= generate_class_row($horarios, $bloque['id_bloque'], $dia);
+        }
+        
+        $rows .= '</div>';
+    }
+    
+    return $rows;
+}
+
+// Generate schedule rows
+$schedule_rows = generate_weekly_schedule($sampleHorarios, $bloques);
+?>
+
+<!DOCTYPE html>
+<html lang="<?php echo $translation->getCurrentLanguage(); ?>"<?php echo $translation->isRTL() ? ' dir="rtl"' : ''; ?>>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><?php _e('app_name'); ?> — Dashboard Padre</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <?php echo Sidebar::getStyles(); ?>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800">
+<body class="bg-bg font-sans text-gray-800 leading-relaxed">
+    <div class="flex min-h-screen">
+        <?php echo $sidebar->render(); ?>
 
-    <div class="flex h-screen">
-        <aside class="w-64 bg-white shadow-xl flex flex-col">
-            
-            <div class="flex items-center space-x-2 w-full pl-6 py-5 h-20 bg-school-blue-dark text-white border-b border-blue-900/50">
-                <img src="/assets/images/LogoScuola.png" alt="Logo" class="h-8 w-auto"> 
-                <span class="text-xl font-bold leading-tight">Scuola Italiana<br>di Montevideo</span>
-            </div>
-            
-            <nav class="w-full mt-2 p-4">
-                <ul>
-                    <li class="mb-2">
-                        <a href="dashboard.php" class="flex items-center p-3 text-school-blue-dark font-semibold rounded-md shadow-md bg-blue-100">
-                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            Horario de mi hijo
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
-
-        <div class="flex-1 flex flex-col">
-            <header class="flex justify-between items-center px-8 shadow-md bg-school-blue-dark h-20">
-                <div class="flex-1 flex justify-center items-center">
-                    <h1 class="text-3xl font-bold text-white">Bienvenido (Padre/Madre)</h1>
+        <main class="flex-1 flex flex-col">
+            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+                <div class="w-8"></div>
+                
+                <div class="text-white text-xl font-semibold text-center">
+                    <?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_parent'); ?>)
                 </div>
-                <button class="text-white hover:text-gray-300 h-full flex items-center absolute right-4"> 
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                    </svg>
-                </button>
+                
+                <div class="flex items-center">
+                    <?php echo $languageSwitcher->render('', 'mr-4'); ?>
+                    <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
+                        <img src="/assets/images/icons/bell.png" class="h-6 w-6" alt="<?php _e('notifications'); ?>" />
+                    </button>
+                    
+                    <div class="relative group">
+                        <button class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-darkblue font-semibold hover:bg-gray-100 transition-colors" id="userMenuButton">
+                            <?php echo htmlspecialchars(AuthHelper::getUserInitials()); ?>
+                        </button>
+                        
+                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block" id="userMenu">
+                            <div class="px-4 py-2 text-sm text-gray-700 border-b">
+                                <div class="font-medium"><?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?></div>
+                                <div class="text-gray-500"><?php _e('role_parent'); ?></div>
+                            </div>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" id="profileLink">
+                                <img src="/assets/images/icons/user.png" class="inline w-4 h-4 mr-2" alt="<?php _e('profile'); ?>" />
+                                <?php _e('profile'); ?>
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" id="settingsLink">
+                                <img src="/assets/images/icons/gear.png" class="inline w-4 h-4 mr-2" alt="<?php _e('settings'); ?>" />
+                                <?php _e('settings'); ?>
+                            </a>
+                            <div class="border-t"></div>
+                            <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" id="logoutButton">
+                                <img src="/assets/images/icons/logout.png" class="inline w-4 h-4 mr-2" alt="<?php _e('logout'); ?>" />
+                                <?php _e('logout'); ?>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </header>
 
-            <main class="flex-1 p-8 overflow-y-auto">
-                <div class="max-w-6xl mx-auto flex flex-col items-center"> 
-                    
-                    <div class="mb-12 w-full">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">Bienvenido al Panel de Seguimiento</h2>
-                        <p class="text-gray-600 mb-8 text-center">Aquí puedes monitorear el progreso académico de tu hijo.</p>
-                        
-                        <div class="mb-16">
-                            
-                            <h3 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Calendario semanal</h3>
-                            
-                            <div class="flex justify-center w-full"> 
-                                <div class="w-full max-w-sm p-4 bg-white rounded-lg shadow-lg border border-gray-200">
-                                    <div class="text-center font-bold text-white bg-school-blue-dark p-2 rounded-t-lg">Horarios semanales</div>
-                                    <div class="grid grid-cols-5 text-center text-sm font-semibold text-gray-700 border-b border-gray-300">
-                                        <div class="py-2 border-r border-gray-200">Lunes</div>
-                                        <div class="py-2 border-r border-gray-200">Martes</div>
-                                        <div class="py-2 border-r border-gray-200">Miércoles</div>
-                                        <div class="py-2 border-r border-gray-200">Jueves</div>
-                                        <div class="py-2">Viernes</div>
-                                    </div>
-                                    <?php for ($i = 0; $i < 5; $i++): ?>
-                                        <div class="grid grid-cols-5 text-center text-xs text-gray-600 border-b border-gray-200">
-                                            <div class="py-2 border-r border-gray-200">Text</div>
-                                            <div class="py-2 border-r border-gray-200">Text</div>
-                                            <div class="py-2 border-r border-gray-200">Text</div>
-                                            <div class="py-2 border-r border-gray-200">Text</div>
-                                            <div class="py-2">Text</div>
-                                        </div>
-                                    <?php endfor; ?>
+            <section class="flex-1 px-6 py-8">
+                <div class="max-w-7xl mx-auto">
+                    <div class="mb-8">
+                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('parent_dashboard'); ?></h2>
+                        <p class="text-muted mb-6 text-base">Aquí puedes monitorear el progreso académico de tu hijo.</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-6 mb-10 border border-gray-100">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-6">
+                            Calendario Semanal
+                        </h3>
+
+                        <div class="overflow-x-auto">
+                            <div class="min-w-full inline-block align-middle">
+                                <div class="border border-gray-200 rounded-lg text-center text-sm font-medium shadow-md">
                                     
-                                    <div class="grid grid-cols-5 text-center text-xs font-semibold text-white bg-gray-500">
-                                        <div class="py-2 col-span-5">ALMUERZO</div>
+                                    <!-- Header with days -->
+                                    <div class="grid grid-cols-5 gap-0">
+                                        <div class="py-3 px-2 bg-blue-600 text-white rounded-tl-lg"><?php _e('monday'); ?></div>
+                                        <div class="py-3 px-2 bg-blue-600 text-white"><?php _e('tuesday'); ?></div>
+                                        <div class="py-3 px-2 bg-blue-600 text-white"><?php _e('wednesday'); ?></div>
+                                        <div class="py-3 px-2 bg-blue-600 text-white"><?php _e('thursday'); ?></div>
+                                        <div class="py-3 px-2 bg-blue-600 text-white rounded-tr-lg"><?php _e('friday'); ?></div>
                                     </div>
 
-                                    <?php for ($i = 0; $i < 3; $i++): ?>
-                                        <div class="grid grid-cols-5 text-center text-xs text-gray-600 border-b border-gray-200">
-                                            <div class="py-2 border-r border-gray-200">Text</div>
-                                            <div class="py-2 border-r border-gray-200">Text</div>
-                                            <div class="py-2 border-r border-gray-200">Text</div>
-                                            <div class="py-2 border-r border-gray-200">Text</div>
-                                            <div class="py-2">Text</div>
+                                    <!-- Schedule rows -->
+                                    <?php if (!empty($bloques)): ?>
+                                        <?php foreach ($bloques as $bloque): ?>
+                                            <div class="grid grid-cols-5 gap-0 border-b border-gray-200">
+                                                <?php for ($dia = 1; $dia <= 5; $dia++): ?>
+                                                    <?php
+                                                    // Buscar horario para este bloque y día
+                                                    $horarioEncontrado = null;
+                                                    foreach ($sampleHorarios as $horario) {
+                                                        if ($horario['id_bloque'] == $bloque['id_bloque'] && $horario['dia'] == $dia) {
+                                                            $horarioEncontrado = $horario;
+                                                            break;
+                                                        }
+                                                    }
+                                                    ?>
+                                                    
+                                                    <?php if ($horarioEncontrado): ?>
+                                                        <div class="py-2 px-1 border-r border-gray-200 text-gray-700 bg-blue-50 text-xs" title="<?php echo htmlspecialchars($horarioEncontrado['materia_nombre'] ?? 'Sin asignar') . ' (' . $bloque['hora_inicio'] . '-' . $bloque['hora_fin'] . ')'; ?>">
+                                                            <?php echo htmlspecialchars(substr($horarioEncontrado['materia_nombre'] ?? 'Sin asignar', 0, 10)); ?>
+                                                        </div>
+                                                    <?php else: ?>
+                                                        <div class="py-2 px-1 border-r border-gray-200 text-gray-700 bg-gray-50 text-xs" title="<?php echo $bloque['hora_inicio'] . '-' . $bloque['hora_fin']; ?>">
+                                                            <?php _e('free'); ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                <?php endfor; ?>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <div class="py-8 text-center text-gray-500">
+                                            <?php _e('no_schedule_available'); ?>
                                         </div>
-                                    <?php endfor; ?>
+                                    <?php endif; ?>
+                                    
                                 </div>
-                            </div>
-                        </div>
-                        <div class="flex justify-center mb-8 w-full">
-                            <span class="text-3xl text-gray-400">...</span>
-                        </div>
-
-                        <div class="w-full">
-                            <h3 class="text-3xl font-semibold text-gray-800 mb-6">Próximas Evaluaciones</h3>
-                            
-                            <div class="space-y-4">
-                                
-                                <div class="flex items-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
-                                    <div class="flex flex-col items-center justify-center w-12 h-12 bg-red-500 text-white rounded-full flex-shrink-0">
-                                        <span class="text-lg font-bold">17</span>
-                                    </div>
-                                    <div class="ml-4 flex-grow">
-                                        <p class="text-lg font-medium text-gray-800">Matemáticas</p>
-                                        <p class="text-sm text-gray-500">Examen Final</p>
-                                    </div>
-                                    <div class="text-right text-sm font-semibold text-gray-600">
-                                        Fecha: 25/10/2023
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
-                                    <div class="flex flex-col items-center justify-center w-12 h-12 bg-red-500 text-white rounded-full flex-shrink-0">
-                                        <span class="text-lg font-bold">17</span>
-                                    </div>
-                                    <div class="ml-4 flex-grow">
-                                        <p class="text-lg font-medium text-gray-800">Programación</p>
-                                        <p class="text-sm text-gray-500">Trabajo Práctico</p>
-                                    </div>
-                                    <div class="text-right text-sm font-semibold text-gray-600">
-                                        Fecha: 27/10/2023
-                                    </div>
-                                </div>
-                                
-                                <div class="flex items-center p-4 bg-white rounded-lg shadow-md border border-gray-200">
-                                    <div class="flex flex-col items-center justify-center w-12 h-12 bg-red-500 text-white rounded-full flex-shrink-0">
-                                        <span class="text-lg font-bold">17</span>
-                                    </div>
-                                    <div class="ml-4 flex-grow">
-                                        <p class="text-lg font-medium text-gray-800">Sistemas Operativos</p>
-                                        <p class="text-sm text-gray-500">Presentación de Proyecto</p>
-                                    </div>
-                                    <div class="text-right text-sm font-semibold text-gray-600">
-                                        Fecha: 30/10/2023
-                                    </div>
-                                </div>
-                                
                             </div>
                         </div>
                     </div>
                 </div>
-            </main>
-        </div>
+            </section>
+        </main>
     </div>
+
+    <script>
+        // Logout functionality
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            if (confirm('<?php _e('confirm_logout'); ?>')) {
+                window.location.href = '/src/controllers/LogoutController.php';
+            }
+        });
+    </script>
 </body>
 </html>
