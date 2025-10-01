@@ -37,9 +37,13 @@ try {
     $horarioModel = new Horario($database->getConnection());
     $horarios = $horarioModel->getAllHorarios();
     $bloques = $horarioModel->getAllBloques();
-    $grupos = $horarioModel->getAllGrupos();
     $materias = $horarioModel->getAllMaterias();
     $docentes = $horarioModel->getAllDocentes();
+    
+    // Get grupos using the dedicated Grupo model
+    require_once __DIR__ . '/../../models/Grupo.php';
+    $grupoModel = new Grupo($database->getConnection());
+    $grupos = $grupoModel->getAllGrupos();
     
     if ($horarios === false) {
         $horarios = [];
@@ -270,8 +274,7 @@ try {
                                             <?php foreach ($dias as $dia): ?>
                                                 <td class="horario-cell text-center font-medium p-2 border border-gray-300 cursor-pointer hover:bg-gray-50" 
                                                     data-bloque="<?php echo $bloque['id_bloque']; ?>" 
-                                                    data-dia="<?php echo $dia; ?>"
-                                                    onclick="openScheduleModal(<?php echo $bloque['id_bloque']; ?>, '<?php echo $dia; ?>')">
+                                                    data-dia="<?php echo $dia; ?>">
                                                     <?php 
                                                     $assignment = $scheduleGrid[$dia][$bloque['id_bloque']] ?? null;
                                                     if ($assignment): ?>
@@ -291,7 +294,7 @@ try {
                                                             </div>
                                                         </div>
                                                     <?php else: ?>
-                                                        <div class="text-gray-400 text-xs"><?php _e('available'); ?></div>
+                                                        <div class="text-gray-400 text-xs" onclick="openScheduleModal(<?php echo $bloque['id_bloque']; ?>, '<?php echo $dia; ?>')"><?php _e('available'); ?></div>
                                                     <?php endif; ?>
                                                 </td>
                                             <?php endforeach; ?>
@@ -313,19 +316,9 @@ try {
 
         // Modal functions
         function openHorarioModal() {
-            isEditMode = false;
-            document.getElementById('horarioModalTitle').textContent = '<?php _e('add_schedule'); ?>';
-            document.getElementById('horarioForm').reset();
-            document.getElementById('horario_id').value = '';
-            document.getElementById('scheduleInfo').innerHTML = '';
-            
-            clearErrors();
-            document.getElementById('horarioModal').classList.remove('hidden');
-            
-            // Focus on first select
-            setTimeout(() => {
-                document.getElementById('id_grupo').focus();
-            }, 100);
+            // Show a message that user needs to select a time slot first
+            alert('Por favor, haga clic en un horario disponible en la tabla para agregar una asignación.');
+            return;
         }
 
         function openScheduleModal(idBloque, dia) {
@@ -427,38 +420,59 @@ try {
         // Handle form submission
         function handleHorarioFormSubmit(e) {
             e.preventDefault();
+            console.log('Form submission started');
             
             clearErrors();
             
             const formData = new FormData(e.target);
             formData.append('action', isEditMode ? 'update' : 'create');
             
+            // Log form data
+            console.log('Form data:');
+            for (let [key, value] of formData.entries()) {
+                console.log(key + ': ' + value);
+            }
+            
             fetch('/src/controllers/horario_handler.php', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(data.message, 'success');
-                    closeHorarioModal();
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    if (data.data && typeof data.data === 'object') {
-                        // Show validation errors
-                        Object.keys(data.data).forEach(field => {
-                            const errorElement = document.getElementById(field + 'Error');
-                            if (errorElement) {
-                                errorElement.textContent = data.data[field];
-                            }
-                        });
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                return response.text();
+            })
+            .then(text => {
+                console.log('Raw response:', text);
+                try {
+                    const data = JSON.parse(text);
+                    console.log('Parsed response:', data);
+                    
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        closeHorarioModal();
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        showToast('Error: ' + data.message, 'error');
+                        if (data.data && typeof data.data === 'object') {
+                            // Show validation errors
+                            Object.keys(data.data).forEach(field => {
+                                const errorElement = document.getElementById(field + 'Error');
+                                if (errorElement) {
+                                    errorElement.textContent = data.data[field];
+                                }
+                            });
+                        } else {
+                            showToast('Error: ' + data.message, 'error');
+                        }
                     }
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    console.error('Response text:', text);
+                    showToast('Error en la respuesta del servidor', 'error');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Fetch error:', error);
                 showToast('Error procesando solicitud', 'error');
             });
         }

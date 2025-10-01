@@ -109,7 +109,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $messageType = 'success';
                     
                     // Log the action
-                    $database->query("INSERT INTO log (id_usuario, accion, fecha) VALUES (?, ?, NOW())", [
+                    $logQuery = "INSERT INTO log (id_usuario, accion, fecha) VALUES (?, ?, NOW())";
+                    $logStmt = $database->getConnection()->prepare($logQuery);
+                    $logStmt->execute([
                         $_SESSION['user']['id_usuario'],
                         "Agregó nuevo docente: $nombre $apellido (CI: $cedula)"
                     ]);
@@ -436,45 +438,22 @@ try {
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Docentes Recientes</h3>
                             
                             <?php if (empty($recentTeachers)): ?>
-                                <div class="text-center py-8">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                    </svg>
-                                    <p class="mt-2 text-sm text-gray-500">No hay docentes registrados</p>
-                                </div>
+                                <p class="text-gray-500 text-center py-4">No hay docentes registrados.</p>
                             <?php else: ?>
-                                <div class="space-y-4">
+                                <div class="space-y-2">
                                     <?php foreach ($recentTeachers as $teacher): ?>
-                                        <div class="teacher-card bg-gray-50 rounded-lg p-4">
-                                            <div class="flex items-center">
-                                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                                                    <span class="text-blue-600 font-semibold">
-                                                        <?php echo strtoupper(substr($teacher['nombre'], 0, 1) . substr($teacher['apellido'], 0, 1)); ?>
-                                                    </span>
-                                                </div>
-                                                <div class="flex-1">
-                                                    <h4 class="font-medium text-gray-900">
-                                                        <?php echo htmlspecialchars($teacher['nombre'] . ' ' . $teacher['apellido']); ?>
-                                                    </h4>
-                                                    <p class="text-sm text-gray-500">
-                                                        CI: <?php echo htmlspecialchars($teacher['cedula']); ?>
-                                                    </p>
-                                                    <p class="text-sm text-gray-500">
-                                                        <?php echo htmlspecialchars($teacher['email']); ?>
-                                                    </p>
-                                                </div>
-                                                <div class="text-xs text-gray-400">
-                                                    <?php echo date('d/m/Y', strtotime($teacher['fecha_creacion'] ?? 'now')); ?>
-                                                </div>
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">
+                                                    <?php echo htmlspecialchars($teacher['nombre'] . ' ' . $teacher['apellido']); ?>
+                                                </p>
+                                                <p class="text-xs text-gray-500"><?php echo htmlspecialchars($teacher['email']); ?></p>
                                             </div>
+                                            <span class="text-xs text-gray-400">
+                                                <?php echo date('d/m/Y', strtotime($teacher['fecha_creacion'] ?? 'now')); ?>
+                                            </span>
                                         </div>
                                     <?php endforeach; ?>
-                                </div>
-                                
-                                <div class="mt-4 text-center">
-                                    <a href="admin-docentes.php" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                        Ver todos los docentes →
-                                    </a>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -485,8 +464,71 @@ try {
     </div>
 
     <script>
+        // Form validation functions
+        function validateCedula(input) {
+            const cedula = input.value.trim();
+            const errorDiv = document.getElementById('cedula-error');
+            const icon = document.getElementById('cedula-icon');
+            
+            if (cedula === '') {
+                showFieldError(input, errorDiv, icon, 'La cédula es requerida');
+                return false;
+            } else if (!/^\d{7,8}$/.test(cedula)) {
+                showFieldError(input, errorDiv, icon, 'La cédula debe tener 7 u 8 dígitos');
+                return false;
+            } else {
+                showFieldSuccess(input, errorDiv, icon);
+                return true;
+            }
+        }
+
+        function validateEmail(input) {
+            const email = input.value.trim();
+            const errorDiv = document.getElementById('email-error');
+            const icon = document.getElementById('email-icon');
+            
+            if (email === '') {
+                showFieldError(input, errorDiv, icon, 'El email es requerido');
+                return false;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showFieldError(input, errorDiv, icon, 'El formato del email no es válido');
+                return false;
+            } else {
+                showFieldSuccess(input, errorDiv, icon);
+                return true;
+            }
+        }
+
+        function showFieldError(input, errorDiv, icon, message) {
+            input.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+            input.classList.remove('border-green-500', 'focus:border-green-500', 'focus:ring-green-500');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            icon.innerHTML = '<svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+        }
+
+        function showFieldSuccess(input, errorDiv, icon) {
+            input.classList.add('border-green-500', 'focus:border-green-500', 'focus:ring-green-500');
+            input.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+            errorDiv.classList.add('hidden');
+            icon.innerHTML = '<svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+        }
+
         function clearForm() {
             document.querySelector('form').reset();
+            // Clear all validation states
+            const inputs = document.querySelectorAll('.form-input');
+            inputs.forEach(input => {
+                input.classList.remove('border-red-500', 'border-green-500', 'focus:border-red-500', 'focus:border-green-500', 'focus:ring-red-500', 'focus:ring-green-500');
+            });
+            
+            const errorDivs = document.querySelectorAll('[id$="-error"]');
+            errorDivs.forEach(div => div.classList.add('hidden'));
+            
+            const icons = document.querySelectorAll('[id$="-icon"]');
+            icons.forEach(icon => {
+                icon.innerHTML = '<svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            });
         }
 
         function logout() {
@@ -494,6 +536,27 @@ try {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         }
+
+        // Form submission with loading state
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submit-btn');
+            const submitText = document.getElementById('submit-text');
+            const submitSpinner = document.getElementById('submit-spinner');
+            
+            // Validate all required fields
+            const cedulaValid = validateCedula(document.getElementById('cedula'));
+            const emailValid = validateEmail(document.getElementById('email'));
+            
+            if (cedulaValid && emailValid) {
+                // Show loading state
+                submitBtn.disabled = true;
+                submitText.textContent = 'Agregando...';
+                submitSpinner.classList.remove('hidden');
+            } else {
+                e.preventDefault();
+            }
+        });
+
     </script>
 </body>
 </html>

@@ -408,8 +408,8 @@ class Docente {
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
             
             // First, create the user
-            $userQuery = "INSERT INTO usuario (cedula, nombre, apellido, email, telefono, password, fecha_creacion) 
-                         VALUES (?, ?, ?, ?, ?, ?, NOW())";
+            $userQuery = "INSERT INTO usuario (cedula, nombre, apellido, email, telefono, contrasena_hash) 
+                         VALUES (?, ?, ?, ?, ?, ?)";
             
             $userStmt = $this->db->prepare($userQuery);
             $userResult = $userStmt->execute([$cedula, $nombre, $apellido, $email, $telefono, $hashedPassword]);
@@ -464,10 +464,10 @@ class Docente {
     public function getRecentTeachers($limit = 5) {
         try {
             $query = "SELECT d.id_docente, 
-                             u.id_usuario, u.cedula, u.nombre, u.apellido, u.email, u.telefono, u.fecha_creacion
+                             u.id_usuario, u.cedula, u.nombre, u.apellido, u.email, u.telefono
                       FROM docente d
                       INNER JOIN usuario u ON d.id_usuario = u.id_usuario
-                      ORDER BY u.fecha_creacion DESC
+                      ORDER BY d.id_docente DESC
                       LIMIT ?";
             
             $stmt = $this->db->prepare($query);

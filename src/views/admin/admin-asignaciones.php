@@ -352,25 +352,56 @@ function getUserInitials($nombre, $apellido) {
             e.preventDefault();
             
             const formData = new FormData(e.target);
+            formData.append('action', 'create');
             
-            // Simulate assignment (in real implementation, this would call an API)
-            const docente = document.getElementById('id_docente').selectedOptions[0].text;
-            const materia = document.getElementById('id_materia').selectedOptions[0].text;
-            
-            showToast(`Asignación creada: ${docente} → ${materia}`, 'success');
-            closeAsignacionModal();
-            
-            // In real implementation, reload the page to show new assignment
-            setTimeout(() => location.reload(), 1500);
+            fetch('/src/controllers/asignacion_handler.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const docente = document.getElementById('id_docente').selectedOptions[0].text;
+                    const materia = document.getElementById('id_materia').selectedOptions[0].text;
+                    showToast(`Asignación creada: ${docente} → ${materia}`, 'success');
+                    closeAsignacionModal();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.message || 'Error al crear la asignación', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error de conexión', 'error');
+            });
         }
 
         // Remove assignment
         function removeAsignacion(idDocente, idMateria, materiaNombre) {
             const confirmMessage = `¿Está seguro de que desea remover la asignación de "${materiaNombre}"?`;
             if (confirm(confirmMessage)) {
-                // Simulate removal (in real implementation, this would call an API)
-                showToast('Asignación removida exitosamente', 'success');
-                setTimeout(() => location.reload(), 1000);
+                const formData = new FormData();
+                formData.append('action', 'delete');
+                formData.append('id_docente', idDocente);
+                formData.append('id_materia', idMateria);
+                
+                fetch('/src/controllers/asignacion_handler.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(`Asignación removida: ${materiaNombre}`, 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showToast(data.message || 'Error al eliminar la asignación', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error de conexión', 'error');
+                });
             }
         }
 

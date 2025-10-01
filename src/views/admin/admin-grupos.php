@@ -37,9 +37,10 @@ try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get grupos using Horario model (since it has the getAllGrupos method)
-    $horarioModel = new Horario($database->getConnection());
-    $grupos = $horarioModel->getAllGrupos();
+    // Get grupos using Grupo model
+    require_once __DIR__ . '/../../models/Grupo.php';
+    $grupoModel = new Grupo($database->getConnection());
+    $grupos = $grupoModel->getAllGrupos();
     
     if ($grupos === false) {
         $grupos = [];
@@ -238,12 +239,14 @@ function getGroupInitials($nombre) {
                         <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
                             <h3 class="font-medium text-darktext"><?php _e('groups'); ?></h3>
                             <div class="flex gap-2">
-                                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                <div class="relative">
+                                    <input type="text" id="searchInput" placeholder="<?php _e('search_groups'); ?>" 
+                                           class="py-2 px-4 pr-10 border border-gray-300 rounded text-sm focus:ring-darkblue focus:border-darkblue"
+                                           onkeyup="searchGrupos(this.value)">
+                                    <svg class="absolute right-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
-                                    <?php _e('filter'); ?>
-                                </button>
+                                </div>
                                 <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50">
                                     <?php _e('export'); ?>
                                 </button>
@@ -257,10 +260,12 @@ function getGroupInitials($nombre) {
                         </div>
 
                         <!-- Lista de grupos -->
-                        <div class="divide-y divide-gray-200">
+                        <div id="gruposList" class="divide-y divide-gray-200">
                             <?php if (!empty($grupos)): ?>
                                 <?php foreach ($grupos as $grupo): ?>
-                                    <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
+                                    <article class="grupo-item flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                                             data-nombre="<?php echo htmlspecialchars(strtolower($grupo['nombre'])); ?>" 
+                                             data-nivel="<?php echo htmlspecialchars(strtolower($grupo['nivel'])); ?>">
                                         <div class="flex items-center">
                                             <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
                                                 <?php echo getGroupInitials($grupo['nombre']); ?>
@@ -380,17 +385,61 @@ function getGroupInitials($nombre) {
             isEditMode = true;
             document.getElementById('modalTitle').textContent = '<?php _e('edit_group'); ?>';
             
-            // Simular obtención de datos del grupo
-            // En una implementación real, esto vendría de la base de datos
-            showToast('Funcionalidad de edición de grupos pendiente de implementar', 'info');
+            // Obtener datos del grupo
+            fetch(`/src/controllers/grupo_handler.php?action=get&id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('grupoId').value = data.data.id_grupo;
+                        document.getElementById('nombre_grupo').value = data.data.nombre;
+                        document.getElementById('nivel').value = data.data.nivel;
+                        
+                        clearErrors();
+                        document.getElementById('grupoModal').classList.remove('hidden');
+                        
+                        // Focus on first input
+                        setTimeout(() => {
+                            document.getElementById('nombre_grupo').focus();
+                        }, 100);
+                    } else {
+                        showToast(data.message || 'Error al cargar el grupo', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error al cargar el grupo', 'error');
+                });
         }
 
         // Eliminar grupo
         function deleteGrupo(id, nombre) {
-            const confirmMessage = `¿Está seguro de que desea eliminar el grupo "${nombre}"?`;
+            const confirmMessage = `<?php _e('confirm_delete_group'); ?> "${nombre}"?`;
             if (confirm(confirmMessage)) {
-                // Simular eliminación
-                showToast('Funcionalidad de eliminación de grupos pendiente de implementar', 'info');
+                // Crear FormData para enviar datos
+                const formData = new FormData();
+                formData.append('action', 'delete');
+                formData.append('id', id);
+                
+                fetch('/src/controllers/grupo_handler.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('<?php _e('group_deleted_successfully'); ?>', 'success');
+                        // Recargar la página para mostrar los cambios
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        showToast(data.message || 'Error al eliminar el grupo', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error al eliminar el grupo', 'error');
+                });
             }
         }
 
@@ -413,9 +462,60 @@ function getGroupInitials($nombre) {
             
             clearErrors();
             
-            // Simular creación/actualización
-            showToast('Funcionalidad de grupos pendiente de implementar completamente', 'info');
-            closeGrupoModal();
+            const formData = new FormData(e.target);
+            const action = isEditMode ? 'update' : 'create';
+            formData.append('action', action);
+            
+            // Validar campos requeridos
+            const nombre = formData.get('nombre').trim();
+            const nivel = formData.get('nivel').trim();
+            
+            if (!nombre) {
+                showToast('<?php _e('group_name_required'); ?>', 'error');
+                return;
+            }
+            
+            if (!nivel) {
+                showToast('<?php _e('level_required'); ?>', 'error');
+                return;
+            }
+            
+            // Validar longitud de campos
+            if (nombre.length > 100) {
+                showToast('<?php _e('group_name_too_long'); ?>', 'error');
+                return;
+            }
+            
+            if (nivel.length > 50) {
+                showToast('<?php _e('level_too_long'); ?>', 'error');
+                return;
+            }
+            
+            fetch('/src/controllers/grupo_handler.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const message = isEditMode ? 
+                        '<?php _e('group_updated_successfully'); ?>' : 
+                        '<?php _e('group_created_successfully'); ?>';
+                    showToast(message, 'success');
+                    closeGrupoModal();
+                    
+                    // Recargar la página para mostrar los cambios
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showToast(data.message || 'Error al procesar la solicitud', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error al procesar la solicitud', 'error');
+            });
         }
 
         // Limpiar errores de validación
@@ -481,6 +581,52 @@ function getGroupInitials($nombre) {
                 closeGrupoModal();
             }
         });
+
+        // Función de búsqueda
+        function searchGrupos(searchTerm) {
+            const grupos = document.querySelectorAll('.grupo-item');
+            const searchLower = searchTerm.toLowerCase().trim();
+            
+            if (searchLower === '') {
+                // Mostrar todos los grupos
+                grupos.forEach(grupo => {
+                    grupo.style.display = 'flex';
+                });
+                return;
+            }
+            
+            // Filtrar grupos
+            grupos.forEach(grupo => {
+                const nombre = grupo.dataset.nombre || '';
+                const nivel = grupo.dataset.nivel || '';
+                
+                if (nombre.includes(searchLower) || nivel.includes(searchLower)) {
+                    grupo.style.display = 'flex';
+                } else {
+                    grupo.style.display = 'none';
+                }
+            });
+            
+            // Mostrar mensaje si no hay resultados
+            const visibleGrupos = Array.from(grupos).filter(grupo => grupo.style.display !== 'none');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            
+            if (visibleGrupos.length === 0 && searchLower !== '') {
+                if (!noResultsMessage) {
+                    const gruposList = document.getElementById('gruposList');
+                    const messageDiv = document.createElement('div');
+                    messageDiv.id = 'noResultsMessage';
+                    messageDiv.className = 'p-8 text-center';
+                    messageDiv.innerHTML = `
+                        <div class="text-gray-500 text-lg mb-2">No se encontraron grupos que coincidan con "${searchTerm}"</div>
+                        <div class="text-gray-400 text-sm">Intente con un término de búsqueda diferente</div>
+                    `;
+                    gruposList.appendChild(messageDiv);
+                }
+            } else if (noResultsMessage) {
+                noResultsMessage.remove();
+            }
+        }
 
         // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
