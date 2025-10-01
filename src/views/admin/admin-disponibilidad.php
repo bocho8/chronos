@@ -168,7 +168,149 @@ function getUserInitials($nombre, $apellido) {
                                 <?php _e('profile'); ?>
                             </a>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" id="settingsLink">
-                                <span class="inline mr-2 text-xs">👤</span>
+                                <span class="inline mr-2 text-xs">⚙</span>
+                                <?php _e('settings'); ?>
+                            </a>
+                            <div class="border-t"></div>
+                            <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" id="logoutButton">
+                                <span class="inline mr-2 text-xs">🚪</span>
+                                <?php _e('logout'); ?>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Contenido principal -->
+            <section class="flex-1 px-6 py-8">
+                <div class="max-w-6xl mx-auto">
+                    <div class="mb-8">
+                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('teacher_availability'); ?></h2>
+                        <p class="text-muted mb-6 text-base"><?php _e('teacher_availability_description'); ?></p>
+                    </div>
+
+                    <!-- Selector de docente -->
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6 mb-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('select_teacher'); ?></h3>
+                        <div class="flex gap-4">
+                            <select id="docenteSelect" class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue">
+                                <option value=""><?php _e('select_teacher'); ?></option>
+                                <?php foreach ($docentes as $docente): ?>
+                                    <option value="<?php echo $docente['id_docente']; ?>" 
+                                            <?php echo ($selectedDocenteId == $docente['id_docente']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($docente['nombre'] . ' ' . $docente['apellido']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button onclick="loadDocenteDisponibilidad()" 
+                                    class="px-4 py-2 bg-darkblue text-white rounded-md hover:bg-navy transition-colors">
+                                <?php _e('load'); ?>
+                            </button>
+                        </div>
+                    </div>
+
+                    <?php if ($selectedDocente): ?>
+                    <!-- Información del docente seleccionado -->
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6 mb-6">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-darkblue mr-4 flex items-center justify-center text-white font-semibold">
+                                <?php echo getUserInitials($selectedDocente['nombre'], $selectedDocente['apellido']); ?>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    <?php echo htmlspecialchars($selectedDocente['nombre'] . ' ' . $selectedDocente['apellido']); ?>
+                                </h3>
+                                <p class="text-gray-600">
+                                    <?php echo htmlspecialchars($selectedDocente['email']); ?> • 
+                                    CI: <?php echo htmlspecialchars($selectedDocente['cedula']); ?>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de disponibilidad -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder">
+                        <div class="p-4 border-b border-gray-200 bg-gray-50">
+                            <h3 class="font-medium text-darktext"><?php _e('availability_schedule'); ?></h3>
+                            <p class="text-sm text-gray-600 mt-1"><?php _e('click_to_toggle_availability'); ?></p>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse">
+                                <thead>
+                                    <tr>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('time'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('monday'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('tuesday'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('wednesday'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('thursday'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('friday'); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php 
+                                    $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+                                    
+                                    // Organizar disponibilidad por día y bloque
+                                    $disponibilidadGrid = [];
+                                    foreach ($dias as $dia) {
+                                        $disponibilidadGrid[$dia] = [];
+                                        foreach ($bloques as $bloque) {
+                                            $disponibilidadGrid[$dia][$bloque['id_bloque']] = true; // Default disponible
+                                        }
+                                    }
+                                    
+                                    // Llenar con datos reales
+                                    foreach ($disponibilidad as $disp) {
+                                        if (isset($disponibilidadGrid[$disp['dia']][$disp['id_bloque']])) {
+                                            $disponibilidadGrid[$disp['dia']][$disp['id_bloque']] = $disp['disponible'];
+                                        }
+                                    }
+                                    
+                                    foreach ($bloques as $bloque): 
+                                    ?>
+                                        <tr>
+                                            <th class="bg-[#34495e] text-white p-2 text-center font-semibold border border-gray-300">
+                                                <?php echo date('H:i', strtotime($bloque['hora_inicio'])) . ' – ' . date('H:i', strtotime($bloque['hora_fin'])); ?>
+                                            </th>
+                                            <?php foreach ($dias as $dia): ?>
+                                                <?php 
+                                                $isDisponible = $disponibilidadGrid[$dia][$bloque['id_bloque']];
+                                                $cellClass = $isDisponible ? 'disponible' : 'no-disponible';
+                                                $cellText = $isDisponible ? 'Disponible' : 'No disponible';
+                                                ?>
+                                                <td class="disponibilidad-cell <?php echo $cellClass; ?> text-center font-medium p-2 border border-gray-300" 
+                                                    data-docente="<?php echo $selectedDocenteId; ?>"
+                                                    data-bloque="<?php echo $bloque['id_bloque']; ?>" 
+                                                    data-dia="<?php echo $dia; ?>"
+                                                    data-disponible="<?php echo $isDisponible ? 'true' : 'false'; ?>"
+                                                    onclick="toggleDisponibilidad(this)">
+                                                    <?php echo $cellText; ?>
+                                                </td>
+                                            <?php endforeach; ?>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-50 border-t">
+                            <div class="flex justify-between items-center">
+                                <div class="text-sm text-gray-600">
+                                    <span class="inline-block w-4 h-4 bg-green-500 rounded mr-2"></span><?php _e('available'); ?>
+                                    <span class="inline-block w-4 h-4 bg-red-500 rounded mr-2 ml-4"></span><?php _e('not_available'); ?>
+                                </div>
+                                <button onclick="saveAllDisponibilidad()" 
+                                        class="px-4 py-2 bg-darkblue text-white rounded-md hover:bg-navy transition-colors">
+                                    <?php _e('save_changes'); ?>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <?php else: ?>
+                    <!-- Mensaje cuando no hay docente seleccionado -->
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-12 text-center">
+                        <div class="text-6xl mb-4">👨‍🏫</div>
                         <h3 class="text-lg font-medium text-gray-900 mb-2"><?php _e('no_teacher_selected'); ?></h3>
                         <p class="text-gray-500"><?php _e('select_teacher_to_manage_availability'); ?></p>
                     </div>
