@@ -79,9 +79,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <header class="flex justify-center items-center px-8 shadow-md bg-blue-900 h-20">
                 <h1 class="text-3xl font-bold text-white">Horarios Semanales</h1>
                 <button class="absolute right-8 text-white hover:text-gray-300 h-full flex items-center"> 
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                    </svg>
+                    <span class="text-sm">📋</span>
                 </button>
             </header>
             <main class="flex-1 p-8 overflow-y-auto">

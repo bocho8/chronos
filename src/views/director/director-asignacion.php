@@ -79,9 +79,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <header class="flex justify-center items-center px-8 shadow-md bg-blue-900 h-20">
                 <h1 class="text-3xl font-bold text-white">Bienvenido (Director)</h1>
                 <button class="absolute right-8 text-white hover:text-gray-300 h-full flex items-center"> 
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                    </svg>
+                    <span class="text-sm">📋</span>
                 </button>
             </header>
             <main class="flex-1 p-8 overflow-y-auto">
@@ -99,9 +97,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         
                         <div class="flex flex-col items-center text-center">
                             <div class="w-20 h-20 bg-white border border-gray-300 rounded-full flex items-center justify-center mb-2">
-                                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
+                                <span class="text-gray-400 text-2xl">•</span>
                             </div>
                             <p class="font-semibold text-gray-800">Mario Gubenio</p>
                             <p class="text-sm text-gray-500">Química</p>
@@ -110,9 +106,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         
                         <div class="flex flex-col items-center text-center">
                             <div class="w-20 h-20 bg-white border border-gray-300 rounded-full flex items-center justify-center mb-2">
-                                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
+                                <span class="text-gray-400 text-2xl">•</span>
                             </div>
                             <p class="font-semibold text-gray-800">Marcelo Sime</p>
                             <p class="text-sm text-gray-500">Física/Electrónica</p>
@@ -121,9 +115,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
                         <div class="flex flex-col items-center text-center">
                             <div class="w-20 h-20 bg-white border border-gray-300 rounded-full flex items-center justify-center mb-2">
-                                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
+                                <span class="text-gray-400 text-2xl">•</span>
                             </div>
                             <p class="font-semibold text-gray-800">Lourdes Canflore</p>
                             <p class="text-sm text-gray-500">Italiano</p>

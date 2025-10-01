@@ -44,26 +44,20 @@
       
       <!-- Illustration/Icon -->
       <div class="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center mb-8 border-4 border-blue-200">
-        <svg class="w-16 h-16 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-3-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
+        <span class="text-gray-400 text-2xl">•</span>
       </div>
       
       <!-- Action buttons -->
       <div class="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
         <button onclick="window.history.back()" 
                 class="flex-1 bg-blue-900 text-white border-none rounded-lg py-3 px-6 text-base font-bold cursor-pointer transition-all duration-200 hover:bg-blue-800 hover:transform hover:scale-105 active:scale-95">
-          <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-          </svg>
+          <span class="text-sm">📋</span>
           Volver Atrás
         </button>
         
         <a href="/" 
            class="flex-1 bg-gray-600 text-white border-none rounded-lg py-3 px-6 text-base font-bold cursor-pointer transition-all duration-200 hover:bg-gray-700 hover:transform hover:scale-105 active:scale-95 text-center no-underline flex items-center justify-center">
-          <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-          </svg>
+          <span class="text-sm">📋</span>
           Inicio
         </a>
       </div>

@@ -63,9 +63,7 @@ $userName = AuthHelper::getUserDisplayName() ?: 'Usuario';
             <section class="bg-card rounded-3xl p-10 md:px-16 md:py-10 w-full max-w-[500px] shadow-lg text-center">
                 <div class="mb-6">
                     <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                        </svg>
+                        <span class="text-sm">📋</span>
                     </div>
                     <h2 class="text-2xl md:text-[28px] font-extrabold text-navy mb-2"><?php _e('logout'); ?></h2>
                     <p class="text-gray-600 mb-6">

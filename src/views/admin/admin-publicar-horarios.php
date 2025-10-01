@@ -164,9 +164,7 @@ try {
                 <div class="flex items-center">
                     <?php echo $languageSwitcher->render('', 'mr-4'); ?>
                     <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
+                        <span class="text-white text-sm">🔔</span>
                     </button>
                     
                     <div class="relative group">
@@ -180,23 +178,16 @@ try {
                                 <div class="text-gray-500"><?php _e('role_admin'); ?></div>
                             </div>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
+                                <span class="inline mr-2 text-xs">👤</span>
                                 <?php _e('profile'); ?>
                             </a>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
+                                <span class="inline mr-2 text-xs">⚙</span>
                                 <?php _e('settings'); ?>
                             </a>
                             <div class="border-t"></div>
                             <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" onclick="logout()">
-                                <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                                </svg>
+                                <span class="inline mr-2 text-xs">🚪</span>
                                 <?php _e('logout'); ?>
                             </button>
                         </div>
@@ -219,13 +210,9 @@ try {
                             <div class="flex">
                                 <div class="flex-shrink-0">
                                     <?php if ($messageType === 'success'): ?>
-                                        <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                        </svg>
+                                        <span class="text-gray-400 text-2xl">•</span>
                                     <?php else: ?>
-                                        <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                        </svg>
+                                        <span class="text-sm">📋</span>
                                     <?php endif; ?>
                                 </div>
                                 <div class="ml-3">
@@ -241,9 +228,7 @@ try {
                         
                         <?php if (empty($unpublishedSchedules)): ?>
                             <div class="text-center py-12 bg-white rounded-lg border border-gray-200">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                                </svg>
+                                <span class="text-gray-400 text-2xl">•</span>
                                 <p class="mt-2 text-sm text-gray-500">No hay horarios pendientes de publicación</p>
                             </div>
                         <?php else: ?>
@@ -269,18 +254,13 @@ try {
                                                 <button 
                                                     onclick="viewSchedule(<?php echo $schedule['id_horario']; ?>)"
                                                     class="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
-                                                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                    </svg>
+                                                    <span class="text-sm">📋</span>
                                                     Ver
                                                 </button>
                                                 <button 
                                                     onclick="publishSchedule(<?php echo $schedule['id_horario']; ?>)"
                                                     class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                                                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                                                    </svg>
+                                                    <span class="text-sm">📋</span>
                                                     Publicar
                                                 </button>
                                             </div>
@@ -297,9 +277,7 @@ try {
                         
                         <?php if (empty($publishedSchedules)): ?>
                             <div class="text-center py-12 bg-white rounded-lg border border-gray-200">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                                </svg>
+                                <span class="text-gray-400 text-2xl">•</span>
                                 <p class="mt-2 text-sm text-gray-500">No hay horarios publicados</p>
                             </div>
                         <?php else: ?>
@@ -325,10 +303,7 @@ try {
                                                 <button 
                                                     onclick="viewSchedule(<?php echo $schedule['id_horario']; ?>)"
                                                     class="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
-                                                    <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                    </svg>
+                                                    <span class="text-sm">📋</span>
                                                     Ver
                                                 </button>
                                             </div>

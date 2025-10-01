@@ -85,9 +85,7 @@ try {
 function generateScheduleTable($horario, $timeBlocks) {
     if (empty($horario)) {
         return '<div class="text-center py-8">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
+                    <span class="text-gray-400 text-2xl">•</span>
                     <p class="mt-2 text-sm text-gray-500">No hay horarios publicados disponibles</p>
                     <p class="text-xs text-gray-400">Los horarios serán visibles una vez que la Dirección los publique</p>
                 </div>';
@@ -172,9 +170,7 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
                 <div class="flex items-center">
                     <?php echo $languageSwitcher->render('', 'mr-4'); ?>
                     <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
+                        <span class="text-white text-sm">🔔</span>
                     </button>
                     
                     <div class="relative group">
@@ -188,9 +184,7 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
                                 <div class="text-gray-500"><?php _e('role_teacher'); ?></div>
                             </div>
                             <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" id="logoutButton">
-                                <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 713-3h4a3 3 0 713 3v1"></path>
-                                </svg>
+                                <span class="inline mr-2 text-xs">🚪</span>
                                 <?php _e('logout'); ?>
                             </button>
                         </div>
@@ -211,9 +205,7 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
                                     <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
+                                        <span class="text-gray-400 text-2xl">•</span>
                                     </div>
                                 </div>
                                 <div class="ml-4">
@@ -227,9 +219,7 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
                                     <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 712-2h2a2 2 0 712 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 712-2h2a2 2 0 712 2v14a2 2 0 71-2 2h-2a2 2 0 71-2-2z"></path>
-                                        </svg>
+                                        <span class="text-xs font-bold leading-none">•</span>
                                     </div>
                                 </div>
                                 <div class="ml-4">
@@ -243,9 +233,7 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
                                     <div class="w-8 h-8 <?php echo $cargaHoraria > 16 ? 'bg-orange-100' : 'bg-green-100'; ?> rounded-full flex items-center justify-center">
-                                        <svg class="w-5 h-5 <?php echo $cargaHoraria > 16 ? 'text-orange-600' : 'text-green-600'; ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path>
-                                        </svg>
+                                        <span class="text-orange-600 text-xs font-bold leading-none">H</span>
                                     </div>
                                 </div>
                                 <div class="ml-4">
@@ -264,9 +252,7 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
                             <h3 class="text-lg font-medium text-gray-900">Mi Horario de Clases</h3>
                             <button onclick="window.print()" 
                                     class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                                </svg>
+                                <span class="text-xs font-bold leading-none">•</span>
                                 Imprimir
                             </button>
                         </div>
