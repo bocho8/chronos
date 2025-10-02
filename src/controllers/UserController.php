@@ -252,8 +252,7 @@ class UserController {
             'nombre' => trim($data['nombre']),
             'apellido' => trim($data['apellido']),
             'email' => trim($data['email']),
-            'telefono' => trim($data['telefono'] ?? ''),
-            'activo' => isset($data['activo']) ? (bool)$data['activo'] : true
+            'telefono' => trim($data['telefono'] ?? '')
         ];
         
         // Agregar contraseña si se proporciona

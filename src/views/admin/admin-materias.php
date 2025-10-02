@@ -126,7 +126,7 @@ try {
             z-index: 10000;
         }
         
-        /* Modal styles */
+        /* Modal styles - Improved for accessibility and responsiveness */
         #materiaModal {
             position: fixed !important;
             top: 0 !important;
@@ -137,9 +137,10 @@ try {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            background-color: rgba(0, 0, 0, 0.2) !important;
+            background-color: rgba(0, 0, 0, 0.5) !important;
             backdrop-filter: blur(8px) !important;
             -webkit-backdrop-filter: blur(8px) !important;
+            padding: 1rem !important;
         }
         
         #materiaModal.hidden {
@@ -150,8 +151,24 @@ try {
             position: relative !important;
             z-index: 10001 !important;
             background: white !important;
-            border-radius: 8px !important;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            max-width: 500px !important;
+            width: 100% !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+            animation: modalSlideIn 0.3s ease-out !important;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
         
         #materiaModal button[type="submit"], 
@@ -160,6 +177,53 @@ try {
             position: relative !important;
             background-color: #1f366d !important;
             color: white !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        #materiaModal button[type="submit"]:hover, 
+        #materiaModal button[type="button"]:hover {
+            background-color: #1a2d5a !important;
+            transform: translateY(-1px) !important;
+        }
+        
+        /* Focus styles for accessibility */
+        #materiaModal input:focus,
+        #materiaModal select:focus,
+        #materiaModal textarea:focus,
+        #materiaModal button:focus {
+            outline: 2px solid #1f366d !important;
+            outline-offset: 2px !important;
+        }
+        
+        /* Error state styles */
+        .error-input {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+        }
+        
+        /* Screen reader only class */
+        .sr-only {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            #materiaModal {
+                padding: 0.5rem !important;
+            }
+            
+            #materiaModal .modal-content {
+                max-height: 95vh !important;
+                border-radius: 8px !important;
+            }
         }
     </style>
 </head>
@@ -225,7 +289,7 @@ try {
                         <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
                             <h3 class="font-medium text-darktext"><?php _e('subjects'); ?></h3>
                             <div class="flex gap-2">
-                                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
+                                <button onclick="openMateriaModal()" class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
                                     <span class="mr-1 text-sm">+</span>
                                     <?php _e('add_subject'); ?>
                                 </button>
@@ -376,6 +440,15 @@ try {
                     document.getElementById('en_conjunto').checked = data.data.en_conjunto;
                     document.getElementById('es_programa_italiano').checked = data.data.es_programa_italiano;
                     
+                    // Handle grupo compartido
+                    if (data.data.en_conjunto && data.data.id_grupo_compartido) {
+                        document.getElementById('id_grupo_compartido').value = data.data.id_grupo_compartido;
+                        toggleGrupoCompartido(); // Show the field
+                    } else {
+                        toggleGrupoCompartido(); // Hide the field
+                    }
+                    
+                    clearErrors();
                     document.getElementById('materiaModal').classList.remove('hidden');
                     
                     // Focus on first input
@@ -424,7 +497,10 @@ try {
         function handleMateriaFormSubmit(e) {
             e.preventDefault();
             
-            clearErrors();
+            if (!validateMateriaForm()) {
+                showToast('<?php _e('please_correct_errors'); ?>', 'error');
+                return;
+            }
             
             const formData = new FormData(e.target);
             formData.append('action', isEditMode ? 'update' : 'create');
@@ -441,12 +517,9 @@ try {
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     if (data.data && typeof data.data === 'object') {
-                        // Show validation errors
+                        // Show validation errors from server
                         Object.keys(data.data).forEach(field => {
-                            const errorElement = document.getElementById(field + 'Error');
-                            if (errorElement) {
-                                errorElement.textContent = data.data[field];
-                            }
+                            showFieldError(field, data.data[field]);
                         });
                     } else {
                         showToast('Error: ' + data.message, 'error');
@@ -455,7 +528,7 @@ try {
             })
             .catch(error => {
                 console.error('Error:', error);
-                showToast('Error procesando solicitud', 'error');
+                showToast('<?php _e('error_processing_request'); ?>', 'error');
             });
         }
 
@@ -465,6 +538,82 @@ try {
             errorElements.forEach(element => {
                 element.textContent = '';
             });
+            
+            const inputElements = document.querySelectorAll('input, select, textarea');
+            inputElements.forEach(element => {
+                element.classList.remove('error-input');
+            });
+        }
+        
+        // Toggle grupo compartido visibility
+        function toggleGrupoCompartido() {
+            const enConjunto = document.getElementById('en_conjunto').checked;
+            const grupoCompartidoDiv = document.getElementById('grupoCompartidoDiv');
+            const grupoCompartidoSelect = document.getElementById('id_grupo_compartido');
+            
+            if (enConjunto) {
+                grupoCompartidoDiv.classList.remove('hidden');
+                grupoCompartidoSelect.required = true;
+            } else {
+                grupoCompartidoDiv.classList.add('hidden');
+                grupoCompartidoSelect.required = false;
+                grupoCompartidoSelect.value = '';
+            }
+        }
+        
+        // Validation functions
+        function validateMateriaForm() {
+            let isValid = true;
+            clearErrors();
+            
+            // Validate nombre
+            const nombre = document.getElementById('nombre').value.trim();
+            if (!nombre) {
+                showFieldError('nombre', '<?php _e('subject_name_required'); ?>');
+                isValid = false;
+            } else if (nombre.length < 2) {
+                showFieldError('nombre', '<?php _e('subject_name_too_short'); ?>');
+                isValid = false;
+            }
+            
+            // Validate horas_semanales
+            const horasSemanales = document.getElementById('horas_semanales').value;
+            if (!horasSemanales || horasSemanales < 1 || horasSemanales > 40) {
+                showFieldError('horas_semanales', '<?php _e('weekly_hours_invalid'); ?>');
+                isValid = false;
+            }
+            
+            // Validate pauta ANEP
+            const pautaAnep = document.getElementById('id_pauta_anep').value;
+            if (!pautaAnep) {
+                showFieldError('id_pauta_anep', '<?php _e('anep_guideline_required'); ?>');
+                isValid = false;
+            }
+            
+            // Validate grupo compartido if en_conjunto is checked
+            const enConjunto = document.getElementById('en_conjunto').checked;
+            if (enConjunto) {
+                const grupoCompartido = document.getElementById('id_grupo_compartido').value;
+                if (!grupoCompartido) {
+                    showFieldError('id_grupo_compartido', '<?php _e('shared_group_required'); ?>');
+                    isValid = false;
+                }
+            }
+            
+            return isValid;
+        }
+        
+        function showFieldError(fieldName, message) {
+            const errorElement = document.getElementById(fieldName + 'Error');
+            const inputElement = document.getElementById(fieldName);
+            
+            if (errorElement) {
+                errorElement.textContent = message;
+            }
+            
+            if (inputElement) {
+                inputElement.classList.add('error-input');
+            }
         }
 
         // Funcionalidad para la barra lateral
@@ -535,34 +684,40 @@ try {
     </script>
 
     <!-- Modal para agregar/editar materia -->
-    <div id="materiaModal" class="hidden">
+    <div id="materiaModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDescription">
         <div class="modal-content p-8 w-full max-w-md mx-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_subject'); ?></h3>
-                <button onclick="closeMateriaModal()" class="text-gray-400 hover:text-gray-600">
-                    <span class="text-sm">×</span>
+                <button onclick="closeMateriaModal()" class="text-gray-400 hover:text-gray-600" aria-label="<?php _e('close_modal'); ?>">
+                    <span class="text-sm" aria-hidden="true">×</span>
                 </button>
             </div>
+            <p id="modalDescription" class="text-sm text-gray-600 mb-6 sr-only"><?php _e('modal_description'); ?></p>
             
             <form id="materiaForm" onsubmit="handleMateriaFormSubmit(event)" class="space-y-4">
                 <input type="hidden" id="materiaId" name="id">
                 
                 <div>
-                    <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('subject_name'); ?></label>
-                    <input type="text" id="nombre" name="nombre" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                    <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('subject_name'); ?> <span class="text-red-500">*</span></label>
+                    <input type="text" id="nombre" name="nombre" required maxlength="200"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                           placeholder="<?php _e('subject_name_placeholder'); ?>" aria-describedby="nombreError">
+                    <p id="nombreError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
                 <div>
-                    <label for="horas_semanales" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('weekly_hours'); ?></label>
+                    <label for="horas_semanales" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('weekly_hours'); ?> <span class="text-red-500">*</span></label>
                     <input type="number" id="horas_semanales" name="horas_semanales" min="1" max="40" value="1" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                           aria-describedby="horas_semanalesError">
+                    <p id="horas_semanalesError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
                 <div>
-                    <label for="id_pauta_anep" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('anep_guideline'); ?></label>
+                    <label for="id_pauta_anep" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('anep_guideline'); ?> <span class="text-red-500">*</span></label>
                     <select id="id_pauta_anep" name="id_pauta_anep" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                            aria-describedby="id_pauta_anepError">
                         <option value=""><?php _e('select_guideline'); ?></option>
                         <?php foreach ($pautasAnep as $pauta): ?>
                             <option value="<?php echo $pauta['id_pauta_anep']; ?>">
@@ -570,14 +725,31 @@ try {
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <p id="id_pauta_anepError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
                 <div class="flex items-center">
                     <input type="checkbox" id="en_conjunto" name="en_conjunto" value="1"
-                           class="h-4 w-4 text-darkblue focus:ring-darkblue border-gray-300 rounded">
+                           class="h-4 w-4 text-darkblue focus:ring-darkblue border-gray-300 rounded"
+                           onchange="toggleGrupoCompartido()">
                     <label for="en_conjunto" class="ml-2 block text-sm text-gray-900">
                         <?php _e('joint_class'); ?>
                     </label>
+                </div>
+                
+                <div id="grupoCompartidoDiv" class="hidden">
+                    <label for="id_grupo_compartido" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('shared_group'); ?></label>
+                    <select id="id_grupo_compartido" name="id_grupo_compartido"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                            aria-describedby="id_grupo_compartidoError">
+                        <option value=""><?php _e('select_group'); ?></option>
+                        <?php foreach ($grupos as $grupo): ?>
+                            <option value="<?php echo $grupo['id_grupo']; ?>">
+                                <?php echo htmlspecialchars($grupo['nombre']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <p id="id_grupo_compartidoError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
                 <div class="flex items-center">

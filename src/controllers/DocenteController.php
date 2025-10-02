@@ -67,7 +67,6 @@ class DocenteController {
             'email' => trim($_POST['email'] ?? ''),
             'telefono' => trim($_POST['telefono'] ?? ''),
             'contrasena' => $_POST['contrasena'],
-            'trabaja_otro_liceo' => isset($_POST['trabaja_otro_liceo']) ? (bool)$_POST['trabaja_otro_liceo'] : false,
             'fecha_envio_disponibilidad' => $_POST['fecha_envio_disponibilidad'] ?? null,
             'horas_asignadas' => (int)($_POST['horas_asignadas'] ?? 0),
             'porcentaje_margen' => (float)($_POST['porcentaje_margen'] ?? 0.00)
@@ -97,7 +96,6 @@ class DocenteController {
             'apellido' => trim($_POST['apellido']),
             'email' => trim($_POST['email'] ?? ''),
             'telefono' => trim($_POST['telefono'] ?? ''),
-            'trabaja_otro_liceo' => isset($_POST['trabaja_otro_liceo']) ? (bool)$_POST['trabaja_otro_liceo'] : false,
             'fecha_envio_disponibilidad' => $_POST['fecha_envio_disponibilidad'] ?? null,
             'horas_asignadas' => (int)($_POST['horas_asignadas'] ?? 0),
             'porcentaje_margen' => (float)($_POST['porcentaje_margen'] ?? 0.00)

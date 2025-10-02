@@ -124,7 +124,7 @@ function getUserInitials($nombre, $apellido) {
             z-index: 10000;
         }
         
-        /* Modal styles */
+        /* Modal styles - Improved for accessibility and responsiveness */
         #coordinadorModal {
             position: fixed !important;
             top: 0 !important;
@@ -135,9 +135,10 @@ function getUserInitials($nombre, $apellido) {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            background-color: rgba(0, 0, 0, 0.2) !important;
+            background-color: rgba(0, 0, 0, 0.5) !important;
             backdrop-filter: blur(8px) !important;
             -webkit-backdrop-filter: blur(8px) !important;
+            padding: 1rem !important;
         }
         
         #coordinadorModal.hidden {
@@ -148,8 +149,24 @@ function getUserInitials($nombre, $apellido) {
             position: relative !important;
             z-index: 10001 !important;
             background: white !important;
-            border-radius: 8px !important;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            max-width: 500px !important;
+            width: 100% !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+            animation: modalSlideIn 0.3s ease-out !important;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
         
         #coordinadorModal button[type="submit"], 
@@ -158,6 +175,53 @@ function getUserInitials($nombre, $apellido) {
             position: relative !important;
             background-color: #1f366d !important;
             color: white !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        #coordinadorModal button[type="submit"]:hover, 
+        #coordinadorModal button[type="button"]:hover {
+            background-color: #1a2d5a !important;
+            transform: translateY(-1px) !important;
+        }
+        
+        /* Focus styles for accessibility */
+        #coordinadorModal input:focus,
+        #coordinadorModal select:focus,
+        #coordinadorModal textarea:focus,
+        #coordinadorModal button:focus {
+            outline: 2px solid #1f366d !important;
+            outline-offset: 2px !important;
+        }
+        
+        /* Error state styles */
+        .error-input {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+        }
+        
+        /* Screen reader only class */
+        .sr-only {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            #coordinadorModal {
+                padding: 0.5rem !important;
+            }
+            
+            #coordinadorModal .modal-content {
+                max-height: 95vh !important;
+                border-radius: 8px !important;
+            }
         }
     </style>
 </head>
@@ -225,7 +289,7 @@ function getUserInitials($nombre, $apellido) {
                         <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
                             <h3 class="font-medium text-darktext"><?php _e('coordinators'); ?></h3>
                             <div class="flex gap-2">
-                                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
+                                <button onclick="showAddCoordinadorModal()" class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
                                     <span class="mr-1 text-sm">+</span>
                                     <?php _e('add_coordinator'); ?>
                                 </button>
@@ -277,53 +341,76 @@ function getUserInitials($nombre, $apellido) {
     </div>
 
     <!-- Modal para agregar/editar coordinador -->
-    <div id="coordinadorModal" class="hidden">
+    <div id="coordinadorModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDescription">
         <div class="modal-content p-8 w-full max-w-md mx-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_coordinator'); ?></h3>
-                <button onclick="closeCoordinadorModal()" class="text-gray-400 hover:text-gray-600">
-                    <span class="text-sm">×</span>
+                <button onclick="closeCoordinadorModal()" class="text-gray-400 hover:text-gray-600" aria-label="<?php _e('close_modal'); ?>">
+                    <span class="text-sm" aria-hidden="true">×</span>
                 </button>
             </div>
+            <p id="modalDescription" class="text-sm text-gray-600 mb-6 sr-only"><?php _e('modal_description'); ?></p>
 
             <form id="coordinadorForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
                 <input type="hidden" id="id_coordinador" name="id" value="">
                 
                 <div>
-                    <label for="cedula" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('cedula'); ?></label>
-                    <input type="text" id="cedula" name="cedula" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                    <label for="cedula" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('cedula'); ?> <span class="text-red-500">*</span></label>
+                    <input type="text" id="cedula" name="cedula" required maxlength="8" pattern="[0-9]{8}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                           placeholder="12345678" aria-describedby="cedulaError cedulaHelp">
+                    <p id="cedulaHelp" class="text-xs text-gray-500 mt-1"><?php _e('cedula_help'); ?></p>
+                    <p id="cedulaError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
                 <div>
-                    <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('name'); ?></label>
-                    <input type="text" id="nombre" name="nombre" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                    <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('name'); ?> <span class="text-red-500">*</span></label>
+                    <input type="text" id="nombre" name="nombre" required maxlength="100"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                           placeholder="<?php _e('name_placeholder'); ?>" aria-describedby="nombreError">
+                    <p id="nombreError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
                 <div>
-                    <label for="apellido" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('lastname'); ?></label>
-                    <input type="text" id="apellido" name="apellido" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                    <label for="apellido" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('lastname'); ?> <span class="text-red-500">*</span></label>
+                    <input type="text" id="apellido" name="apellido" required maxlength="100"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                           placeholder="<?php _e('lastname_placeholder'); ?>" aria-describedby="apellidoError">
+                    <p id="apellidoError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('email'); ?></label>
-                    <input type="email" id="email" name="email" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('email'); ?> <span class="text-red-500">*</span></label>
+                    <input type="email" id="email" name="email" required maxlength="150"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                           placeholder="usuario@ejemplo.com" aria-describedby="emailError">
+                    <p id="emailError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
                 <div>
                     <label for="telefono" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('phone'); ?></label>
-                    <input type="text" id="telefono" name="telefono"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
+                    <input type="tel" id="telefono" name="telefono" maxlength="20" pattern="[0-9\s\-\+\(\)]+"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                           placeholder="099123456" aria-describedby="telefonoError telefonoHelp">
+                    <p id="telefonoHelp" class="text-xs text-gray-500 mt-1"><?php _e('phone_help'); ?></p>
+                    <p id="telefonoError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
                 <div>
-                    <label for="contrasena" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('password'); ?></label>
-                    <input type="password" id="contrasena" name="contrasena"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm">
-                    <p class="text-xs text-gray-500 mt-1"><?php _e('password_leave_blank'); ?></p>
+                    <label for="contrasena" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('password'); ?> <span id="passwordRequired" class="text-red-500" style="display: none;">*</span></label>
+                    <div class="relative">
+                        <input type="password" id="contrasena" name="contrasena" minlength="8" maxlength="255"
+                               class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                               placeholder="<?php _e('password_placeholder'); ?>" aria-describedby="contrasenaError contrasenaHelp">
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors" aria-label="<?php _e('toggle_password_visibility'); ?>">
+                            <svg id="passwordIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p id="contrasenaHelp" class="text-xs text-gray-500 mt-1"><?php _e('password_help'); ?></p>
+                    <p id="contrasenaError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-4">
@@ -354,6 +441,7 @@ function getUserInitials($nombre, $apellido) {
             
             // Hacer contraseña requerida para nuevo coordinador
             document.getElementById('contrasena').required = true;
+            document.getElementById('passwordRequired').style.display = 'inline';
             
             clearErrors();
             document.getElementById('coordinadorModal').classList.remove('hidden');
@@ -390,7 +478,9 @@ function getUserInitials($nombre, $apellido) {
                     // No hacer contraseña requerida para edición
                     document.getElementById('contrasena').required = false;
                     document.getElementById('contrasena').value = '';
+                    document.getElementById('passwordRequired').style.display = 'none';
                     
+                    clearErrors();
                     document.getElementById('coordinadorModal').classList.remove('hidden');
                     
                     // Focus on first input
@@ -446,7 +536,10 @@ function getUserInitials($nombre, $apellido) {
         function handleFormSubmit(e) {
             e.preventDefault();
             
-            clearErrors();
+            if (!validateCoordinadorForm()) {
+                showToast('<?php _e('please_correct_errors'); ?>', 'error');
+                return;
+            }
             
             const formData = new FormData(e.target);
             formData.append('action', isEditMode ? 'update' : 'create');
@@ -463,12 +556,9 @@ function getUserInitials($nombre, $apellido) {
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     if (data.data && typeof data.data === 'object') {
-                        // Show validation errors
+                        // Show validation errors from server
                         Object.keys(data.data).forEach(field => {
-                            const errorElement = document.getElementById(field + 'Error');
-                            if (errorElement) {
-                                errorElement.textContent = data.data[field];
-                            }
+                            showFieldError(field, data.data[field]);
                         });
                     } else {
                         showToast('Error: ' + data.message, 'error');
@@ -477,7 +567,7 @@ function getUserInitials($nombre, $apellido) {
             })
             .catch(error => {
                 console.error('Error:', error);
-                showToast('Error procesando solicitud', 'error');
+                showToast('<?php _e('error_processing_request'); ?>', 'error');
             });
         }
 
@@ -487,6 +577,108 @@ function getUserInitials($nombre, $apellido) {
             errorElements.forEach(element => {
                 element.textContent = '';
             });
+            
+            const inputElements = document.querySelectorAll('input, select, textarea');
+            inputElements.forEach(element => {
+                element.classList.remove('error-input');
+            });
+        }
+        
+        // Toggle password visibility
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('contrasena');
+            const passwordIcon = document.getElementById('passwordIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                passwordIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+                `;
+            } else {
+                passwordInput.type = 'password';
+                passwordIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                `;
+            }
+        }
+        
+        // Validation functions
+        function validateCoordinadorForm() {
+            let isValid = true;
+            clearErrors();
+            
+            // Validate cédula
+            const cedula = document.getElementById('cedula').value.trim();
+            if (!cedula) {
+                showFieldError('cedula', '<?php _e('cedula_required'); ?>');
+                isValid = false;
+            } else if (!/^[0-9]{8}$/.test(cedula)) {
+                showFieldError('cedula', '<?php _e('cedula_invalid_format'); ?>');
+                isValid = false;
+            }
+            
+            // Validate nombre
+            const nombre = document.getElementById('nombre').value.trim();
+            if (!nombre) {
+                showFieldError('nombre', '<?php _e('name_required'); ?>');
+                isValid = false;
+            } else if (nombre.length < 2) {
+                showFieldError('nombre', '<?php _e('name_too_short'); ?>');
+                isValid = false;
+            }
+            
+            // Validate apellido
+            const apellido = document.getElementById('apellido').value.trim();
+            if (!apellido) {
+                showFieldError('apellido', '<?php _e('lastname_required'); ?>');
+                isValid = false;
+            } else if (apellido.length < 2) {
+                showFieldError('apellido', '<?php _e('lastname_too_short'); ?>');
+                isValid = false;
+            }
+            
+            // Validate email
+            const email = document.getElementById('email').value.trim();
+            if (!email) {
+                showFieldError('email', '<?php _e('email_required'); ?>');
+                isValid = false;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showFieldError('email', '<?php _e('email_invalid_format'); ?>');
+                isValid = false;
+            }
+            
+            // Validate phone (optional but if provided, must be valid)
+            const telefono = document.getElementById('telefono').value.trim();
+            if (telefono && !/^[0-9\s\-\+\(\)]+$/.test(telefono)) {
+                showFieldError('telefono', '<?php _e('phone_invalid_format'); ?>');
+                isValid = false;
+            }
+            
+            // Validate password
+            const contrasena = document.getElementById('contrasena').value;
+            if (!isEditMode && (!contrasena || contrasena.length < 8)) {
+                showFieldError('contrasena', '<?php _e('password_required_min_length'); ?>');
+                isValid = false;
+            } else if (contrasena && contrasena.length < 8) {
+                showFieldError('contrasena', '<?php _e('password_min_length'); ?>');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        function showFieldError(fieldName, message) {
+            const errorElement = document.getElementById(fieldName + 'Error');
+            const inputElement = document.getElementById(fieldName);
+            
+            if (errorElement) {
+                errorElement.textContent = message;
+            }
+            
+            if (inputElement) {
+                inputElement.classList.add('error-input');
+            }
         }
 
         // Toast notification functions
@@ -542,6 +734,12 @@ function getUserInitials($nombre, $apellido) {
                 closeCoordinadorModal();
             }
         });
+        
+        // Toggle password visibility
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        if (togglePasswordBtn) {
+            togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
+        }
 
         // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
