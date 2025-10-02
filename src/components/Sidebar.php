@@ -176,6 +176,12 @@ class Sidebar {
                         'icon' => '📅'
                     ],
                     [
+                        'url' => '/src/views/admin/admin-gestion-horarios.php',
+                        'file' => 'admin-gestion-horarios.php',
+                        'text' => 'schedule_management',
+                        'icon' => '⚙️'
+                    ],
+                    [
                         'url' => '/src/views/admin/admin-grupos.php',
                         'file' => 'admin-grupos.php',
                         'text' => 'groups',

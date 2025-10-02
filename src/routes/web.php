@@ -81,6 +81,11 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->put('/schedules/{id}', 'Admin\ScheduleController@update');
         $router->delete('/schedules/{id}', 'Admin\ScheduleController@destroy');
         
+        // Advanced schedule management
+        $router->get('/gestion-horarios', function() {
+            require __DIR__ . '/../views/admin/admin-gestion-horarios.php';
+        });
+        
         // Users management
         $router->get('/users', 'Admin\UserController@index');
         $router->get('/users/create', 'Admin\UserController@create');
