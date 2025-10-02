@@ -1,34 +1,58 @@
 <?php
 
-header("Location: ../src/views/login.php");
-exit();
+/**
+ * Chronos - School Management System
+ * Main entry point with modern routing system
+ */
 
-$host = getenv('POSTGRES_HOST');
-$db = getenv('POSTGRES_DB');
-$user = getenv('POSTGRES_USER');
-$pass = getenv('POSTGRES_PASSWORD');
+// Set error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Set timezone
+date_default_timezone_set('America/Montevideo');
+
+// Start output buffering
+ob_start();
 
 try {
-    $pdo = new PDO("pgsql:host=$host;dbname=$db", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $msg = "✅ Conexión a PostgreSQL exitosa";
-} catch (PDOException $e) {
-    $msg = "❌ Error: " . $e->getMessage();
+    // Load autoloader (if using Composer)
+    if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+        require_once __DIR__ . '/../vendor/autoload.php';
+    }
+    
+    // Load environment configuration
+    if (file_exists(__DIR__ . '/../config/environment/ngrok.env')) {
+        $env = parse_ini_file(__DIR__ . '/../config/environment/ngrok.env');
+        foreach ($env as $key => $value) {
+            putenv("$key=$value");
+        }
+    }
+    
+    // Load routes
+    require_once __DIR__ . '/../src/routes/web.php';
+    
+    // Include toast system
+    echo '<script src="/js/toast.js"></script>';
+    
+} catch (Exception $e) {
+    // Log error
+    error_log("Fatal error in index.php: " . $e->getMessage());
+    
+    // Show user-friendly error
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'Internal server error',
+        'message' => 'An unexpected error occurred. Please try again later.'
+    ]);
+    
+    // In development, show detailed error
+    if (getenv('APP_ENV') === 'development') {
+        echo "\n\nDebug information:\n";
+        echo $e->getMessage() . "\n";
+        echo $e->getTraceAsString();
+    }
 }
-?><!doctype html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Chronos</title>
-    <link rel="stylesheet" href="css/styles.css">
-</head>
-<body class="bg-slate-100 flex items-center justify-center h-screen">
-    <div class="p-8 bg-white rounded shadow text-center">
-        <h1 class="text-3xl font-bold text-indigo-600 mb-2">Chronos</h1>
-        <p class="text-lg text-gray-700 mb-6"><?= htmlspecialchars($msg) ?></p>
-        <a href="login.php" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 ease-in-out transform hover:scale-105">
-            Ir al Login
-        </a>
-    </div>
-</body>
-</html>
+
+// Clean output buffer
+ob_end_flush();

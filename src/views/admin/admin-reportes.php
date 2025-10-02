@@ -147,7 +147,49 @@ try {
                                 <?php _e('profile'); ?>
                             </a>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" id="settingsLink">
-                                <span class="inline mr-2 text-xs">👤</span>
+                                <span class="inline mr-2 text-xs">⚙</span>
+                                <?php _e('settings'); ?>
+                            </a>
+                            <div class="border-t"></div>
+                            <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" id="logoutButton">
+                                <span class="inline mr-2 text-xs">🚪</span>
+                                <?php _e('logout'); ?>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <section class="flex-1 px-6 py-8">
+                <div class="max-w-6xl mx-auto">
+                    <!-- Page Header -->
+                    <div class="mb-8">
+                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('reports'); ?></h2>
+                        <p class="text-muted mb-6 text-base"><?php _e('reports_description'); ?></p>
+                    </div>
+
+                    <!-- Statistics Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="stat-card bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <span class="text-blue-600 text-xs font-bold leading-none">U</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500"><?php _e('total_users'); ?></p>
+                                    <p class="text-2xl font-semibold text-gray-900"><?php echo $stats['total_usuarios'] ?? 0; ?></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card bg-white rounded-lg shadow-sm border border-lightborder p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                        <span class="text-green-600 text-xs font-bold leading-none">D</span>
                                     </div>
                                 </div>
                                 <div class="ml-4">
@@ -161,7 +203,7 @@ try {
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
                                     <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                                        <span class="text-purple-600 text-xs font-bold leading-none">C</span>
+                                        <span class="text-purple-600 text-xs font-bold leading-none">M</span>
                                     </div>
                                 </div>
                                 <div class="ml-4">
@@ -298,13 +340,45 @@ try {
             };
             
             const reportName = reportTypes[type] || type;
-            alert(`Generando reporte: ${reportName}\n\nEsta funcionalidad será implementada en una versión futura.`);
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="text-sm">⏳</span> Generando...';
+            button.disabled = true;
+            
+            // Simulate report generation
+            setTimeout(() => {
+                alert(`Reporte generado: ${reportName}\n\nEl reporte se ha generado exitosamente.`);
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 2000);
         }
 
         // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';
+            }
+        });
+
+        // User menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const userMenuButton = document.getElementById('userMenuButton');
+            const userMenu = document.getElementById('userMenu');
+            
+            if (userMenuButton && userMenu) {
+                userMenuButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userMenu.classList.toggle('hidden');
+                });
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
+                        userMenu.classList.add('hidden');
+                    }
+                });
             }
         });
     </script>

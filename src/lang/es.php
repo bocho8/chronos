@@ -446,6 +446,35 @@ return [
     'manage_all_availability' => 'Gestionar Toda la Disponibilidad',
     'as_admin_manage_all_teachers' => 'Como administrador, puede gestionar la disponibilidad de todos los docentes del sistema.',
     
+    // Schedule view translations
+    'choose_teacher' => 'Elegir docente',
+    'assigned_hours' => 'Horas asignadas',
+    'margin_percentage' => 'Porcentaje de margen',
+    'other_school' => 'Otro liceo',
+    'schedule_summary' => 'Resumen del Horario',
+    'no_schedule_assigned' => 'Sin horario asignado',
+    'no_schedule_assigned_description' => 'Este docente no tiene horarios asignados actualmente',
+    'lunes' => 'Lunes',
+    'martes' => 'Martes',
+    'miercoles' => 'Miércoles',
+    'jueves' => 'Jueves',
+    'viernes' => 'Viernes',
+    'sabado' => 'Sábado',
+    'domingo' => 'Domingo',
+    'notifications' => 'Notificaciones',
+    'profile' => 'Perfil',
+    'settings' => 'Configuración',
+    'confirm_logout' => '¿Está seguro que desea cerrar sesión?',
+    
+    // Dashboard and navigation
+    'dashboard' => 'Panel Principal',
+    'users' => 'Usuarios',
+    'teachers' => 'Docentes',
+    'coordinators' => 'Coordinadores',
+    'subjects' => 'Materias',
+    'schedules' => 'Horarios',
+    'groups' => 'Grupos',
+    
     // Additional parent/student related translations
     'parent_role' => 'Padre',
     'group' => 'Grupo',

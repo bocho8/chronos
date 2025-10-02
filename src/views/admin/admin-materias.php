@@ -345,53 +345,8 @@ try {
         </main>
     </div>
 
+    <script src="/js/toast.js"></script>
     <script>
-        // Toast notification functions
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            
-            const icon = getToastIcon(type);
-            toast.innerHTML = `
-                <div class="flex items-center">
-                    ${icon}
-                    <span>${message}</span>
-                </div>
-                <button onclick="hideToast(this)" class="ml-4 text-white hover:text-gray-200">
-                    <span class="text-xs">×</span>
-                </button>
-            `;
-            
-            container.appendChild(toast);
-            
-            // Trigger animation
-            setTimeout(() => toast.classList.add('show'), 100);
-            
-            // Auto hide after 5 seconds
-            setTimeout(() => hideToast(toast), 5000);
-        }
-
-        function getToastIcon(type) {
-            const icons = {
-                success: '<span class="text-green-500 text-xs">✓</span>',
-                error: '<span class="text-red-500 text-xs">×</span>',
-                warning: '<span class="text-gray-400 text-2xl">•</span>',
-                info: '<span class="text-sm">📋</span>'
-            };
-            return icons[type] || icons.info;
-        }
-
-        function hideToast(toast) {
-            if (toast && toast.parentNode) {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.parentNode.removeChild(toast);
-                    }
-                }, 300);
-            }
-        }
 
         let isEditMode = false;
 

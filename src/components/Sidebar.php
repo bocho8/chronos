@@ -50,7 +50,7 @@ class Sidebar {
         return <<<HTML
         <li>
             <a href="{$dashboardUrl}" class="sidebar-link {$activeClass} flex items-center py-3 px-5 {$textColor} no-underline transition-all hover:bg-sidebarHover">
-                <span class="text-sm">🏠</span>
+                <span class="text-sm mr-3">🏠</span>
                 {$this->translation->get('dashboard')}
             </a>
         </li>
@@ -95,7 +95,7 @@ class Sidebar {
         return <<<HTML
         <li>
             <a href="{$item['url']}" class="sidebar-link {$activeClass} flex items-center py-3 px-5 {$textColor} no-underline transition-all hover:bg-sidebarHover">
-                {$item['icon']}
+                <span class="text-sm mr-3">{$item['icon']}</span>
                 {$itemText}
             </a>
         </li>
@@ -136,22 +136,22 @@ class Sidebar {
                 'title' => 'administration',
                 'items' => [
                     [
-                        'url' => 'admin-usuarios.php',
+                        'url' => '/src/views/admin/admin-usuarios.php',
                         'file' => 'admin-usuarios.php',
                         'text' => 'users',
-                        'icon' => '<span class="text-sm">👥</span>'
+                        'icon' => '👥'
                     ],
                     [
-                        'url' => 'admin-docentes.php',
+                        'url' => '/src/views/admin/admin-docentes.php',
                         'file' => 'admin-docentes.php',
                         'text' => 'teachers',
-                        'icon' => '<span class="text-sm">👨‍🏫</span>'
+                        'icon' => '👨‍🏫'
                     ],
                     [
-                        'url' => 'admin-coordinadores.php',
+                        'url' => '/src/views/admin/admin-coordinadores.php',
                         'file' => 'admin-coordinadores.php',
                         'text' => 'coordinators',
-                        'icon' => '<span class="text-sm">👨‍💼</span>'
+                        'icon' => '👨‍💼'
                     ]
                 ]
             ]
@@ -164,22 +164,22 @@ class Sidebar {
                 'title' => 'academic_management',
                 'items' => [
                     [
-                        'url' => 'admin-materias.php',
+                        'url' => '/src/views/admin/admin-materias.php',
                         'file' => 'admin-materias.php',
                         'text' => 'subjects',
-                        'icon' => '<span class="text-sm">📚</span>'
+                        'icon' => '📚'
                     ],
                     [
-                        'url' => 'admin-horarios.php',
+                        'url' => '/src/views/admin/admin-horarios.php',
                         'file' => 'admin-horarios.php',
                         'text' => 'schedules',
-                        'icon' => '<span class="text-sm">📅</span>'
+                        'icon' => '📅'
                     ],
                     [
-                        'url' => 'admin-grupos.php',
+                        'url' => '/src/views/admin/admin-grupos.php',
                         'file' => 'admin-grupos.php',
                         'text' => 'groups',
-                        'icon' => '<span class="text-sm">👥</span>'
+                        'icon' => '👥'
                     ]
                 ]
             ]
@@ -192,22 +192,10 @@ class Sidebar {
                 'title' => 'director_functions',
                 'items' => [
                     [
-                        'url' => 'admin-publicar-horarios.php',
+                        'url' => '/src/views/admin/admin-publicar-horarios.php',
                         'file' => 'admin-publicar-horarios.php',
                         'text' => 'publish_schedules',
-                        'icon' => '<span class="text-sm">📢</span>'
-                    ],
-                    [
-                        'url' => 'admin-agregar-docentes.php',
-                        'file' => 'admin-agregar-docentes.php',
-                        'text' => 'add_new_teachers',
-                        'icon' => '<span class="text-sm">➕</span>'
-                    ],
-                    [
-                        'url' => 'admin-agregar-materias.php',
-                        'file' => 'admin-agregar-materias.php',
-                        'text' => 'add_new_subjects',
-                        'icon' => '<span class="text-sm">➕</span>'
+                        'icon' => '📢'
                     ]
                 ]
             ]
@@ -220,22 +208,22 @@ class Sidebar {
                 'title' => 'coordinator_functions',
                 'items' => [
                     [
-                        'url' => 'admin-disponibilidad.php',
+                        'url' => '/src/views/admin/admin-disponibilidad.php',
                         'file' => 'admin-disponibilidad.php',
                         'text' => 'teacher_availability',
-                        'icon' => '<span class="text-sm">⏰</span>'
+                        'icon' => '⏰'
                     ],
                     [
-                        'url' => 'admin-asignaciones.php',
+                        'url' => '/src/views/admin/admin-asignaciones.php',
                         'file' => 'admin-asignaciones.php',
                         'text' => 'subject_assignments',
-                        'icon' => '<span class="text-sm">🔗</span>'
+                        'icon' => '🔗'
                     ],
                     [
-                        'url' => 'admin-reportes.php',
+                        'url' => '/src/views/admin/admin-reportes.php',
                         'file' => 'admin-reportes.php',
                         'text' => 'reports',
-                        'icon' => '<span class="text-sm">📊</span>'
+                        'icon' => '📊'
                     ]
                 ]
             ]
@@ -248,16 +236,16 @@ class Sidebar {
                 'title' => 'teacher_functions',
                 'items' => [
                     [
-                        'url' => 'mi-horario.php', 
-                        'file' => 'mi-horario.php',
+                        'url' => '/src/views/admin/admin-mi-horario.php',
+                        'file' => 'admin-mi-horario.php',
                         'text' => 'my_schedule',
-                        'icon' => '<span class="text-sm">📅</span>'
+                        'icon' => '📅'
                     ],
                     [
-                        'url' => 'mi-disponibilidad.php',
-                        'file' => 'mi-disponibilidad.php',
+                        'url' => '/src/views/admin/admin-mi-disponibilidad.php',
+                        'file' => 'admin-mi-disponibilidad.php',
                         'text' => 'my_availability',
-                        'icon' => '<span class="text-sm">⏰</span>'
+                        'icon' => '⏰'
                     ]
                 ]
             ]
@@ -270,16 +258,16 @@ class Sidebar {
                 'title' => 'parent_functions',
                 'items' => [
                     [
-                        'url' => 'admin-estudiantes.php',
+                        'url' => '/src/views/admin/admin-estudiantes.php',
                         'file' => 'admin-estudiantes.php',
                         'text' => 'students',
-                        'icon' => '<span class="text-sm">👨‍🎓</span>'
+                        'icon' => '👨‍🎓'
                     ],
                     [
-                        'url' => 'admin-horarios-estudiante.php',
+                        'url' => '/src/views/admin/admin-horarios-estudiante.php',
                         'file' => 'admin-horarios-estudiante.php',
                         'text' => 'student_schedules',
-                        'icon' => '<span class="text-sm">📅</span>'
+                        'icon' => '📅'
                     ]
                 ]
             ]
@@ -299,7 +287,8 @@ class Sidebar {
     }
     
     private function isActive($file) {
-        return basename($_SERVER['PHP_SELF']) === $file || $this->currentPage === $file;
+        $currentFile = basename($_SERVER['PHP_SELF']);
+        return $currentFile === $file || $this->currentPage === $file;
     }
     
     public static function getStyles() {
@@ -320,6 +309,21 @@ class Sidebar {
             top: 0;
             height: 100%;
             width: 4px;
+            background-color: #1f366d;
+        }
+        .sidebar-link:hover {
+            background-color: #f3f4f6;
+        }
+        .bg-sidebar {
+            background-color: #f8fafc;
+        }
+        .bg-sidebarHover {
+            background-color: #f1f5f9;
+        }
+        .border-border {
+            border-color: #e2e8f0;
+        }
+        .bg-darkblue {
             background-color: #1f366d;
         }
         </style>
