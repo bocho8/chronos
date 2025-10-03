@@ -138,93 +138,409 @@ try {
         }
         
         .schedule-cell {
-            background-color: white;
-            min-height: 80px;
-            padding: 4px;
-            border: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            min-height: 100px;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             position: relative;
+            border-radius: 8px;
+            overflow: hidden;
         }
         
         .schedule-cell:hover {
-            background-color: #f9fafb;
-            border-color: #3b82f6;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
+            border-color: #3b82f6 !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
         }
         
         .schedule-cell.occupied {
-            background-color: #dbeafe;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
             border-color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+        }
+        
+        .schedule-cell.occupied:hover {
+            background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25) !important;
+        }
+        
+        .schedule-cell.available:hover {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+            border-color: #0ea5e9 !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15) !important;
+        }
+        
+        .schedule-cell.available:hover::after {
+            content: '➕';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: #0ea5e9;
+            font-size: 16px;
+            z-index: 5;
+        }
+        
+        .schedule-cell.available:hover .cell-content {
+            color: #0ea5e9;
+            font-weight: 600;
         }
         
         .schedule-cell.conflict {
-            background-color: #fef2f2;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
             border-color: #ef4444;
-            animation: pulse 2s infinite;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+            animation: pulse-red 2s infinite;
         }
         
         .schedule-cell.warning {
-            background-color: #fef3c7;
-            border-color: #f59e0b;
+            background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+            border-color: #eab308;
+            box-shadow: 0 2px 8px rgba(234, 179, 8, 0.2);
+            animation: pulse-yellow 2s infinite;
+        }
+        
+        .schedule-cell.anep-warning {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-color: #0ea5e9;
+            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
+        }
+        
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        @keyframes pulse-yellow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.9; }
         }
         
         .schedule-assignment {
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             color: white;
-            padding: 6px 8px;
-            border-radius: 4px;
-            font-size: 11px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 12px;
             font-weight: 500;
-            margin-bottom: 2px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .schedule-assignment::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #60a5fa, #3b82f6, #1d4ed8);
         }
         
         .schedule-assignment .group-name {
-            font-weight: 600;
-            margin-bottom: 2px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .schedule-assignment .subject-name {
-            opacity: 0.9;
-            font-size: 10px;
+            opacity: 0.95;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 4px 0;
         }
         
         .schedule-assignment .teacher-name {
-            opacity: 0.8;
+            opacity: 0.85;
             font-size: 10px;
-            margin-top: 2px;
+            margin-top: 4px;
+            font-style: italic;
         }
         
         .schedule-actions {
             position: absolute;
-            top: 2px;
-            right: 2px;
+            top: 6px;
+            right: 6px;
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: all 0.3s ease;
+            display: flex;
+            gap: 4px;
+            z-index: 20;
         }
         
         .schedule-cell:hover .schedule-actions {
             opacity: 1;
         }
         
+        .schedule-assignment:hover .schedule-actions {
+            opacity: 1;
+        }
+        
+        /* Hide action buttons in selection mode to avoid conflicts */
+        .selection-mode .schedule-actions {
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+        
         .schedule-actions button {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.2);
             border: none;
-            border-radius: 3px;
-            padding: 2px 4px;
-            margin-left: 2px;
-            font-size: 10px;
+            border-radius: 4px;
+            padding: 4px 6px;
+            margin-left: 0;
+            font-size: 11px;
             cursor: pointer;
-            color: #374151;
+            color: white;
+            transition: all 0.2s;
+            backdrop-filter: blur(4px);
         }
         
         .schedule-actions button:hover {
-            background: white;
-            color: #1f366d;
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
         }
         
-        .schedule-actions .edit-btn {
-            color: #3b82f6;
+        .edit-btn:hover {
+            background: rgba(34, 197, 94, 0.8);
+        }
+        
+        .delete-btn:hover {
+            background: rgba(239, 68, 68, 0.8);
+        }
+        
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 8px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            font-size: 11px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Indicadores de estado */
+        .schedule-cell.available::after {
+            content: '✓';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: #10b981;
+            font-weight: bold;
+            font-size: 16px;
+            z-index: 5;
+        }
+        
+        /* Style for available cells */
+        .schedule-cell.available {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-color: #e2e8f0;
+            position: relative;
+        }
+        
+        .cell-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .schedule-cell.occupied::after {
+            content: '📚';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 14px;
+            z-index: 5;
+        }
+        
+        .schedule-cell.conflict::after {
+            content: '⚠️';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 16px;
+            z-index: 5;
+        }
+        
+        .schedule-cell.warning::after {
+            content: '⚡';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 14px;
+            z-index: 5;
+        }
+        
+        .schedule-cell.anep-warning::after {
+            content: '📋';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 14px;
+            z-index: 5;
+        }
+        
+        /* Hide status indicators in selection mode to avoid conflicts */
+        .selection-mode .schedule-cell.occupied::after {
+            display: none;
+        }
+        
+        /* Bulk Selection Styles */
+        .selection-mode .schedule-cell {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .selection-mode .schedule-cell.occupied::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            background: white;
+            z-index: 15;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Ensure available cells don't show checkbox in selection mode */
+        .selection-mode .schedule-cell.available::before {
+            display: none;
+        }
+        
+        .selection-mode .schedule-cell.available .cell-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .selection-mode .schedule-cell.occupied.selected::before {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+        
+        .selection-mode .schedule-cell.occupied.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 6px;
+            left: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 16;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .selection-mode .schedule-cell.occupied:hover::before {
+            border-color: #3b82f6;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+        }
+        
+        .selection-mode .schedule-cell.occupied.selected {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        
+        .selection-mode .schedule-cell.occupied.selected:hover {
+            background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25), 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        
+        .selection-mode .schedule-cell.available {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .selection-mode .schedule-cell.available:hover {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-color: #0ea5e9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+            opacity: 0.8;
+        }
+        
+        /* Override hover styles in selection mode for occupied cells */
+        .selection-mode .schedule-cell.occupied:hover {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            transform: none;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+        }
+        
+        .selection-mode .schedule-cell.occupied.selected:hover {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            transform: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        
+        .bulk-actions-panel {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .selected-count {
+            background: #3b82f6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
         }
         
         .schedule-actions .delete-btn {
@@ -492,7 +808,7 @@ try {
                                 <p class="text-muted text-base"><?php _e('schedule_management_description'); ?></p>
                             </div>
                             
-                            <div class="flex gap-3">
+                            <div class="flex gap-3 flex-wrap">
                                 <select id="viewMode" class="px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-darkblue focus:border-darkblue">
                                     <option value="group" selected><?php _e('by_group'); ?></option>
                                     <option value="teacher"><?php _e('by_teacher'); ?></option>
@@ -515,6 +831,31 @@ try {
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                                
+                                <!-- Bulk Operations Controls -->
+                                <div class="flex gap-2 items-center">
+                                    <button id="toggleSelectionMode" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm transition-colors">
+                                        <span class="mr-1">☑️</span> Selección Múltiple
+                                    </button>
+                                    
+                                    <div id="bulkActions" class="hidden flex gap-2">
+                                        <button id="selectAll" class="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs">
+                                            Seleccionar Todo
+                                        </button>
+                                        <button id="deselectAll" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs">
+                                            Deseleccionar
+                                        </button>
+                                        <button id="bulkDelete" class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded text-xs">
+                                            🗑️ Eliminar
+                                        </button>
+                                        <button id="bulkCopy" class="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded text-xs">
+                                            📋 Copiar
+                                        </button>
+                                        <button id="bulkMove" class="px-3 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded text-xs">
+                                            📦 Mover
+                                        </button>
+                                    </div>
+                                </div>
                                 
                                 <button onclick="openScheduleModal()" class="px-4 py-2 bg-darkblue text-white rounded-md text-sm font-medium hover:bg-navy transition-colors">
                                     <span class="mr-1">+</span>
@@ -615,6 +956,41 @@ try {
                 <div id="suggestionList"></div>
             </div>
             
+                        <!-- Teacher Workload Panel -->
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                            <div id="teacherWorkload">
+                                <h4 class="font-semibold text-gray-700 mb-3">Carga Horaria por Docente</h4>
+                                <p class="text-gray-500 text-sm">Selecciona un grupo o docente para ver la carga horaria</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Bulk Actions Panel -->
+                        <div id="bulkActionsPanel" class="bulk-actions-panel hidden">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-sm font-medium text-gray-700">Acciones en Lote:</span>
+                                    <span id="selectedCount" class="selected-count">0 seleccionados</span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button id="bulkEdit" class="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs">
+                                        ✏️ Editar
+                                    </button>
+                                    <button id="bulkDeleteConfirm" class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded text-xs">
+                                        🗑️ Eliminar
+                                    </button>
+                                    <button id="bulkCopyConfirm" class="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded text-xs">
+                                        📋 Copiar
+                                    </button>
+                                    <button id="bulkMoveConfirm" class="px-3 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded text-xs">
+                                        📦 Mover
+                                    </button>
+                                    <button id="exitSelectionMode" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs">
+                                        ✕ Salir
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+            
             <form id="scheduleForm" onsubmit="handleScheduleFormSubmit(event)" class="space-y-4">
                 <input type="hidden" id="schedule_id" name="id">
                 <input type="hidden" id="schedule_id_bloque" name="id_bloque">
@@ -685,6 +1061,8 @@ try {
         let isEditMode = false;
         let currentConflicts = [];
         let currentSuggestions = [];
+        let isSelectionMode = false;
+        let selectedSchedules = new Set();
         
         // View mode handling
         document.getElementById('viewMode').addEventListener('change', function() {
@@ -718,6 +1096,45 @@ try {
             
             // Load initial data
             loadScheduleGrid();
+            
+            // Bulk operations event listeners
+            const toggleBtn = document.getElementById('toggleSelectionMode');
+            const selectAllBtn = document.getElementById('selectAll');
+            const deselectAllBtn = document.getElementById('deselectAll');
+            const bulkDeleteBtn = document.getElementById('bulkDelete');
+            const bulkCopyBtn = document.getElementById('bulkCopy');
+            const bulkMoveBtn = document.getElementById('bulkMove');
+            const bulkEditBtn = document.getElementById('bulkEdit');
+            const bulkDeleteConfirmBtn = document.getElementById('bulkDeleteConfirm');
+            const bulkCopyConfirmBtn = document.getElementById('bulkCopyConfirm');
+            const bulkMoveConfirmBtn = document.getElementById('bulkMoveConfirm');
+            const exitSelectionBtn = document.getElementById('exitSelectionMode');
+            
+            // Remove existing listeners to avoid duplicates
+            toggleBtn?.removeEventListener('click', toggleSelectionMode);
+            selectAllBtn?.removeEventListener('click', selectAllSchedules);
+            deselectAllBtn?.removeEventListener('click', deselectAllSchedules);
+            bulkDeleteBtn?.removeEventListener('click', bulkDelete);
+            bulkCopyBtn?.removeEventListener('click', bulkCopy);
+            bulkMoveBtn?.removeEventListener('click', bulkMove);
+            bulkEditBtn?.removeEventListener('click', bulkEdit);
+            bulkDeleteConfirmBtn?.removeEventListener('click', bulkDelete);
+            bulkCopyConfirmBtn?.removeEventListener('click', bulkCopy);
+            bulkMoveConfirmBtn?.removeEventListener('click', bulkMove);
+            exitSelectionBtn?.removeEventListener('click', exitSelectionMode);
+            
+            // Add event listeners
+            toggleBtn?.addEventListener('click', toggleSelectionMode);
+            selectAllBtn?.addEventListener('click', selectAllSchedules);
+            deselectAllBtn?.addEventListener('click', deselectAllSchedules);
+            bulkDeleteBtn?.addEventListener('click', bulkDelete);
+            bulkCopyBtn?.addEventListener('click', bulkCopy);
+            bulkMoveBtn?.addEventListener('click', bulkMove);
+            bulkEditBtn?.addEventListener('click', bulkEdit);
+            bulkDeleteConfirmBtn?.addEventListener('click', bulkDelete);
+            bulkCopyConfirmBtn?.addEventListener('click', bulkCopy);
+            bulkMoveConfirmBtn?.addEventListener('click', bulkMove);
+            exitSelectionBtn?.addEventListener('click', exitSelectionMode);
         });
         
         document.getElementById('groupFilter').addEventListener('change', loadScheduleGrid);
@@ -908,17 +1325,31 @@ try {
             // Handle ANEP conflicts specially
             if (conflicts.anep_conflicts && conflicts.anep_conflicts.conflicts) {
                 const anepDiv = document.createElement('div');
-                anepDiv.className = 'anep-conflicts mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg';
+                anepDiv.className = 'anep-conflicts mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg shadow-sm';
                 
                 let conflictsHtml = `
-                    <h4 class="font-semibold text-yellow-800 mb-3 flex items-center">
-                        ⚠️ Conflictos ANEP - ${conflicts.anep_conflicts.materia}
+                    <h4 class="font-semibold text-blue-800 mb-3 flex items-center">
+                        <span class="text-xl mr-2">📋</span>
+                        Conflictos ANEP - ${conflicts.anep_conflicts.materia}
                     </h4>
-                    <div class="text-sm text-yellow-700 mb-3">
-                        <strong>Pauta:</strong> ${conflicts.anep_conflicts.pauta}<br>
-                        <strong>Días asignados:</strong> ${conflicts.anep_conflicts.resumen.dias_asignados} 
-                        (mín: ${conflicts.anep_conflicts.resumen.dias_minimos}, máx: ${conflicts.anep_conflicts.resumen.dias_maximos})<br>
-                        <strong>Horas asignadas:</strong> ${conflicts.anep_conflicts.resumen.horas_asignadas} / ${conflicts.anep_conflicts.resumen.horas_semanales}
+                    <div class="bg-white p-3 rounded-lg border border-blue-100 mb-3">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <strong class="text-blue-700">Pauta:</strong> ${conflicts.anep_conflicts.pauta}
+                            </div>
+                            <div>
+                                <strong class="text-blue-700">Días asignados:</strong> 
+                                <span class="px-2 py-1 rounded-full text-xs ${conflicts.anep_conflicts.resumen.dias_asignados < conflicts.anep_conflicts.resumen.dias_minimos ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
+                                    ${conflicts.anep_conflicts.resumen.dias_asignados} / ${conflicts.anep_conflicts.resumen.dias_minimos}-${conflicts.anep_conflicts.resumen.dias_maximos}
+                                </span>
+                            </div>
+                            <div>
+                                <strong class="text-blue-700">Horas asignadas:</strong> 
+                                <span class="px-2 py-1 rounded-full text-xs ${conflicts.anep_conflicts.resumen.horas_asignadas < conflicts.anep_conflicts.resumen.horas_semanales ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">
+                                    ${conflicts.anep_conflicts.resumen.horas_asignadas} / ${conflicts.anep_conflicts.resumen.horas_semanales}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                     <div class="space-y-2">
                 `;
@@ -928,14 +1359,20 @@ try {
                                         conflict.severity === 'warning' ? 'text-yellow-600' : 'text-blue-600';
                     const icon = conflict.severity === 'error' ? '❌' : 
                                conflict.severity === 'warning' ? '⚠️' : 'ℹ️';
+                    const borderClass = conflict.severity === 'error' ? 'border-red-400' : 
+                                      conflict.severity === 'warning' ? 'border-yellow-400' : 'border-blue-400';
                     
                     conflictsHtml += `
-                        <div class="p-2 bg-white rounded border-l-4 ${conflict.severity === 'error' ? 'border-red-400' : 
-                                                                          conflict.severity === 'warning' ? 'border-yellow-400' : 'border-blue-400'}">
-                            <div class="font-medium ${severityClass}">
-                                ${icon} ${conflict.message}
+                        <div class="p-3 bg-white rounded-lg border-l-4 ${borderClass} shadow-sm">
+                            <div class="font-medium ${severityClass} flex items-start">
+                                <span class="text-lg mr-2">${icon}</span>
+                                <span>${conflict.message}</span>
                             </div>
-                            ${conflict.suggestion ? `<div class="text-xs text-gray-600 mt-1">💡 ${conflict.suggestion}</div>` : ''}
+                            ${conflict.suggestion ? `
+                                <div class="text-xs text-gray-600 mt-2 p-2 bg-gray-50 rounded border-l-2 border-gray-300">
+                                    💡 <strong>Sugerencia:</strong> ${conflict.suggestion}
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 });
@@ -1086,9 +1523,8 @@ try {
                 console.log('Datos recibidos del servidor:', data);
                 if (data.success) {
                     console.log('Grid data:', data.data.grid);
-                    console.log('Grid LUNES:', data.data.grid.LUNES);
-                    console.log('Grid MARTES:', data.data.grid.MARTES);
                     updateScheduleGrid(data.data.grid);
+                    updateTeacherWorkload(data.data.grid);
                     console.log('Horarios cargados:', data.data.horarios_count, 'Bloques:', data.data.bloques_count);
                 } else {
                     showToast('Error cargando horarios: ' + data.message, 'error');
@@ -1106,8 +1542,12 @@ try {
             
             // Clear existing assignments
             document.querySelectorAll('.schedule-cell').forEach(cell => {
-                cell.innerHTML = '<div class="text-gray-400 text-xs text-center mt-4"><?php _e('available'); ?></div>';
-                cell.classList.remove('occupied', 'conflict', 'warning');
+                cell.innerHTML = '<div class="cell-content">Disponible</div><span class="tooltiptext">Click para agregar horario</span>';
+                cell.classList.remove('occupied', 'conflict', 'warning', 'anep-warning', 'available', 'selected', 'tooltip');
+                cell.removeAttribute('data-tooltip');
+                
+                // Remove all event listeners
+                cell.removeEventListener('click', handleCellClick);
             });
             
             // Update with new data
@@ -1122,6 +1562,9 @@ try {
                             
                             if (cell && assignment) {
                                 console.log('Found cell and assignment:', assignment);
+                                const timeRange = `${assignment.hora_inicio} - ${assignment.hora_fin}`;
+                                const tooltipText = `${assignment.materia_nombre} - ${assignment.docente_nombre} ${assignment.docente_apellido}\\n${assignment.grupo_nombre} - ${timeRange}`;
+                                
                                 cell.innerHTML = `
                                     <div class="schedule-assignment">
                                         <div class="group-name">${assignment.grupo_nombre || ''}</div>
@@ -1129,17 +1572,36 @@ try {
                                         <div class="teacher-name">${assignment.docente_nombre || ''} ${assignment.docente_apellido || ''}</div>
                                     </div>
                                     <div class="schedule-actions">
-                                        <button class="edit-btn" onclick="event.stopPropagation(); editSchedule(${assignment.id_horario})">
+                                        <button class="edit-btn" onclick="event.stopPropagation(); editSchedule(${assignment.id_horario})" title="Editar horario">
                                             ✏️
                                         </button>
-                                        <button class="delete-btn" onclick="event.stopPropagation(); deleteSchedule(${assignment.id_horario})">
+                                        <button class="delete-btn" onclick="event.stopPropagation(); deleteSchedule(${assignment.id_horario})" title="Eliminar horario">
                                             🗑️
                                         </button>
                                     </div>
                                 `;
                                 cell.classList.add('occupied');
+                                cell.setAttribute('data-tooltip', tooltipText);
+                                
+                                // Remove existing event listener to avoid duplicates
+                                cell.removeEventListener('click', handleCellClick);
+                                cell.addEventListener('click', handleCellClick);
                             } else if (cell) {
                                 console.log('Found cell but no assignment for:', dia, bloqueId);
+                                cell.classList.add('available', 'tooltip');
+                                // Ensure the cell has the correct content
+                                if (!cell.querySelector('.cell-content')) {
+                                    cell.innerHTML = '<div class="cell-content">Disponible</div><span class="tooltiptext">Click para agregar horario</span>';
+                                }
+                                // Add click listener for available cells
+                                cell.addEventListener('click', function() {
+                                    if (!isSelectionMode) {
+                                        openScheduleModal();
+                                        // Set the day and block for the new schedule
+                                        document.getElementById('schedule_dia').value = dia;
+                                        document.getElementById('schedule_id_bloque').value = bloqueId;
+                                    }
+                                });
                             } else {
                                 console.log('Cell not found for:', dia, bloqueId);
                             }
@@ -1155,6 +1617,250 @@ try {
             errorElements.forEach(element => {
                 element.textContent = '';
             });
+        }
+        
+        // Calculate and display teacher workload
+        function updateTeacherWorkload(gridData) {
+            const workload = {};
+            
+            if (gridData && typeof gridData === 'object') {
+                Object.keys(gridData).forEach(dia => {
+                    if (gridData[dia] && typeof gridData[dia] === 'object') {
+                        Object.keys(gridData[dia]).forEach(bloqueId => {
+                            const assignment = gridData[dia][bloqueId];
+                            if (assignment && assignment.docente_nombre) {
+                                const teacherKey = `${assignment.docente_nombre} ${assignment.docente_apellido}`;
+                                if (!workload[teacherKey]) {
+                                    workload[teacherKey] = {
+                                        name: teacherKey,
+                                        hours: 0,
+                                        subjects: new Set(),
+                                        groups: new Set()
+                                    };
+                                }
+                                workload[teacherKey].hours += 1; // Assuming 1 hour per block
+                                workload[teacherKey].subjects.add(assignment.materia_nombre);
+                                workload[teacherKey].groups.add(assignment.grupo_nombre);
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Update workload display
+            const workloadContainer = document.getElementById('teacherWorkload');
+            if (workloadContainer) {
+                let workloadHtml = '<h4 class="font-semibold text-gray-700 mb-3">Carga Horaria por Docente</h4>';
+                Object.values(workload).forEach(teacher => {
+                    const subjectsList = Array.from(teacher.subjects).join(', ');
+                    const groupsList = Array.from(teacher.groups).join(', ');
+                    workloadHtml += `
+                        <div class="bg-white p-3 rounded-lg border border-gray-200 mb-2">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium text-gray-800">${teacher.name}</span>
+                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                                    ${teacher.hours} horas
+                                </span>
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">
+                                <div><strong>Materias:</strong> ${subjectsList}</div>
+                                <div><strong>Grupos:</strong> ${groupsList}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                workloadContainer.innerHTML = workloadHtml;
+            }
+        }
+        
+        // Bulk Operations Functions
+        function toggleSelectionMode() {
+            isSelectionMode = !isSelectionMode;
+            const grid = document.getElementById('scheduleGrid');
+            const toggleBtn = document.getElementById('toggleSelectionMode');
+            const bulkActions = document.getElementById('bulkActions');
+            const bulkPanel = document.getElementById('bulkActionsPanel');
+            
+            console.log('Toggle selection mode:', isSelectionMode);
+            
+            if (isSelectionMode) {
+                grid.classList.add('selection-mode');
+                toggleBtn.textContent = '☑️ Salir de Selección';
+                toggleBtn.classList.add('bg-blue-100', 'text-blue-700');
+                bulkActions.classList.remove('hidden');
+                bulkPanel.classList.remove('hidden');
+                
+                // Clear any existing selections
+                selectedSchedules.clear();
+                updateSelectedCount();
+                
+                console.log('Selection mode activated');
+            } else {
+                exitSelectionMode();
+            }
+        }
+        
+        function exitSelectionMode() {
+            isSelectionMode = false;
+            selectedSchedules.clear();
+            
+            const grid = document.getElementById('scheduleGrid');
+            const toggleBtn = document.getElementById('toggleSelectionMode');
+            const bulkActions = document.getElementById('bulkActions');
+            const bulkPanel = document.getElementById('bulkActionsPanel');
+            
+            grid.classList.remove('selection-mode');
+            toggleBtn.textContent = '☑️ Selección Múltiple';
+            toggleBtn.classList.remove('bg-blue-100', 'text-blue-700');
+            bulkActions.classList.add('hidden');
+            bulkPanel.classList.add('hidden');
+            
+            // Remove all selections
+            document.querySelectorAll('.schedule-cell.selected').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+            
+            updateSelectedCount();
+        }
+        
+        function selectAllSchedules() {
+            document.querySelectorAll('.schedule-cell.occupied').forEach(cell => {
+                const editButton = cell.querySelector('.edit-btn');
+                if (!editButton) return;
+                
+                const onclickAttr = editButton.getAttribute('onclick');
+                const match = onclickAttr ? onclickAttr.match(/editSchedule\((\d+)\)/) : null;
+                const scheduleId = match ? match[1] : null;
+                
+                if (scheduleId) {
+                    cell.classList.add('selected');
+                    selectedSchedules.add(scheduleId);
+                }
+            });
+            updateSelectedCount();
+        }
+        
+        function deselectAllSchedules() {
+            selectedSchedules.clear();
+            document.querySelectorAll('.schedule-cell.selected').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+            updateSelectedCount();
+        }
+        
+        function updateSelectedCount() {
+            const count = selectedSchedules.size;
+            document.getElementById('selectedCount').textContent = `${count} seleccionado${count !== 1 ? 's' : ''}`;
+        }
+        
+        function handleCellClick(event) {
+            if (!isSelectionMode) {
+                console.log('Not in selection mode');
+                return;
+            }
+            
+            const cell = event.currentTarget;
+            console.log('Cell clicked:', cell);
+            
+            // Only allow selection of occupied cells
+            if (!cell.classList.contains('occupied')) {
+                console.log('Cell not occupied, ignoring');
+                return;
+            }
+            
+            // Find the schedule ID from the edit button
+            const editButton = cell.querySelector('.edit-btn');
+            if (!editButton) {
+                console.log('No edit button found');
+                return;
+            }
+            
+            const onclickAttr = editButton.getAttribute('onclick');
+            const match = onclickAttr ? onclickAttr.match(/editSchedule\((\d+)\)/) : null;
+            const scheduleId = match ? match[1] : null;
+            
+            console.log('Schedule ID found:', scheduleId);
+            
+            if (!scheduleId) return;
+            
+            if (cell.classList.contains('selected')) {
+                cell.classList.remove('selected');
+                selectedSchedules.delete(scheduleId);
+                console.log('Deselected schedule:', scheduleId);
+            } else {
+                cell.classList.add('selected');
+                selectedSchedules.add(scheduleId);
+                console.log('Selected schedule:', scheduleId);
+            }
+            
+            updateSelectedCount();
+        }
+        
+        function bulkDelete() {
+            if (selectedSchedules.size === 0) {
+                showToast('No hay horarios seleccionados', 'warning');
+                return;
+            }
+            
+            if (confirm(`¿Estás seguro de que quieres eliminar ${selectedSchedules.size} horario(s)?`)) {
+                const scheduleIds = Array.from(selectedSchedules);
+                performBulkOperation('delete', scheduleIds);
+            }
+        }
+        
+        function bulkCopy() {
+            if (selectedSchedules.size === 0) {
+                showToast('No hay horarios seleccionados', 'warning');
+                return;
+            }
+            
+            showToast('Funcionalidad de copia en desarrollo', 'info');
+        }
+        
+        function bulkMove() {
+            if (selectedSchedules.size === 0) {
+                showToast('No hay horarios seleccionados', 'warning');
+                return;
+            }
+            
+            showToast('Funcionalidad de movimiento en desarrollo', 'info');
+        }
+        
+        function bulkEdit() {
+            if (selectedSchedules.size === 0) {
+                showToast('No hay horarios seleccionados', 'warning');
+                return;
+            }
+            
+            showToast('Funcionalidad de edición en lote en desarrollo', 'info');
+        }
+        
+        async function performBulkOperation(operation, scheduleIds) {
+            try {
+                const response = await fetch('/src/controllers/gestion_horarios_handler.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'bulk_' + operation,
+                        schedule_ids: JSON.stringify(scheduleIds)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`${operation === 'delete' ? 'Eliminados' : 'Procesados'} ${scheduleIds.length} horario(s)`, 'success');
+                    loadScheduleGrid();
+                    exitSelectionMode();
+                } else {
+                    showToast('Error: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error en la operación', 'error');
+            }
         }
         
         // Helper functions for suggestions

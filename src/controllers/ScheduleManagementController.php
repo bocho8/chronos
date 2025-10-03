@@ -34,6 +34,10 @@ class ScheduleManagementController
                 'get_subject_requirements' => $this->getSubjectRequirements(),
                 'get_anep_guidelines' => $this->getANEPGuidelines(),
                 'bulk_create_schedules' => $this->bulkCreateSchedules(),
+                'bulk_delete' => $this->bulkDelete(),
+                'bulk_copy' => $this->bulkCopy(),
+                'bulk_move' => $this->bulkMove(),
+                'bulk_edit' => $this->bulkEdit(),
                 'validate_schedule' => $this->validateSchedule(),
                 default => throw new Exception("Acción no válida: $action")
             };
@@ -543,5 +547,78 @@ class ScheduleManagementController
         } catch (Exception $e) {
             error_log("Error logging activity: " . $e->getMessage());
         }
+    }
+    
+    /**
+     * Elimina múltiples horarios en lote
+     */
+    private function bulkDelete()
+    {
+        $scheduleIds = json_decode($_POST['schedule_ids'] ?? '[]', true);
+        
+        if (empty($scheduleIds) || !is_array($scheduleIds)) {
+            ResponseHelper::error('No se proporcionaron IDs de horarios válidos');
+            return;
+        }
+        
+        try {
+            $deletedCount = 0;
+            $errors = [];
+            
+            foreach ($scheduleIds as $scheduleId) {
+                if (!is_numeric($scheduleId)) {
+                    $errors[] = "ID de horario inválido: $scheduleId";
+                    continue;
+                }
+                
+                $query = "DELETE FROM horario WHERE id_horario = :id";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindParam(':id', $scheduleId, PDO::PARAM_INT);
+                
+                if ($stmt->execute()) {
+                    $deletedCount++;
+                } else {
+                    $errors[] = "Error eliminando horario ID: $scheduleId";
+                }
+            }
+            
+            if ($deletedCount > 0) {
+                $this->logActivity('Bulk delete schedules: ' . $deletedCount . ' deleted');
+                ResponseHelper::success("Eliminados $deletedCount horario(s)", [
+                    'deleted_count' => $deletedCount,
+                    'errors' => $errors
+                ]);
+            } else {
+                ResponseHelper::error('No se pudo eliminar ningún horario', $errors);
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error in bulkDelete: " . $e->getMessage());
+            ResponseHelper::error('Error eliminando horarios: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Copia múltiples horarios en lote
+     */
+    private function bulkCopy()
+    {
+        ResponseHelper::error('Funcionalidad de copia en lote en desarrollo');
+    }
+    
+    /**
+     * Mueve múltiples horarios en lote
+     */
+    private function bulkMove()
+    {
+        ResponseHelper::error('Funcionalidad de movimiento en lote en desarrollo');
+    }
+    
+    /**
+     * Edita múltiples horarios en lote
+     */
+    private function bulkEdit()
+    {
+        ResponseHelper::error('Funcionalidad de edición en lote en desarrollo');
     }
 }
