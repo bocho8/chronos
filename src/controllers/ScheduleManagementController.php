@@ -39,6 +39,7 @@ class ScheduleManagementController
                 'bulk_move' => $this->bulkMove(),
                 'bulk_edit' => $this->bulkEdit(),
                 'validate_schedule' => $this->validateSchedule(),
+                'get_teacher_workload' => $this->getTeacherWorkload(),
                 default => throw new Exception("Acción no válida: $action")
             };
         } catch (Exception $e) {
@@ -620,5 +621,53 @@ class ScheduleManagementController
     private function bulkEdit()
     {
         ResponseHelper::error('Funcionalidad de edición en lote en desarrollo');
+    }
+
+    private function getTeacherWorkload()
+    {
+        try {
+            // Consulta corregida según el esquema de la base de datos
+            $query = "
+                SELECT 
+                    d.id_docente,
+                    CONCAT(u.nombre, ' ', u.apellido) as nombre,
+                    COUNT(h.id_horario) as horas,
+                    STRING_AGG(DISTINCT m.nombre, ', ') as materias,
+                    STRING_AGG(DISTINCT g.nombre, ', ') as grupos
+                FROM docente d
+                INNER JOIN usuario u ON d.id_usuario = u.id_usuario
+                LEFT JOIN horario h ON d.id_docente = h.id_docente
+                LEFT JOIN materia m ON h.id_materia = m.id_materia
+                LEFT JOIN grupo g ON h.id_grupo = g.id_grupo
+                GROUP BY d.id_docente, u.nombre, u.apellido
+                ORDER BY horas DESC, nombre ASC
+            ";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Process the data
+            $processedTeachers = [];
+            foreach ($teachers as $teacher) {
+                $processedTeachers[] = [
+                    'id' => $teacher['id_docente'],
+                    'name' => $teacher['nombre'],
+                    'hours' => (int)$teacher['horas'],
+                    'subjects' => $teacher['materias'] ? array_filter(explode(', ', $teacher['materias'])) : [],
+                    'groups' => $teacher['grupos'] ? array_filter(explode(', ', $teacher['grupos'])) : []
+                ];
+            }
+            
+            ResponseHelper::success('Datos de carga horaria obtenidos', [
+                'teachers' => $processedTeachers,
+                'total_teachers' => count($processedTeachers),
+                'total_hours' => array_sum(array_column($processedTeachers, 'hours'))
+            ]);
+            
+        } catch (PDOException $e) {
+            error_log("Error getting teacher workload: " . $e->getMessage());
+            ResponseHelper::error('Error obteniendo datos de carga horaria: ' . $e->getMessage());
+        }
     }
 }

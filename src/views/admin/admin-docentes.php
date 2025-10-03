@@ -304,8 +304,8 @@ function getUserInitials($nombre, $apellido) {
                 </div>
                 
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('email'); ?> <span class="text-red-500">*</span></label>
-                    <input type="email" id="email" name="email" required maxlength="150"
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('email'); ?></label>
+                    <input type="email" id="email" name="email" maxlength="150"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
                            placeholder="usuario@ejemplo.com" aria-describedby="emailError">
                     <p id="emailError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
@@ -383,23 +383,19 @@ function getUserInitials($nombre, $apellido) {
             isEditMode = true;
             document.getElementById('modalTitle').textContent = '<?php _e('edit_teacher'); ?>';
             
-            const formData = new FormData();
-            formData.append('action', 'get');
-            formData.append('id', id);
-            
-            fetch('/src/controllers/docente_handler.php', {
-                method: 'POST',
-                body: formData
+            fetch(`/admin/teachers/${id}/edit`, {
+                method: 'GET'
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    document.getElementById('id_docente').value = data.data.id_docente;
-                    document.getElementById('cedula').value = data.data.cedula;
-                    document.getElementById('nombre').value = data.data.nombre;
-                    document.getElementById('apellido').value = data.data.apellido;
-                    document.getElementById('email').value = data.data.email;
-                    document.getElementById('telefono').value = data.data.telefono || '';
+                    const teacher = data.data.teacher;
+                    document.getElementById('id_docente').value = teacher.id_docente;
+                    document.getElementById('cedula').value = teacher.cedula;
+                    document.getElementById('nombre').value = teacher.nombre;
+                    document.getElementById('apellido').value = teacher.apellido;
+                    document.getElementById('email').value = teacher.email;
+                    document.getElementById('telefono').value = teacher.telefono || '';
                     
                     // No hacer contraseña requerida para edición
                     document.getElementById('contrasena').required = false;
@@ -427,13 +423,8 @@ function getUserInitials($nombre, $apellido) {
         function deleteDocente(id, nombre) {
             const confirmMessage = `¿Está seguro de que desea eliminar al docente "${nombre}"?`;
             if (confirm(confirmMessage)) {
-                const formData = new FormData();
-                formData.append('action', 'delete');
-                formData.append('id_docente', id);
-                
-                fetch('/src/controllers/docente_handler.php', {
-                    method: 'POST',
-                    body: formData
+                fetch(`/admin/teachers/${id}`, {
+                    method: 'DELETE'
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -467,13 +458,41 @@ function getUserInitials($nombre, $apellido) {
                 return;
             }
             
-            const formData = new FormData(e.target);
-            formData.append('action', isEditMode ? 'update' : 'create');
+            const url = isEditMode 
+                ? `/admin/teachers/${document.getElementById('id_docente').value}`
+                : '/admin/teachers';
+            const method = isEditMode ? 'PUT' : 'POST';
             
-            fetch('/src/controllers/docente_handler.php', {
-                method: 'POST',
-                body: formData
-            })
+            let requestBody;
+            let contentType;
+            
+            if (isEditMode) {
+                // For PUT requests, send as URL-encoded data
+                const formData = new FormData(e.target);
+                const urlEncodedData = new URLSearchParams();
+                for (let [key, value] of formData.entries()) {
+                    urlEncodedData.append(key, value);
+                }
+                requestBody = urlEncodedData.toString();
+                contentType = 'application/x-www-form-urlencoded';
+            } else {
+                // For POST requests, use FormData
+                requestBody = new FormData(e.target);
+                contentType = null; // Let browser set it
+            }
+            
+            const fetchOptions = {
+                method: method,
+                body: requestBody
+            };
+            
+            if (contentType) {
+                fetchOptions.headers = {
+                    'Content-Type': contentType
+                };
+            }
+            
+            fetch(url, fetchOptions)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -564,12 +583,9 @@ function getUserInitials($nombre, $apellido) {
                 isValid = false;
             }
             
-            // Validate email
+            // Validate email (optional)
             const email = document.getElementById('email').value.trim();
-            if (!email) {
-                showFieldError('email', '<?php _e('email_required'); ?>');
-                isValid = false;
-            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 showFieldError('email', '<?php _e('email_invalid_format'); ?>');
                 isValid = false;
             }

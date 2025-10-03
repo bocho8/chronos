@@ -41,16 +41,25 @@ class HorarioController {
     
     private function getHorario() {
         $id = $_POST['id'] ?? $_GET['id'] ?? null;
+        
         if (!$id) {
             ResponseHelper::error("ID de horario requerido");
         }
         
         $horario = $this->horarioModel->getHorarioById($id);
+        
         if (!$horario) {
             ResponseHelper::notFound("Horario");
         }
         
-        ResponseHelper::success("Horario obtenido exitosamente", $horario);
+        // Get additional data for editing
+        $horarioCompleto = $this->horarioModel->getHorarioCompletoById($id);
+        
+        if (!$horarioCompleto) {
+            ResponseHelper::error("Error al obtener datos completos del horario");
+        }
+        
+        ResponseHelper::success("Horario obtenido exitosamente", $horarioCompleto);
     }
     
     private function listHorarios() {

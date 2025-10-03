@@ -18,7 +18,7 @@ class AuthMiddleware
         }
         
         // Check if user is logged in
-        if (!AuthHelper::isLoggedIn()) {
+        if (!\AuthHelper::isLoggedIn()) {
             if (self::isAjaxRequest()) {
                 http_response_code(401);
                 echo json_encode(['error' => 'Unauthorized', 'redirect' => '/login']);
@@ -30,7 +30,7 @@ class AuthMiddleware
         }
         
         // Check session timeout
-        if (!AuthHelper::checkSessionTimeout()) {
+        if (!\AuthHelper::checkSessionTimeout()) {
             if (self::isAjaxRequest()) {
                 http_response_code(401);
                 echo json_encode(['error' => 'Session expired', 'redirect' => '/login']);

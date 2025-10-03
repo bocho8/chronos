@@ -17,7 +17,7 @@ class RoleMiddleware
         }
         
         // Check if user has required role
-        if (!AuthHelper::hasRole($requiredRole)) {
+        if (!\AuthHelper::hasRole($requiredRole)) {
             if (self::isAjaxRequest()) {
                 http_response_code(403);
                 echo json_encode(['error' => 'Forbidden', 'message' => 'Insufficient permissions']);

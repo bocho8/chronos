@@ -19,6 +19,9 @@ try {
     // Load autoloader (if using Composer)
     if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
         require_once __DIR__ . '/../vendor/autoload.php';
+    } else {
+        // Load simple autoloader
+        require_once __DIR__ . '/src/autoload.php';
     }
     
     // Load environment configuration
@@ -30,7 +33,7 @@ try {
     }
     
     // Load routes
-    require_once __DIR__ . '/../src/routes/web.php';
+    require_once __DIR__ . '/src/routes/web.php';
     
     // Include toast system
     echo '<script src="/js/toast.js"></script>';

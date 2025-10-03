@@ -18,7 +18,7 @@ class TeacherController
     public function __construct($database)
     {
         $this->teacherModel = new \App\Models\Teacher($database);
-        $this->translation = Translation::getInstance();
+        $this->translation = \Translation::getInstance();
     }
     
     /**
@@ -28,10 +28,10 @@ class TeacherController
     {
         try {
             $teachers = $this->teacherModel->getAllTeachers();
-            ResponseHelper::success('Teachers retrieved successfully', $teachers);
+            \ResponseHelper::success('Teachers retrieved successfully', $teachers);
         } catch (Exception $e) {
             error_log("Error in TeacherController@index: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -42,7 +42,7 @@ class TeacherController
     {
         // This would typically return a view for creating teachers
         // For API responses, we can return form data or validation rules
-        ResponseHelper::success('Form data retrieved successfully', [
+        \ResponseHelper::success('Form data retrieved successfully', [
             'validation_rules' => $this->getValidationRules()
         ]);
     }
@@ -53,9 +53,9 @@ class TeacherController
     public function store()
     {
         try {
-            $errors = $this->validateTeacherData($_POST);
+            $errors = $this->validateTeacherData($_POST, true, false);
             if (!empty($errors)) {
-                ResponseHelper::validationError($errors);
+                \ResponseHelper::validationError($errors);
             }
             
             $teacherData = [
@@ -73,14 +73,14 @@ class TeacherController
             $teacherId = $this->teacherModel->createTeacher($teacherData);
             
             if ($teacherId === false) {
-                ResponseHelper::error('Error creating teacher. Please verify that the ID number is not already in use.');
+                \ResponseHelper::error('Error creating teacher. Please verify that the ID number is not already in use.');
             }
             
             $this->logActivity("Created teacher with ID $teacherId");
-            ResponseHelper::success('Teacher created successfully', ['id_teacher' => $teacherId]);
+            \ResponseHelper::success('Teacher created successfully', ['id_teacher' => $teacherId]);
         } catch (Exception $e) {
             error_log("Error in TeacherController@store: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -93,13 +93,13 @@ class TeacherController
             $teacher = $this->teacherModel->getTeacherById($id);
             
             if (!$teacher) {
-                ResponseHelper::notFound('Teacher');
+                \ResponseHelper::notFound('Teacher');
             }
             
-            ResponseHelper::success('Teacher retrieved successfully', $teacher);
+            \ResponseHelper::success('Teacher retrieved successfully', $teacher);
         } catch (Exception $e) {
             error_log("Error in TeacherController@show: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -112,16 +112,16 @@ class TeacherController
             $teacher = $this->teacherModel->getTeacherById($id);
             
             if (!$teacher) {
-                ResponseHelper::notFound('Teacher');
+                \ResponseHelper::notFound('Teacher');
             }
             
-            ResponseHelper::success('Teacher data retrieved successfully', [
+            \ResponseHelper::success('Teacher data retrieved successfully', [
                 'teacher' => $teacher,
                 'validation_rules' => $this->getValidationRules(false)
             ]);
         } catch (Exception $e) {
             error_log("Error in TeacherController@edit: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -131,36 +131,42 @@ class TeacherController
     public function update($id)
     {
         try {
-            $errors = $this->validateTeacherData($_POST, false);
+            // Handle PUT request data
+            $inputData = $_POST;
+            if (empty($inputData) && $_SERVER['REQUEST_METHOD'] === 'PUT') {
+                parse_str(file_get_contents('php://input'), $inputData);
+            }
+            
+            $errors = $this->validateTeacherData($inputData, false, true);
             if (!empty($errors)) {
-                ResponseHelper::validationError($errors);
+                \ResponseHelper::validationError($errors);
             }
             
             $teacherData = [
-                'nombre' => trim($_POST['nombre']),
-                'apellido' => trim($_POST['apellido']),
-                'email' => trim($_POST['email'] ?? ''),
-                'telefono' => trim($_POST['telefono'] ?? ''),
-                'fecha_envio_disponibilidad' => $_POST['fecha_envio_disponibilidad'] ?? null,
-                'horas_asignadas' => (int)($_POST['horas_asignadas'] ?? 0),
-                'porcentaje_margen' => (float)($_POST['porcentaje_margen'] ?? 0.00)
+                'nombre' => trim($inputData['nombre']),
+                'apellido' => trim($inputData['apellido']),
+                'email' => trim($inputData['email'] ?? ''),
+                'telefono' => trim($inputData['telefono'] ?? ''),
+                'fecha_envio_disponibilidad' => $inputData['fecha_envio_disponibilidad'] ?? null,
+                'horas_asignadas' => (int)($inputData['horas_asignadas'] ?? 0),
+                'porcentaje_margen' => (float)($inputData['porcentaje_margen'] ?? 0.00)
             ];
             
-            if (!empty($_POST['contrasena'])) {
-                $teacherData['contrasena'] = $_POST['contrasena'];
+            if (!empty($inputData['contrasena'])) {
+                $teacherData['contrasena'] = $inputData['contrasena'];
             }
             
             $result = $this->teacherModel->updateTeacher($id, $teacherData);
             
             if ($result === false) {
-                ResponseHelper::error('Error updating teacher');
+                \ResponseHelper::error('Error updating teacher');
             }
             
             $this->logActivity("Updated teacher with ID $id");
-            ResponseHelper::success('Teacher updated successfully');
+            \ResponseHelper::success('Teacher updated successfully');
         } catch (Exception $e) {
             error_log("Error in TeacherController@update: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -173,14 +179,14 @@ class TeacherController
             $result = $this->teacherModel->deleteTeacher($id);
             
             if ($result === false) {
-                ResponseHelper::error('Error deleting teacher');
+                \ResponseHelper::error('Error deleting teacher');
             }
             
             $this->logActivity("Deleted teacher with ID $id");
-            ResponseHelper::success('Teacher deleted successfully');
+            \ResponseHelper::success('Teacher deleted successfully');
         } catch (Exception $e) {
             error_log("Error in TeacherController@destroy: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -199,13 +205,13 @@ class TeacherController
             $teachers = $this->teacherModel->searchTeachers($searchTerm);
             
             if ($teachers === false) {
-                ResponseHelper::error('Error searching teachers');
+                \ResponseHelper::error('Error searching teachers');
             }
             
-            ResponseHelper::success('Search completed', $teachers);
+            \ResponseHelper::success('Search completed', $teachers);
         } catch (Exception $e) {
             error_log("Error in TeacherController@search: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -228,35 +234,39 @@ class TeacherController
             };
         } catch (Exception $e) {
             error_log("Error in TeacherController@handleRequest: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
     /**
      * Validate teacher data
      */
-    private function validateTeacherData($data, $requirePassword = true)
+    private function validateTeacherData($data, $requirePassword = true, $isUpdate = false)
     {
         $errors = [];
         
-        $errors['cedula'] = ValidationHelper::validateCedula($data['cedula'] ?? '');
-        $errors['nombre'] = ValidationHelper::validateName($data['nombre'] ?? '', 'nombre');
-        $errors['apellido'] = ValidationHelper::validateName($data['apellido'] ?? '', 'apellido');
-        $errors['email'] = ValidationHelper::validateEmail($data['email'] ?? '', false);
-        $errors['telefono'] = ValidationHelper::validatePhone($data['telefono'] ?? '');
+        // Only validate cédula for new teachers, not for updates
+        if (!$isUpdate) {
+            $errors['cedula'] = \ValidationHelper::validateCedula($data['cedula'] ?? '');
+        }
+        
+        $errors['nombre'] = \ValidationHelper::validateName($data['nombre'] ?? '', 'nombre');
+        $errors['apellido'] = \ValidationHelper::validateName($data['apellido'] ?? '', 'apellido');
+        $errors['email'] = \ValidationHelper::validateEmail($data['email'] ?? '', false);
+        $errors['telefono'] = \ValidationHelper::validatePhone($data['telefono'] ?? '');
         
         if ($requirePassword) {
-            $errors['contrasena'] = ValidationHelper::validatePassword($data['contrasena'] ?? '', true);
+            $errors['contrasena'] = \ValidationHelper::validatePassword($data['contrasena'] ?? '', true);
         } elseif (!empty($data['contrasena'])) {
-            $errors['contrasena'] = ValidationHelper::validatePassword($data['contrasena'], false);
+            $errors['contrasena'] = \ValidationHelper::validatePassword($data['contrasena'], false);
         }
         
         if (isset($data['horas_asignadas'])) {
-            $errors['horas_asignadas'] = ValidationHelper::validateNumericRange($data['horas_asignadas'], 'horas_asignadas', 0);
+            $errors['horas_asignadas'] = \ValidationHelper::validateNumericRange($data['horas_asignadas'], 'horas_asignadas', 0);
         }
         
         if (isset($data['porcentaje_margen'])) {
-            $errors['porcentaje_margen'] = ValidationHelper::validateNumericRange($data['porcentaje_margen'], 'porcentaje_margen', 0, 100);
+            $errors['porcentaje_margen'] = \ValidationHelper::validateNumericRange($data['porcentaje_margen'], 'porcentaje_margen', 0, 100);
         }
         
         return array_filter($errors);

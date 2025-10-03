@@ -302,6 +302,8 @@ return [
     
     // Advanced Schedule Management
     'schedule_management' => 'Gestión de Horarios Avanzada',
+    'teacher_workload' => 'Carga Horaria Docentes',
+    'teacher_workload_management' => 'Gestión de Carga Horaria de Docentes',
     'all_schedules' => 'Todos los Horarios',
     'by_group' => 'Por Grupo',
     'by_teacher' => 'Por Docente',

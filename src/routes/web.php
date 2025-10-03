@@ -73,13 +73,27 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->delete('/groups/{id}', 'Admin\GroupController@destroy');
         
         // Schedules management
-        $router->get('/schedules', 'Admin\ScheduleController@index');
-        $router->get('/schedules/create', 'Admin\ScheduleController@create');
-        $router->post('/schedules', 'Admin\ScheduleController@store');
-        $router->get('/schedules/{id}', 'Admin\ScheduleController@show');
-        $router->get('/schedules/{id}/edit', 'Admin\ScheduleController@edit');
-        $router->put('/schedules/{id}', 'Admin\ScheduleController@update');
-        $router->delete('/schedules/{id}', 'Admin\ScheduleController@destroy');
+        $router->get('/schedules', function() {
+            require __DIR__ . '/../views/admin/admin-gestion-horarios.php';
+        });
+        $router->get('/schedules/create', function() {
+            require __DIR__ . '/../views/admin/admin-gestion-horarios.php';
+        });
+        $router->post('/schedules', function() {
+            require __DIR__ . '/../controllers/horario_handler.php';
+        });
+        $router->get('/schedules/{id}', function() {
+            require __DIR__ . '/../controllers/horario_handler.php';
+        });
+        $router->get('/schedules/{id}/edit', function() {
+            require __DIR__ . '/../controllers/horario_handler.php';
+        });
+        $router->put('/schedules/{id}', function() {
+            require __DIR__ . '/../controllers/horario_handler.php';
+        });
+        $router->delete('/schedules/{id}', function() {
+            require __DIR__ . '/../controllers/horario_handler.php';
+        });
         
         // Advanced schedule management
         $router->get('/gestion-horarios', function() {
@@ -119,7 +133,9 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->post('/api/assignments', 'Admin\AssignmentController@handleRequest');
         $router->post('/api/subjects', 'Admin\SubjectController@handleRequest');
         $router->post('/api/groups', 'Admin\GroupController@handleRequest');
-        $router->post('/api/schedules', 'Admin\ScheduleController@handleRequest');
+        $router->post('/api/schedules', function() {
+            require __DIR__ . '/../controllers/horario_handler.php';
+        });
         $router->post('/api/users', 'Admin\UserController@handleRequest');
         $router->post('/api/coordinators', 'Admin\CoordinatorController@handleRequest');
     });

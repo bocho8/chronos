@@ -224,6 +224,35 @@ class Horario {
     }
     
     /**
+     * Obtiene un horario completo con todos los datos necesarios para edición
+     */
+    public function getHorarioCompletoById($id) {
+        try {
+            $query = "SELECT h.*, 
+                            g.nombre as grupo_nombre, g.nivel as grupo_nivel,
+                            m.nombre as materia_nombre, m.horas_semanales,
+                            u.nombre as docente_nombre, u.apellido as docente_apellido,
+                            b.hora_inicio, b.hora_fin
+                     FROM horario h
+                     JOIN grupo g ON h.id_grupo = g.id_grupo
+                     JOIN materia m ON h.id_materia = m.id_materia
+                     JOIN docente d ON h.id_docente = d.id_docente
+                     JOIN usuario u ON d.id_usuario = u.id_usuario
+                     JOIN bloque_horario b ON h.id_bloque = b.id_bloque
+                     WHERE h.id_horario = :id";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting complete horario by ID: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
      * Verifica si hay conflicto de horario
      */
     private function hasScheduleConflict($data, $excludeId = null) {

@@ -215,7 +215,7 @@ class Router
         
         if ($database === null) {
             $dbConfig = require __DIR__ . '/../../config/database.php';
-            $database = new \App\Models\Database($dbConfig);
+            $database = new \Database($dbConfig);
         }
         
         return $database->getConnection();
