@@ -69,6 +69,8 @@ function getGroupInitials($nombre) {
     <title><?php _e('app_name'); ?> — <?php _e('groups_management'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
     <?php echo Sidebar::getStyles(); ?>
+    <script src="/js/multiple-selection.js"></script>
+    <script src="/js/status-labels.js"></script>
     <style type="text/css">
         body {
             overflow-x: hidden;
@@ -225,10 +227,16 @@ function getGroupInitials($nombre) {
                         <p class="text-muted mb-6 text-base"><?php _e('groups_management_description'); ?></p>
                     </div>
 
-                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8" data-default-labels='["Estados"]'>
                         <!-- Header de la tabla -->
                         <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-                            <h3 class="font-medium text-darktext"><?php _e('groups'); ?></h3>
+                            <div class="flex items-center">
+                                <div class="select-all-container">
+                                    <input type="checkbox" id="selectAll" class="item-checkbox">
+                                    <label for="selectAll"><?php _e('select_all'); ?></label>
+                                </div>
+                                <h3 class="font-medium text-darktext ml-4"><?php _e('groups'); ?></h3>
+                            </div>
                             <div class="flex gap-2">
                                 <div class="relative">
                                     <input type="text" id="searchInput" placeholder="<?php _e('search_groups'); ?>" 
@@ -246,14 +254,52 @@ function getGroupInitials($nombre) {
                             </div>
                         </div>
 
+                        <!-- Bulk Actions Bar -->
+                        <div id="bulkActions" class="bulk-actions hidden">
+                            <div class="flex items-center justify-between">
+                                <div class="selection-info">
+                                    <span data-selection-count>0</span> <?php _e('selected_items'); ?>
+                                </div>
+                                <div class="action-buttons">
+                                    <button data-bulk-action="export" class="btn-export">
+                                        <?php _e('bulk_export'); ?>
+                                    </button>
+                                    <button data-bulk-action="delete" class="btn-delete">
+                                        <?php _e('bulk_delete'); ?>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Statistics Container -->
+                            <div id="statisticsContainer"></div>
+                        </div>
+
                         <!-- Lista de grupos -->
                         <div id="gruposList" class="divide-y divide-gray-200">
                             <?php if (!empty($grupos)): ?>
                                 <?php foreach ($grupos as $grupo): ?>
-                                    <article class="grupo-item flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                                    <article class="grupo-item item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
                                              data-nombre="<?php echo htmlspecialchars(strtolower($grupo['nombre'])); ?>" 
-                                             data-nivel="<?php echo htmlspecialchars(strtolower($grupo['nivel'])); ?>">
+                                             data-nivel="<?php echo htmlspecialchars(strtolower($grupo['nivel'])); ?>"
+                                             data-item-id="<?php echo $grupo['id_grupo']; ?>"
+                                             data-original-text=""
+                                             data-available-labels="<?php 
+                                                 $labels = [];
+                                                 $labels[] = 'Level: ' . htmlspecialchars($grupo['nivel']);
+                                                 $tieneHorario = isset($grupo['tiene_horario']) ? $grupo['tiene_horario'] : false;
+                                                 $labels[] = $tieneHorario ? 'Estado: Con horario' : 'Estado: Sin horario';
+                                                 echo implode('|', $labels);
+                                             ?>"
+                                             data-label-mapping="<?php 
+                                                 $mapping = [];
+                                                 $tieneHorario = isset($grupo['tiene_horario']) ? $grupo['tiene_horario'] : false;
+                                                 $mapping['Estados'] = $tieneHorario ? 'Estado: Con horario' : 'Estado: Sin horario';
+                                                 $mapping['Niveles'] = 'Level: ' . htmlspecialchars($grupo['nivel']);
+                                                 echo htmlspecialchars(json_encode($mapping));
+                                             ?>">
                                         <div class="flex items-center">
+                                            <div class="checkbox-container">
+                                                <input type="checkbox" class="item-checkbox" data-item-id="<?php echo $grupo['id_grupo']; ?>">
+                                            </div>
                                             <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
                                                 <?php echo getGroupInitials($grupo['nombre']); ?>
                                             </div>
@@ -572,6 +618,30 @@ function getGroupInitials($nombre) {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
+        });
+
+        // Initialize multiple selection
+        const multipleSelection = new MultipleSelection({
+            container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
+            itemSelector: '.item-row',
+            checkboxSelector: '.item-checkbox',
+            selectAllSelector: '#selectAll',
+            bulkActionsSelector: '#bulkActions',
+            entityType: 'grupos',
+            onSelectionChange: function(selectedItems) {
+                // Selection changed
+            },
+            onBulkAction: function(action, selectedIds) {
+                // Bulk action triggered
+            }
+        });
+
+        // Initialize status labels
+        const statusLabels = new StatusLabels({
+            container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
+            itemSelector: '.item-row',
+            metaSelector: '.meta .text-muted',
+            entityType: 'grupos'
         });
     </script>
 </body>

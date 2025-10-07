@@ -50,6 +50,8 @@ function getUserInitials($nombre, $apellido) {
   <title><?php _e('app_name'); ?> — <?php _e('admin_panel'); ?> · <?php _e('users'); ?></title>
   <link rel="stylesheet" href="/css/styles.css">
     <?php echo Sidebar::getStyles(); ?>
+    <script src="/js/multiple-selection.js"></script>
+    <script src="/js/status-labels.js"></script>
   <style type="text/css">
     .hamburger span {
       width: 25px;
@@ -289,10 +291,16 @@ function getUserInitials($nombre, $apellido) {
             <p class="text-muted mb-6 text-base"><?php _e('users_management_description'); ?></p>
           </div>
 
-          <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
+          <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8" data-default-labels='["Estados"]'>
             <!-- Header de la tabla -->
             <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-medium text-darktext"><?php _e('users'); ?></h3>
+              <div class="flex items-center">
+                <div class="select-all-container">
+                  <input type="checkbox" id="selectAll" class="item-checkbox">
+                  <label for="selectAll"><?php _e('select_all'); ?></label>
+                </div>
+                <h3 class="font-medium text-darktext ml-4"><?php _e('users'); ?></h3>
+              </div>
               <div class="flex gap-2">
                 <button onclick="openUsuarioModal()" class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
                   <span class="mr-1 text-sm">+</span>
@@ -301,12 +309,57 @@ function getUserInitials($nombre, $apellido) {
               </div>
             </div>
 
+            <!-- Bulk Actions Bar -->
+            <div id="bulkActions" class="bulk-actions hidden">
+              <div class="flex items-center justify-between">
+                <div class="selection-info">
+                  <span data-selection-count>0</span> <?php _e('selected_items'); ?>
+                </div>
+                <div class="action-buttons">
+                  <button data-bulk-action="export" class="btn-export">
+                    <?php _e('bulk_export'); ?>
+                  </button>
+                  <button data-bulk-action="delete" class="btn-delete">
+                    <?php _e('bulk_delete'); ?>
+                  </button>
+                </div>
+              </div>
+              <!-- Statistics Container -->
+              <div id="statisticsContainer"></div>
+            </div>
+
             <!-- Lista de usuarios -->
             <div class="divide-y divide-gray-200">
               <?php if (!empty($usuarios)): ?>
                 <?php foreach ($usuarios as $usuario): ?>
-                  <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
+                  <article class="item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                           data-item-id="<?php echo $usuario['id_usuario']; ?>"
+                           data-original-text=""
+                           data-available-labels="<?php 
+                               $labels = [];
+                               $labels[] = 'Email: ' . htmlspecialchars($usuario['email']);
+                               $labels[] = 'CI: ' . htmlspecialchars($usuario['cedula']);
+                               if ($usuario['roles'] && $usuario['roles'] !== 'Sin roles') {
+                                   $labels[] = 'Roles: ' . htmlspecialchars($usuario['roles']);
+                                   $labels[] = 'Estado: Con roles';
+                               } else {
+                                   $labels[] = 'Estado: Sin roles';
+                               }
+                               echo implode('|', $labels);
+                           ?>"
+                           data-label-mapping="<?php 
+                               $mapping = [];
+                               $mapping['Estados'] = ($usuario['roles'] && $usuario['roles'] !== 'Sin roles') ? 'Estado: Con roles' : 'Estado: Sin roles';
+                               $mapping['Información'] = 'Email: ' . htmlspecialchars($usuario['email']) . ' • CI: ' . htmlspecialchars($usuario['cedula']);
+                               if ($usuario['roles'] && $usuario['roles'] !== 'Sin roles') {
+                                   $mapping['Roles'] = 'Roles: ' . htmlspecialchars($usuario['roles']);
+                               }
+                               echo htmlspecialchars(json_encode($mapping));
+                           ?>">
                     <div class="flex items-center">
+                      <div class="checkbox-container">
+                        <input type="checkbox" class="item-checkbox" data-item-id="<?php echo $usuario['id_usuario']; ?>">
+                      </div>
                       <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
                         <?php echo getUserInitials($usuario['nombre'], $usuario['apellido']); ?>
                       </div>
@@ -880,6 +933,30 @@ function getUserInitials($nombre, $apellido) {
           }
         });
       }
+
+      // Initialize multiple selection
+      const multipleSelection = new MultipleSelection({
+        container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
+        itemSelector: '.item-row',
+        checkboxSelector: '.item-checkbox',
+        selectAllSelector: '#selectAll',
+        bulkActionsSelector: '#bulkActions',
+        entityType: 'usuarios',
+        onSelectionChange: function(selectedItems) {
+          // Selection changed
+        },
+        onBulkAction: function(action, selectedIds) {
+          // Bulk action triggered
+        }
+      });
+
+      // Initialize status labels
+      const statusLabels = new StatusLabels({
+        container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
+        itemSelector: '.item-row',
+        metaSelector: '.meta .text-muted',
+        entityType: 'usuarios'
+      });
     });
   </script>
 </body>

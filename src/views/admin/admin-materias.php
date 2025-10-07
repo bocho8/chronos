@@ -58,6 +58,8 @@ try {
     <title><?php _e('app_name'); ?> — <?php _e('admin_panel'); ?> · <?php _e('subjects'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
     <?php echo Sidebar::getStyles(); ?>
+    <script src="/js/multiple-selection.js?v=<?php echo time(); ?>"></script>
+    <script src="/js/status-labels.js"></script>
     <style type="text/css">
         .hamburger span {
             width: 25px;
@@ -285,9 +287,15 @@ try {
                         <p class="text-muted mb-6 text-base"><?php _e('subjects_management_description'); ?></p>
                     </div>
 
-                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8" data-default-labels='["Horas semanales"]'>
                         <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-                            <h3 class="font-medium text-darktext"><?php _e('subjects'); ?></h3>
+                            <div class="flex items-center">
+                                <div class="select-all-container">
+                                    <input type="checkbox" id="selectAll" class="item-checkbox">
+                                    <label for="selectAll"><?php _e('select_all'); ?></label>
+                                </div>
+                                <h3 class="font-medium text-darktext ml-4"><?php _e('subjects'); ?></h3>
+                            </div>
                             <div class="flex gap-2">
                                 <button onclick="openMateriaModal()" class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
                                     <span class="mr-1 text-sm">+</span>
@@ -296,12 +304,64 @@ try {
                             </div>
                         </div>
 
+                        <!-- Bulk Actions Bar -->
+                        <div id="bulkActions" class="bulk-actions hidden">
+                            <div class="flex items-center justify-between">
+                                <div class="selection-info">
+                                    <span data-selection-count>0</span> <?php _e('selected_items'); ?>
+                                </div>
+                                <div class="action-buttons">
+                                    <button data-bulk-action="export" class="btn-export">
+                                        <?php _e('bulk_export'); ?>
+                                    </button>
+                                    <button data-bulk-action="delete" class="btn-delete">
+                                        <?php _e('bulk_delete'); ?>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Statistics Container -->
+                            <div id="statisticsContainer"></div>
+                        </div>
+
                         <!-- Lista de materias -->
                         <div class="divide-y divide-gray-200">
                             <?php if (!empty($materias)): ?>
                                 <?php foreach ($materias as $materia): ?>
-                                    <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
+                                    <article class="item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                                             data-item-id="<?php echo $materia['id_materia']; ?>"
+                                             data-original-text=""
+                                             data-available-labels="<?php 
+                                                 $labels = [];
+                                                 if ($materia['horas_semanales']) {
+                                                     $labels[] = $materia['horas_semanales'] . ' horas semanales';
+                                                 }
+                                                 if ($materia['pauta_anep_nombre']) {
+                                                     $labels[] = $materia['pauta_anep_nombre'];
+                                                 }
+                                                 if ($materia['es_programa_italiano']) {
+                                                     $labels[] = 'Programa Italiano';
+                                                 }
+                                                 $labels[] = 'Estado: Sin asignar';
+                                                 echo implode('|', $labels);
+                                             ?>"
+                                             data-label-mapping="<?php 
+                                                 $mapping = [];
+                                                 if ($materia['horas_semanales']) {
+                                                     $mapping['Horas semanales'] = $materia['horas_semanales'] . ' horas semanales';
+                                                 }
+                                                 if ($materia['pauta_anep_nombre']) {
+                                                     $mapping['Pautas'] = $materia['pauta_anep_nombre'];
+                                                 }
+                                                 if ($materia['es_programa_italiano']) {
+                                                     $mapping['Programas'] = 'Programa Italiano';
+                                                 }
+                                                 $mapping['Estados'] = 'Estado: Sin asignar';
+                                                 echo htmlspecialchars(json_encode($mapping));
+                                             ?>">
                                         <div class="flex items-center">
+                                            <div class="checkbox-container">
+                                                <input type="checkbox" class="item-checkbox" data-item-id="<?php echo $materia['id_materia']; ?>">
+                                            </div>
                                             <div class="w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
                                                 <?php echo strtoupper(substr($materia['nombre'], 0, 1)); ?>
                                             </div>
@@ -635,6 +695,30 @@ try {
                     }
                 });
             }
+
+            // Initialize multiple selection
+            const multipleSelection = new MultipleSelection({
+                container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
+                itemSelector: '.item-row',
+                checkboxSelector: '.item-checkbox',
+                selectAllSelector: '#selectAll',
+                bulkActionsSelector: '#bulkActions',
+                entityType: 'materias',
+                onSelectionChange: function(selectedItems) {
+                    // Selection changed
+                },
+                onBulkAction: function(action, selectedIds) {
+                    // Bulk action triggered
+                }
+            });
+
+            // Initialize status labels
+            const statusLabels = new StatusLabels({
+                container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
+                itemSelector: '.item-row',
+                metaSelector: '.meta .text-muted',
+                entityType: 'materias'
+            });
         });
     </script>
 

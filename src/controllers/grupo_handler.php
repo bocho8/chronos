@@ -18,7 +18,7 @@ AuthHelper::requireRole('ADMIN');
 
 // Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
-    ResponseHelper::sendError('Sesión expirada', 401);
+    ResponseHelper::error('Sesión expirada', 401);
     exit();
 }
 
@@ -61,11 +61,11 @@ try {
             handleGetStats($grupoModel);
             break;
         default:
-            ResponseHelper::sendError('Acción no válida', 400);
+            ResponseHelper::error('Acción no válida', 400);
     }
 } catch (Exception $e) {
     error_log("Error in grupo_handler: " . $e->getMessage());
-    ResponseHelper::sendError('Error interno del servidor', 500);
+    ResponseHelper::error('Error interno del servidor', 500);
 }
 
 /**
@@ -77,33 +77,33 @@ function handleCreateGrupo($grupoModel) {
     
     // Validate required fields
     if (empty($nombre)) {
-        ResponseHelper::sendError('El nombre del grupo es requerido');
+        ResponseHelper::error('El nombre del grupo es requerido');
         return;
     }
     
     if (empty($nivel)) {
-        ResponseHelper::sendError('El nivel es requerido');
+        ResponseHelper::error('El nivel es requerido');
         return;
     }
     
     // Validate nombre length
     if (strlen($nombre) > 100) {
-        ResponseHelper::sendError('El nombre del grupo no puede exceder 100 caracteres');
+        ResponseHelper::error('El nombre del grupo no puede exceder 100 caracteres');
         return;
     }
     
     // Validate nivel length
     if (strlen($nivel) > 50) {
-        ResponseHelper::sendError('El nivel no puede exceder 50 caracteres');
+        ResponseHelper::error('El nivel no puede exceder 50 caracteres');
         return;
     }
     
     $result = $grupoModel->createGrupo($nombre, $nivel);
     
     if ($result['success']) {
-        ResponseHelper::sendSuccess($result, 201);
+        ResponseHelper::success($result, 201);
     } else {
-        ResponseHelper::sendError($result['message'], 400);
+        ResponseHelper::error($result['message'], 400);
     }
 }
 
@@ -117,38 +117,38 @@ function handleUpdateGrupo($grupoModel) {
     
     // Validate required fields
     if (empty($id) || !is_numeric($id)) {
-        ResponseHelper::sendError('ID de grupo inválido');
+        ResponseHelper::error('ID de grupo inválido');
         return;
     }
     
     if (empty($nombre)) {
-        ResponseHelper::sendError('El nombre del grupo es requerido');
+        ResponseHelper::error('El nombre del grupo es requerido');
         return;
     }
     
     if (empty($nivel)) {
-        ResponseHelper::sendError('El nivel es requerido');
+        ResponseHelper::error('El nivel es requerido');
         return;
     }
     
     // Validate nombre length
     if (strlen($nombre) > 100) {
-        ResponseHelper::sendError('El nombre del grupo no puede exceder 100 caracteres');
+        ResponseHelper::error('El nombre del grupo no puede exceder 100 caracteres');
         return;
     }
     
     // Validate nivel length
     if (strlen($nivel) > 50) {
-        ResponseHelper::sendError('El nivel no puede exceder 50 caracteres');
+        ResponseHelper::error('El nivel no puede exceder 50 caracteres');
         return;
     }
     
     $result = $grupoModel->updateGrupo($id, $nombre, $nivel);
     
     if ($result['success']) {
-        ResponseHelper::sendSuccess($result);
+        ResponseHelper::success($result);
     } else {
-        ResponseHelper::sendError($result['message'], 400);
+        ResponseHelper::error($result['message'], 400);
     }
 }
 
@@ -158,17 +158,28 @@ function handleUpdateGrupo($grupoModel) {
 function handleDeleteGrupo($grupoModel) {
     $id = $_POST['id'] ?? $_GET['id'] ?? '';
     
+    // Log the delete attempt
+    error_log("Delete grupo request - ID: " . $id . ", Method: " . $_SERVER['REQUEST_METHOD']);
+    
     if (empty($id) || !is_numeric($id)) {
-        ResponseHelper::sendError('ID de grupo inválido');
+        error_log("Invalid grupo ID provided: " . $id);
+        ResponseHelper::error('ID de grupo inválido');
         return;
     }
     
-    $result = $grupoModel->deleteGrupo($id);
-    
-    if ($result['success']) {
-        ResponseHelper::sendSuccess($result);
-    } else {
-        ResponseHelper::sendError($result['message'], 400);
+    try {
+        $result = $grupoModel->deleteGrupo($id);
+        
+        if ($result['success']) {
+            error_log("Grupo deletion successful: " . $id);
+            ResponseHelper::success($result);
+        } else {
+            error_log("Grupo deletion failed: " . $result['message'] . " (ID: " . $id . ")");
+            ResponseHelper::error($result['message'], 400);
+        }
+    } catch (Exception $e) {
+        error_log("Exception in handleDeleteGrupo: " . $e->getMessage());
+        ResponseHelper::error('Error interno del servidor', 500);
     }
 }
 
@@ -179,7 +190,7 @@ function handleGetGrupo($grupoModel) {
     $id = $_GET['id'] ?? '';
     
     if (empty($id) || !is_numeric($id)) {
-        ResponseHelper::sendError('ID de grupo inválido');
+        ResponseHelper::error('ID de grupo inválido');
         return;
     }
     
@@ -187,12 +198,12 @@ function handleGetGrupo($grupoModel) {
     
     if ($grupo !== false) {
         if ($grupo) {
-            ResponseHelper::sendSuccess($grupo);
+            ResponseHelper::success($grupo);
         } else {
-            ResponseHelper::sendError('Grupo no encontrado', 404);
+            ResponseHelper::error('Grupo no encontrado', 404);
         }
     } else {
-        ResponseHelper::sendError('Error al obtener grupo');
+        ResponseHelper::error('Error al obtener grupo');
     }
 }
 
@@ -203,9 +214,9 @@ function handleGetAllGrupos($grupoModel) {
     $grupos = $grupoModel->getAllGrupos();
     
     if ($grupos !== false) {
-        ResponseHelper::sendSuccess($grupos);
+        ResponseHelper::success($grupos);
     } else {
-        ResponseHelper::sendError('Error al obtener grupos');
+        ResponseHelper::error('Error al obtener grupos');
     }
 }
 
@@ -216,16 +227,16 @@ function handleSearchGrupos($grupoModel) {
     $searchTerm = $_GET['q'] ?? $_POST['q'] ?? '';
     
     if (empty($searchTerm)) {
-        ResponseHelper::sendError('Término de búsqueda requerido');
+        ResponseHelper::error('Término de búsqueda requerido');
         return;
     }
     
     $grupos = $grupoModel->searchGrupos($searchTerm);
     
     if ($grupos !== false) {
-        ResponseHelper::sendSuccess($grupos);
+        ResponseHelper::success($grupos);
     } else {
-        ResponseHelper::sendError('Error al buscar grupos');
+        ResponseHelper::error('Error al buscar grupos');
     }
 }
 
@@ -236,16 +247,16 @@ function handleGetGruposByNivel($grupoModel) {
     $nivel = $_GET['nivel'] ?? $_POST['nivel'] ?? '';
     
     if (empty($nivel)) {
-        ResponseHelper::sendError('Nivel requerido');
+        ResponseHelper::error('Nivel requerido');
         return;
     }
     
     $grupos = $grupoModel->getGruposByNivel($nivel);
     
     if ($grupos !== false) {
-        ResponseHelper::sendSuccess($grupos);
+        ResponseHelper::success($grupos);
     } else {
-        ResponseHelper::sendError('Error al obtener grupos por nivel');
+        ResponseHelper::error('Error al obtener grupos por nivel');
     }
 }
 
@@ -256,8 +267,8 @@ function handleGetStats($grupoModel) {
     $stats = $grupoModel->getGruposStats();
     
     if ($stats !== false) {
-        ResponseHelper::sendSuccess($stats);
+        ResponseHelper::success($stats);
     } else {
-        ResponseHelper::sendError('Error al obtener estadísticas');
+        ResponseHelper::error('Error al obtener estadísticas');
     }
 }

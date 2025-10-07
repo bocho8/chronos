@@ -119,13 +119,35 @@ class Grupo {
      */
     public function deleteGrupo($idGrupo) {
         try {
+            // Validar que el ID sea numérico
+            if (!is_numeric($idGrupo) || $idGrupo <= 0) {
+                error_log("Invalid grupo ID provided for deletion: " . $idGrupo);
+                return ['success' => false, 'message' => 'ID de grupo inválido'];
+            }
+            
+            // Verificar que el grupo existe
+            $existsQuery = "SELECT id_grupo, nombre FROM grupo WHERE id_grupo = :id_grupo";
+            $existsStmt = $this->db->prepare($existsQuery);
+            $existsStmt->bindParam(':id_grupo', $idGrupo, PDO::PARAM_INT);
+            $existsStmt->execute();
+            $grupo = $existsStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$grupo) {
+                error_log("Grupo not found for deletion: " . $idGrupo);
+                return ['success' => false, 'message' => 'No se encontró el grupo'];
+            }
+            
+            error_log("Attempting to delete grupo: " . $grupo['nombre'] . " (ID: " . $idGrupo . ")");
+            
             // Verificar si el grupo tiene horarios asignados
             $checkQuery = "SELECT COUNT(*) FROM horario WHERE id_grupo = :id_grupo";
             $checkStmt = $this->db->prepare($checkQuery);
             $checkStmt->bindParam(':id_grupo', $idGrupo, PDO::PARAM_INT);
             $checkStmt->execute();
+            $horariosCount = $checkStmt->fetchColumn();
             
-            if ($checkStmt->fetchColumn() > 0) {
+            if ($horariosCount > 0) {
+                error_log("Cannot delete grupo " . $idGrupo . " - has " . $horariosCount . " horarios assigned");
                 return ['success' => false, 'message' => 'No se puede eliminar el grupo porque tiene horarios asignados'];
             }
             
@@ -134,27 +156,49 @@ class Grupo {
             $checkStmt2 = $this->db->prepare($checkQuery2);
             $checkStmt2->bindParam(':id_grupo', $idGrupo, PDO::PARAM_INT);
             $checkStmt2->execute();
+            $materiasCount = $checkStmt2->fetchColumn();
             
-            if ($checkStmt2->fetchColumn() > 0) {
+            if ($materiasCount > 0) {
+                error_log("Cannot delete grupo " . $idGrupo . " - has " . $materiasCount . " materias compartidas");
                 return ['success' => false, 'message' => 'No se puede eliminar el grupo porque tiene materias compartidas asignadas'];
             }
             
-            $query = "DELETE FROM grupo WHERE id_grupo = :id_grupo";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':id_grupo', $idGrupo, PDO::PARAM_INT);
+            // Iniciar transacción para asegurar consistencia
+            $this->db->beginTransaction();
             
-            if ($stmt->execute()) {
-                if ($stmt->rowCount() > 0) {
-                    return ['success' => true, 'message' => 'Grupo eliminado exitosamente'];
+            try {
+                $query = "DELETE FROM grupo WHERE id_grupo = :id_grupo";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindParam(':id_grupo', $idGrupo, PDO::PARAM_INT);
+                
+                if ($stmt->execute()) {
+                    $rowCount = $stmt->rowCount();
+                    if ($rowCount > 0) {
+                        $this->db->commit();
+                        error_log("Grupo deleted successfully: " . $grupo['nombre'] . " (ID: " . $idGrupo . ")");
+                        return ['success' => true, 'message' => 'Grupo eliminado exitosamente'];
+                    } else {
+                        $this->db->rollback();
+                        error_log("No rows affected when deleting grupo: " . $idGrupo);
+                        return ['success' => false, 'message' => 'No se encontró el grupo'];
+                    }
                 } else {
-                    return ['success' => false, 'message' => 'No se encontró el grupo'];
+                    $this->db->rollback();
+                    error_log("Failed to execute delete query for grupo: " . $idGrupo);
+                    return ['success' => false, 'message' => 'Error al eliminar el grupo'];
                 }
-            } else {
-                return ['success' => false, 'message' => 'Error al eliminar el grupo'];
+            } catch (Exception $e) {
+                $this->db->rollback();
+                throw $e;
             }
+            
         } catch (PDOException $e) {
-            error_log("Error deleting grupo: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Error interno del servidor'];
+            error_log("PDO Error deleting grupo " . $idGrupo . ": " . $e->getMessage());
+            error_log("PDO Error Code: " . $e->getCode());
+            return ['success' => false, 'message' => 'Error interno del servidor: ' . $e->getMessage()];
+        } catch (Exception $e) {
+            error_log("General Error deleting grupo " . $idGrupo . ": " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error interno del servidor: ' . $e->getMessage()];
         }
     }
     
