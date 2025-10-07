@@ -133,20 +133,16 @@ function getRedirectUrl($role) {
   </style>
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">
-  <!-- BARRA SUPERIOR -->
   <header class="bg-navy text-white h-[60px] flex items-center">
     <div class="w-full grid grid-cols-3 items-center px-4 h-full">
       
-      <!-- IZQUIERDA -->
       <div class="flex items-center gap-2.5">
           <img src="/assets\images/LogoScuola.png" alt="<?php _e('scuola_italiana'); ?>" class="h-9 w-auto">
           <span class="text-white font-semibold text-lg"><?php _e('scuola_italiana'); ?></span>
       </div>
 
-      <!-- CENTRO -->
       <h1 class="m-0 text-center text-xl md:text-[22px] font-bold"><?php _e('app_name'); ?></h1>
 
-      <!-- DERECHA -->
       <div class="flex items-center gap-2 justify-end">
         <?php echo $languageSwitcher->render(); ?>
         <button class="w-11 h-11 grid place-content-center gap-1.5 bg-transparent border-0 cursor-pointer hamburger" aria-label="Menú">
@@ -156,14 +152,13 @@ function getRedirectUrl($role) {
     </div>
   </header>
 
-  <!-- CONTENEDOR CENTRAL -->
   <main class="flex items-center justify-center min-h-[calc(100vh-60px)] p-6">
     <div class="w-full flex justify-center">
       <section class="bg-card rounded-3xl p-10 md:px-16 md:py-10 w-full max-w-[500px] shadow-lg" aria-labelledby="titulo-login">
       <h2 id="titulo-login" class="text-center text-2xl md:text-[28px] font-extrabold text-navy mb-6"><?php _e('login_title'); ?></h2>
 
       <form method="POST" autocomplete="off" id="loginForm" class="flex flex-col gap-5">
-        <!-- C.I -->
+
         <label class="flex flex-col gap-1.5">
           <span class="font-semibold"><?php _e('ci_label'); ?></span>
           <input type="text" id="ci" name="ci" placeholder="<?php _e('ci_placeholder'); ?>" autocomplete="off" 
@@ -174,7 +169,6 @@ function getRedirectUrl($role) {
           </div>
         </label>
 
-        <!-- Contraseña -->
         <label class="flex flex-col gap-1.5">
           <span class="font-semibold"><?php _e('password_label'); ?></span>
           <input type="password" id="password" name="password" placeholder="<?php _e('password_placeholder'); ?>" autocomplete="off"
@@ -184,7 +178,6 @@ function getRedirectUrl($role) {
           </div>
         </label>
 
-        <!-- Selección de Rol -->
         <label class="flex flex-col gap-1.5">
           <span class="font-semibold"><?php _e('role_label'); ?></span>
           <div class="relative">
@@ -221,10 +214,8 @@ function getRedirectUrl($role) {
           </div>
         <?php endif; ?>
 
-        <!-- Botón -->
         <button type="submit" class="h-11 px-4 py-2.5 rounded-lg border-0 font-bold cursor-pointer bg-navy text-white w-full hover:bg-[#142852]"><?php _e('login'); ?></button>
 
-        <!-- Link para olvidar contraseña -->
         <div class="mt-1.5 flex items-center justify-end">
           <a class="text-navy no-underline font-semibold text-sm hover:underline" href="#" tabindex="0"><?php _e('forgot_password'); ?></a>
         </div>
