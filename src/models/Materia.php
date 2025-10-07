@@ -68,12 +68,12 @@ class Materia {
                      VALUES (:nombre, :horas_semanales, :id_pauta_anep, :en_conjunto, :id_grupo_compartido, :es_programa_italiano)";
             
             $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':nombre', $data['nombre']);
-            $stmt->bindParam(':horas_semanales', $data['horas_semanales'] ?? 1, PDO::PARAM_INT);
-            $stmt->bindParam(':id_pauta_anep', $data['id_pauta_anep'], PDO::PARAM_INT);
-            $stmt->bindParam(':en_conjunto', $data['en_conjunto'] ?? false, PDO::PARAM_BOOL);
-            $stmt->bindParam(':id_grupo_compartido', $data['id_grupo_compartido'] ?? null, PDO::PARAM_INT);
-            $stmt->bindParam(':es_programa_italiano', $data['es_programa_italiano'] ?? false, PDO::PARAM_BOOL);
+            $stmt->bindValue(':nombre', $data['nombre']);
+            $stmt->bindValue(':horas_semanales', $data['horas_semanales'] ?? 1, PDO::PARAM_INT);
+            $stmt->bindValue(':id_pauta_anep', $data['id_pauta_anep'], PDO::PARAM_INT);
+            $stmt->bindValue(':en_conjunto', $data['en_conjunto'] ?? false, PDO::PARAM_BOOL);
+            $stmt->bindValue(':id_grupo_compartido', $data['id_grupo_compartido'] ?? null, PDO::PARAM_INT);
+            $stmt->bindValue(':es_programa_italiano', $data['es_programa_italiano'] ?? false, PDO::PARAM_BOOL);
             
             $stmt->execute();
             
@@ -109,13 +109,13 @@ class Materia {
                      WHERE id_materia = :id";
             
             $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            $stmt->bindParam(':nombre', $data['nombre']);
-            $stmt->bindParam(':horas_semanales', $data['horas_semanales'] ?? 1, PDO::PARAM_INT);
-            $stmt->bindParam(':id_pauta_anep', $data['id_pauta_anep'], PDO::PARAM_INT);
-            $stmt->bindParam(':en_conjunto', $data['en_conjunto'] ?? false, PDO::PARAM_BOOL);
-            $stmt->bindParam(':id_grupo_compartido', $data['id_grupo_compartido'] ?? null, PDO::PARAM_INT);
-            $stmt->bindParam(':es_programa_italiano', $data['es_programa_italiano'] ?? false, PDO::PARAM_BOOL);
+            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+            $stmt->bindValue(':nombre', $data['nombre']);
+            $stmt->bindValue(':horas_semanales', $data['horas_semanales'] ?? 1, PDO::PARAM_INT);
+            $stmt->bindValue(':id_pauta_anep', $data['id_pauta_anep'], PDO::PARAM_INT);
+            $stmt->bindValue(':en_conjunto', $data['en_conjunto'] ?? false, PDO::PARAM_BOOL);
+            $stmt->bindValue(':id_grupo_compartido', $data['id_grupo_compartido'] ?? null, PDO::PARAM_INT);
+            $stmt->bindValue(':es_programa_italiano', $data['es_programa_italiano'] ?? false, PDO::PARAM_BOOL);
             
             return $stmt->execute();
         } catch (PDOException $e) {

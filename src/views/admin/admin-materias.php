@@ -740,7 +740,7 @@ try {
                     <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('subject_name'); ?> <span class="text-red-500">*</span></label>
                     <input type="text" id="nombre" name="nombre" required maxlength="200"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
-                           placeholder="<?php _e('subject_name_placeholder'); ?>" aria-describedby="nombreError">
+                           placeholder="<?php _e('subject_name_placeholder'); ?>" aria-describedby="nombreError" autocomplete="off">
                     <p id="nombreError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
@@ -748,7 +748,7 @@ try {
                     <label for="horas_semanales" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('weekly_hours'); ?> <span class="text-red-500">*</span></label>
                     <input type="number" id="horas_semanales" name="horas_semanales" min="1" max="40" value="1" required
                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
-                           aria-describedby="horas_semanalesError">
+                           aria-describedby="horas_semanalesError" autocomplete="off">
                     <p id="horas_semanalesError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
@@ -756,7 +756,7 @@ try {
                     <label for="id_pauta_anep" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('anep_guideline'); ?> <span class="text-red-500">*</span></label>
                     <select id="id_pauta_anep" name="id_pauta_anep" required
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
-                            aria-describedby="id_pauta_anepError">
+                            aria-describedby="id_pauta_anepError" autocomplete="off">
                         <option value=""><?php _e('select_guideline'); ?></option>
                         <?php foreach ($pautasAnep as $pauta): ?>
                             <option value="<?php echo $pauta['id_pauta_anep']; ?>">
@@ -780,7 +780,7 @@ try {
                     <label for="id_grupo_compartido" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('shared_group'); ?></label>
                     <select id="id_grupo_compartido" name="id_grupo_compartido"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
-                            aria-describedby="id_grupo_compartidoError">
+                            aria-describedby="id_grupo_compartidoError" autocomplete="off">
                         <option value=""><?php _e('select_group'); ?></option>
                         <?php foreach ($grupos as $grupo): ?>
                             <option value="<?php echo $grupo['id_grupo']; ?>">

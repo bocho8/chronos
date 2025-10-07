@@ -1,5 +1,9 @@
 <?php
 
+// Disable error reporting to prevent HTML output before JSON
+error_reporting(0);
+ini_set('display_errors', 0);
+
 require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/../models/Database.php';
 require_once __DIR__ . '/../helpers/Translation.php';
@@ -23,7 +27,7 @@ try {
         throw new Exception("No se pudo conectar a la base de datos");
     }
     
-    require_once __DIR__ . '/MateriaController.php';
+    require_once __DIR__ . '/SubjectController.php';
     $controller = new MateriaController($database->getConnection());
     $controller->handleRequest();
     
