@@ -22,11 +22,8 @@ class MultipleSelection {
         this.bindEvents();
         this.updateUI();
     }
-    
-    
 
     bindEvents() {
-        // Select all checkbox
         const selectAllCheckbox = this.container.querySelector(this.selectAllSelector);
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', (e) => {
@@ -34,7 +31,6 @@ class MultipleSelection {
             });
         }
 
-        // Individual item checkboxes
         this.container.addEventListener('change', (e) => {
             if (e.target.matches(this.checkboxSelector)) {
                 const itemId = e.target.dataset.itemId;
@@ -48,7 +44,6 @@ class MultipleSelection {
             }
         });
 
-        // Bulk action buttons
         this.container.addEventListener('click', (e) => {
             if (e.target.matches('[data-bulk-action]')) {
                 e.preventDefault();
@@ -57,7 +52,6 @@ class MultipleSelection {
             }
         });
     }
-    
 
     toggleAll(checked) {
         const checkboxes = this.container.querySelectorAll(this.checkboxSelector);
@@ -79,7 +73,6 @@ class MultipleSelection {
         const bulkActionsContainer = this.container.querySelector(this.bulkActionsSelector);
         const checkboxes = this.container.querySelectorAll(this.checkboxSelector);
         
-        // Update select all checkbox state
         if (selectAllCheckbox) {
             if (this.selectedItems.size === 0) {
                 selectAllCheckbox.indeterminate = false;
@@ -93,19 +86,15 @@ class MultipleSelection {
             }
         }
 
-        // Show/hide bulk actions with smooth transition
         if (bulkActionsContainer) {
             if (this.selectedItems.size > 0) {
-                // Show bulk actions
                 bulkActionsContainer.classList.remove('hidden');
                 this.updateBulkActionText();
             } else {
-                // Hide bulk actions
                 bulkActionsContainer.classList.add('hidden');
             }
         }
 
-        // Update item visual state
         this.updateItemStates();
     }
 
@@ -128,7 +117,6 @@ class MultipleSelection {
             element.textContent = count;
         });
         
-        // Update statistics
         this.updateStatistics();
     }
     
@@ -140,15 +128,12 @@ class MultipleSelection {
             return;
         }
         
-        // Get selected elements
         const selectedElements = selectedItems.map(id => 
             this.container.querySelector(`[data-item-id="${id}"]`)
         ).filter(el => el);
         
-        // Calculate statistics based on entity type
         const stats = this.calculateStatistics(selectedElements);
-        
-        // Update statistics display
+
         this.displayStatistics(stats);
     }
     
@@ -164,7 +149,7 @@ class MultipleSelection {
         };
         
         selectedElements.forEach(element => {
-            // Extract data based on entity type
+
             if (this.entityType === 'materias') {
                 this.calculateMateriaStats(element, stats);
             } else if (this.entityType === 'grupos') {
@@ -178,7 +163,7 @@ class MultipleSelection {
     }
     
     calculateMateriaStats(element, stats) {
-        // Extract hours from the element
+
         const metaElement = element.querySelector('.meta .text-muted');
         if (metaElement) {
             const text = metaElement.textContent;
@@ -186,15 +171,13 @@ class MultipleSelection {
             if (horasMatch) {
                 stats.horas += parseInt(horasMatch[1]);
             }
-            
-            // Check if it's assigned (has horario)
+
             if (text.includes('asignada') || text.includes('horario')) {
                 stats.asignados++;
             } else {
                 stats.noAsignados++;
             }
-            
-            // Check for Italian program
+
             if (text.includes('Programa Italiano')) {
                 stats.programas.add('Italiano');
             }
@@ -202,13 +185,12 @@ class MultipleSelection {
     }
     
     calculateGrupoStats(element, stats) {
-        // Extract level from data attribute
+
         const nivel = element.getAttribute('data-nivel');
         if (nivel) {
             stats.niveles.add(nivel);
         }
-        
-        // Check if group has schedule (look for schedule button)
+
         const scheduleButton = element.querySelector('button[onclick*="viewGroupSchedule"]');
         if (scheduleButton) {
             stats.asignados++;
@@ -218,7 +200,7 @@ class MultipleSelection {
     }
     
     calculateUsuarioStats(element, stats) {
-        // Extract roles from the element
+
         const metaElement = element.querySelector('.meta .text-muted');
         if (metaElement) {
             const text = metaElement.textContent;
@@ -372,11 +354,11 @@ class MultipleSelection {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                // Try to parse as JSON to get proper error message
+
                 try {
                     const errorData = JSON.parse(errorText);
                     if (errorData.message) {
-                        // Check if it's a foreign key error (decode first)
+
                         const decodedMessage = errorData.message.replace(/\\u([0-9a-fA-F]{4})/g, (match, code) => {
                             return String.fromCharCode(parseInt(code, 16));
                         });
@@ -394,13 +376,13 @@ class MultipleSelection {
                         
                         if (isForeignKeyError) {
                             this.showToast(errorData.message, 'warning');
-                            return; // Exit early, don't throw error
+                            return;
                         } else {
                             throw new Error(errorData.message);
                         }
                     }
                 } catch (parseError) {
-                    // If not JSON, use the raw text
+
                 }
                 throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
@@ -410,10 +392,10 @@ class MultipleSelection {
             if (data.success) {
                 this.showToast(this.getTranslation('bulk_delete_success') || `Se eliminaron ${selectedIds.length} elementos correctamente`, 'success');
                 this.clearSelection();
-                // Reload page or update UI
+
                 setTimeout(() => location.reload(), 1000);
             } else {
-                // Check if it's a foreign key violation for better UX
+
                 const isForeignKeyError = data.message && (
                     data.message.includes('están siendo utilizadas') ||
                     data.message.includes('están siendo utilizados') ||
@@ -429,7 +411,7 @@ class MultipleSelection {
                 }
             }
         } catch (error) {
-            // Check if it's a foreign key error from the error message
+
             const isForeignKeyError = error.message && (
                 error.message.includes('están siendo utilizadas') ||
                 error.message.includes('están siendo utilizados') ||
@@ -448,14 +430,13 @@ class MultipleSelection {
     }
 
     exportSelected(selectedIds) {
-        // Create CSV data
+
         const csvData = this.generateCSV(selectedIds);
         this.downloadCSV(csvData, `${this.getEntityType()}_export.csv`);
     }
 
     generateCSV(selectedIds) {
-        // This should be implemented based on the specific entity type
-        // For now, return a simple CSV structure
+
         const headers = this.getCSVHeaders();
         const rows = selectedIds.map(id => this.getCSVRowData(id));
         
@@ -465,12 +446,12 @@ class MultipleSelection {
     }
 
     getCSVHeaders() {
-        // Override in specific implementations
+
         return ['ID', 'Nombre'];
     }
 
     getCSVRowData(id) {
-        // Override in specific implementations
+
         const item = this.container.querySelector(`[data-item-id="${id}"]`);
         return [id, item?.textContent?.trim() || ''];
     }
@@ -518,7 +499,7 @@ class MultipleSelection {
     }
 
     getEntityType() {
-        // This should be set when initializing the class
+
         return this.entityType || 'unknown';
     }
 
@@ -540,16 +521,15 @@ class MultipleSelection {
     }
 
     getTranslation(key) {
-        // Try to get translation from global function if available
+
         if (typeof _e === 'function') {
             const translation = _e(key);
-            // If translation returns the key itself or null, use fallback
+
             if (translation && translation !== key) {
                 return translation;
             }
         }
-        
-        // Fallback translations
+
         const fallbacks = {
             'total_hours': 'Total Hours',
             'assigned': 'Assigned',
@@ -566,11 +546,11 @@ class MultipleSelection {
     }
 
     showToast(message, type = 'info') {
-        // Use existing toast system if available
+
         if (typeof showToast === 'function') {
             showToast(message, type);
         } else {
-            // Fallback toast system with better styling
+
             this.createFallbackToast(message, type);
         }
     }
@@ -596,7 +576,6 @@ class MultipleSelection {
             line-height: 1.4;
         `;
 
-        // Set colors based on type
         const colors = {
             success: '#10b981',
             error: '#ef4444',
@@ -605,15 +584,12 @@ class MultipleSelection {
         };
         toast.style.backgroundColor = colors[type] || colors.info;
 
-        // Handle Unicode characters properly
         let decodedMessage = message;
-        
-        // Decode Unicode escape sequences
+
         decodedMessage = decodedMessage.replace(/\\u([0-9a-fA-F]{4})/g, (match, code) => {
             return String.fromCharCode(parseInt(code, 16));
         });
-        
-        // Decode additional Unicode sequences
+
         decodedMessage = decodedMessage.replace(/\\u([0-9a-fA-F]{4})\\u([0-9a-fA-F]{4})/g, (match, code1, code2) => {
             return String.fromCharCode(parseInt(code1, 16)) + String.fromCharCode(parseInt(code2, 16));
         });
@@ -621,12 +597,10 @@ class MultipleSelection {
         toast.innerHTML = decodedMessage;
         document.body.appendChild(toast);
 
-        // Animate in
         setTimeout(() => {
             toast.style.transform = 'translateX(0)';
         }, 100);
 
-        // Auto remove after 5 seconds
         setTimeout(() => {
             toast.style.transform = 'translateX(100%)';
             setTimeout(() => {
@@ -638,7 +612,6 @@ class MultipleSelection {
     }
 }
 
-// CSS styles for multiple selection
 const multipleSelectionStyles = `
 <style>
 .item-row {
@@ -689,7 +662,6 @@ const multipleSelectionStyles = `
     flex-wrap: wrap;
 }
 
-/* Statistics styles */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -736,8 +708,6 @@ const multipleSelectionStyles = `
 .stat-item:has(.stat-value:not(:contains("0"))) .stat-value {
     color: #0369a1;
 }
-
-
 
 .bulk-actions .action-buttons button {
     padding: 0.5rem 1rem;
@@ -826,8 +796,6 @@ const multipleSelectionStyles = `
 </style>
 `;
 
-// Inject styles
 document.head.insertAdjacentHTML('beforeend', multipleSelectionStyles);
 
-// Export for use in other modules
 window.MultipleSelection = MultipleSelection;

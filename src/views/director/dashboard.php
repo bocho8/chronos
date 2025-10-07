@@ -3,31 +3,23 @@
  * Dashboard principal del director
  */
 
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 
-// Require authentication and director role
 AuthHelper::requireRole('DIRECTOR');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Get user data
 $user = AuthHelper::getCurrentUser();
 
-// Definimos la variable para saber en qué archivo estamos.
-// Usaremos esta variable para resaltar el botón activo.
 $current_page = basename($_SERVER['PHP_SELF']); 
 ?>
 

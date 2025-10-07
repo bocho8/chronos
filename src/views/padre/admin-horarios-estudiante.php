@@ -12,59 +12,45 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize components
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-horarios-estudiante.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and padre role
 AuthHelper::requireRole('PADRE'); 
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Load current user info
 $currentUser = AuthHelper::getCurrentUser();
 
-// Load database configuration and get data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get models
     $horarioModel = new Horario($database->getConnection());
     
-    // Get data
     $grupos = $horarioModel->getAllGrupos();
     $bloques = $horarioModel->getAllBloques();
     
-    // Get selected grupo
     $selectedGrupo = $_GET['grupo'] ?? null;
     $selectedGrupoData = null;
     $horarios = [];
     
     if ($selectedGrupo) {
-        // Get grupo data
         $selectedGrupoData = $horarioModel->getGrupoById($selectedGrupo);
         
-    // Get horarios for selected grupo (only published schedules)
     $horarios = $horarioModel->getHorariosByGrupo($selectedGrupo);
-    
-    // Filter only published schedules for parents
+
     $horarios = array_filter($horarios, function($horario) {
         return isset($horario['publicado']) && $horario['publicado'] == 1;
     });
-        
-        // Organize horarios by day and block
+
         $horariosOrganizados = [];
         foreach ($horarios as $horario) {
             $dia = $horario['dia'];
@@ -230,7 +216,7 @@ try {
                                                         <?php foreach ($dias as $dia): ?>
                                                             <td class="border border-gray-300 px-4 py-3 text-sm text-center">
                                                                 <?php 
-                                                                $diaNum = array_search($dia, $dias) + 1; // Convert to 1-5
+                                                                $diaNum = array_search($dia, $dias) + 1;
                                                                 if (isset($horariosOrganizados[$diaNum][$bloque['id_bloque']])):
                                                                     $horario = $horariosOrganizados[$diaNum][$bloque['id_bloque']];
                                                                 ?>
@@ -278,7 +264,7 @@ try {
     </div>
 
     <script>
-        // Logout functionality
+
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';

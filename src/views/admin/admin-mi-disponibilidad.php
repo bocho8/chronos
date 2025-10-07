@@ -3,28 +3,22 @@
  * Vista de "Mi Disponibilidad" para administradores (simulando vista de docente)
  */
 
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-mi-disponibilidad.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');
     exit();
@@ -171,7 +165,7 @@ if (!AuthHelper::checkSessionTimeout()) {
     </div>
 
     <script>
-        // Logout functionality
+
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';

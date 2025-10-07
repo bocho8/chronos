@@ -20,7 +20,6 @@ class LoginController {
         $password = $_POST['password'] ?? '';
         $role = $_POST['role'] ?? '';
         
-        // Validate input
         $validation = $this->validateInput($cedula, $password, $role);
         if (!$validation['valid']) {
             $this->redirectToLogin('validation_error', $validation['errors']);
@@ -31,17 +30,14 @@ class LoginController {
             $dbConfig = require __DIR__ . '/../config/database.php';
             $database = new Database($dbConfig);
             $auth = new Auth($database->getConnection());
-            
-            // Authenticate user
+
             $user = $auth->authenticate($cedula, $password, $role);
             
             if ($user) {
-                // Set session data
                 $_SESSION['logged_in'] = true;
                 $_SESSION['user'] = $user;
                 $_SESSION['last_activity'] = time();
-                
-                // Redirect based on role
+
                 $redirectUrl = $this->getRoleRedirectUrl($role);
                 header("Location: $redirectUrl");
                 exit();
@@ -65,7 +61,6 @@ class LoginController {
         $password = $_POST['password'] ?? '';
         $role = $_POST['role'] ?? '';
         
-        // Validate input
         $validation = $this->validateInput($cedula, $password, $role);
         if (!$validation['valid']) {
             ResponseHelper::error('Datos inválidos', $validation['errors']);
@@ -76,17 +71,14 @@ class LoginController {
             $dbConfig = require __DIR__ . '/../config/database.php';
             $database = new Database($dbConfig);
             $auth = new Auth($database->getConnection());
-            
-            // Authenticate user
+
             $user = $auth->authenticate($cedula, $password, $role);
             
             if ($user) {
-                // Set session data
                 $_SESSION['logged_in'] = true;
                 $_SESSION['user'] = $user;
                 $_SESSION['last_activity'] = time();
                 
-                // Return success with redirect URL
                 $redirectUrl = $this->getRoleRedirectUrl($role);
                 ResponseHelper::success('Inicio de sesión exitoso', ['redirect' => $redirectUrl]);
             } else {
@@ -102,21 +94,18 @@ class LoginController {
     private function validateInput($cedula, $password, $role) {
         $errors = [];
         
-        // Validate cedula
         if (empty($cedula)) {
             $errors['ci'] = 'El C.I es obligatorio';
         } elseif (!preg_match('/^\d{7,8}$/', $cedula)) {
             $errors['ci'] = 'El C.I debe tener 7 u 8 dígitos numéricos';
         }
         
-        // Validate password
         if (empty($password)) {
             $errors['password'] = 'La contraseña es obligatoria';
         } elseif (strlen($password) < 6) {
             $errors['password'] = 'La contraseña debe tener al menos 6 caracteres';
         }
         
-        // Validate role
         if (empty($role)) {
             $errors['role'] = 'Debe seleccionar un rol';
         } elseif (!in_array($role, ['ADMIN', 'DIRECTOR', 'COORDINADOR', 'DOCENTE', 'PADRE'])) {

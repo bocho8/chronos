@@ -10,24 +10,19 @@ require_once __DIR__ . '/../helpers/ResponseHelper.php';
 require_once __DIR__ . '/../models/Database.php';
 require_once __DIR__ . '/../models/Grupo.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     ResponseHelper::sendError('Sesión expirada', 401);
     exit();
 }
 
-// Get request method and action
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
 
 try {
-    // Load database configuration
     $dbConfig = require __DIR__ . '/../config/database.php';
     $database = new Database($dbConfig);
     $grupoModel = new Grupo($database->getConnection());
@@ -146,7 +141,6 @@ function handlePostRequest($grupoModel, $action) {
             $nombre = trim($data['nombre'] ?? '');
             $nivel = trim($data['nivel'] ?? '');
             
-            // Validate required fields
             if (empty($nombre)) {
                 ResponseHelper::sendError('El nombre del grupo es requerido');
                 return;
@@ -157,13 +151,11 @@ function handlePostRequest($grupoModel, $action) {
                 return;
             }
             
-            // Validate nombre length
             if (strlen($nombre) > 100) {
                 ResponseHelper::sendError('El nombre del grupo no puede exceder 100 caracteres');
                 return;
             }
             
-            // Validate nivel length
             if (strlen($nivel) > 50) {
                 ResponseHelper::sendError('El nivel no puede exceder 50 caracteres');
                 return;
@@ -200,7 +192,6 @@ function handlePutRequest($grupoModel, $action) {
             $nombre = trim($data['nombre'] ?? '');
             $nivel = trim($data['nivel'] ?? '');
             
-            // Validate required fields
             if (empty($id) || !is_numeric($id)) {
                 ResponseHelper::sendError('ID de grupo inválido');
                 return;
@@ -216,13 +207,11 @@ function handlePutRequest($grupoModel, $action) {
                 return;
             }
             
-            // Validate nombre length
             if (strlen($nombre) > 100) {
                 ResponseHelper::sendError('El nombre del grupo no puede exceder 100 caracteres');
                 return;
             }
             
-            // Validate nivel length
             if (strlen($nivel) > 50) {
                 ResponseHelper::sendError('El nivel no puede exceder 50 caracteres');
                 return;

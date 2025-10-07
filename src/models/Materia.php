@@ -49,17 +49,15 @@ class Materia {
      */
     public function createMateria($data) {
         try {
-            // Validar datos requeridos
+
             if (empty($data['nombre'])) {
                 throw new Exception("El nombre de la materia es requerido");
             }
-            
-            // Verificar si ya existe una materia con el mismo nombre
+
             if ($this->materiaExists($data['nombre'])) {
                 throw new Exception("Ya existe una materia con ese nombre");
             }
-            
-            // Obtener la primera pauta ANEP disponible si no se especifica
+
             if (empty($data['id_pauta_anep'])) {
                 $data['id_pauta_anep'] = $this->getDefaultPautaAnep();
             }
@@ -89,12 +87,11 @@ class Materia {
      */
     public function updateMateria($id, $data) {
         try {
-            // Validar que la materia existe
+
             if (!$this->getMateriaById($id)) {
                 throw new Exception("La materia no existe");
             }
-            
-            // Verificar si el nuevo nombre ya existe (excluyendo la materia actual)
+
             if (!empty($data['nombre']) && $this->materiaExists($data['nombre'], $id)) {
                 throw new Exception("Ya existe otra materia con ese nombre");
             }
@@ -129,12 +126,11 @@ class Materia {
      */
     public function deleteMateria($id) {
         try {
-            // Verificar que la materia existe
+
             if (!$this->getMateriaById($id)) {
                 throw new Exception("La materia no existe");
             }
-            
-            // Verificar si la materia está siendo utilizada en horarios
+
             if ($this->materiaInUse($id)) {
                 throw new Exception("No se puede eliminar la materia porque está siendo utilizada en horarios");
             }

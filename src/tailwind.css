@@ -17,7 +17,6 @@
   --font-family-sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-/* Custom utility classes for the custom colors */
 .bg-bg { background-color: var(--color-bg); }
 .bg-card { background-color: var(--color-card); }
 .bg-sidebar { background-color: var(--color-sidebar); }
@@ -34,7 +33,6 @@
 .border-lightborder { border-color: var(--color-lightborder); }
 .border-hover { border-color: var(--color-hover); }
 
-/* Custom styles for form validation and error messages */
 .error-message {
   display: none;
 }

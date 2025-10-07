@@ -1,6 +1,5 @@
 <?php
 
-// Disable error reporting to prevent HTML output before JSON
 error_reporting(0);
 ini_set('display_errors', 0);
 

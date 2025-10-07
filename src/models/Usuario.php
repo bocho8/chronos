@@ -57,21 +57,17 @@ class Usuario {
     public function createUsuario($usuarioData) {
         try {
             $this->db->beginTransaction();
-            
-            // Verificar si la cédula ya existe
+
             if ($this->cedulaExists($usuarioData['cedula'])) {
                 throw new Exception("La cédula ya está en uso");
             }
-            
-            // Verificar si el email ya existe
+
             if ($this->emailExists($usuarioData['email'])) {
                 throw new Exception("El email ya está en uso");
             }
-            
-            // Hash de la contraseña
+
             $passwordHash = password_hash($usuarioData['contrasena'], PASSWORD_DEFAULT);
-            
-            // Insertar usuario
+
             $userQuery = "INSERT INTO usuario (cedula, nombre, apellido, email, telefono, contrasena_hash) 
                          VALUES (:cedula, :nombre, :apellido, :email, :telefono, :contrasena_hash)";
             
@@ -85,13 +81,11 @@ class Usuario {
             
             $userStmt->execute();
             $userId = $this->db->lastInsertId();
-            
-            // Asignar roles
+
             if (!empty($usuarioData['roles'])) {
                 $this->assignRoles($userId, $usuarioData['roles']);
             }
-            
-            // Log de la acción
+
             $this->logAction($userId, 'create', "Usuario creado: {$usuarioData['nombre']} {$usuarioData['apellido']}");
             
             $this->db->commit();
@@ -110,24 +104,20 @@ class Usuario {
     public function updateUsuario($id, $usuarioData) {
         try {
             $this->db->beginTransaction();
-            
-            // Obtener usuario actual
+
             $currentUsuario = $this->getUsuarioById($id);
             if (!$currentUsuario) {
                 throw new Exception("Usuario no encontrado");
             }
-            
-            // Verificar si la cédula ya existe (excluyendo el usuario actual)
+
             if ($usuarioData['cedula'] !== $currentUsuario['cedula'] && $this->cedulaExists($usuarioData['cedula'])) {
                 throw new Exception("La cédula ya está en uso");
             }
-            
-            // Verificar si el email ya existe (excluyendo el usuario actual)
+
             if ($usuarioData['email'] !== $currentUsuario['email'] && $this->emailExists($usuarioData['email'])) {
                 throw new Exception("El email ya está en uso");
             }
-            
-            // Actualizar datos del usuario
+
             $updateQuery = "UPDATE usuario SET 
                            cedula = :cedula, 
                            nombre = :nombre, 
@@ -145,8 +135,7 @@ class Usuario {
             $updateStmt->bindValue(':id_usuario', $id, PDO::PARAM_INT);
             
             $updateStmt->execute();
-            
-            // Actualizar contraseña si se proporciona
+
             if (!empty($usuarioData['contrasena'])) {
                 $passwordHash = password_hash($usuarioData['contrasena'], PASSWORD_DEFAULT);
                 $passwordQuery = "UPDATE usuario SET contrasena_hash = :contrasena_hash WHERE id_usuario = :id_usuario";
@@ -155,13 +144,11 @@ class Usuario {
                 $passwordStmt->bindValue(':id_usuario', $id, PDO::PARAM_INT);
                 $passwordStmt->execute();
             }
-            
-            // Actualizar roles
+
             if (isset($usuarioData['roles'])) {
                 $this->updateRoles($id, $usuarioData['roles']);
             }
-            
-            // Log de la acción
+
             $this->logAction($id, 'update', "Usuario actualizado: {$usuarioData['nombre']} {$usuarioData['apellido']}");
             
             $this->db->commit();
@@ -180,29 +167,24 @@ class Usuario {
     public function deleteUsuario($id) {
         try {
             $this->db->beginTransaction();
-            
-            // Obtener datos del usuario antes de eliminar
+
             $usuario = $this->getUsuarioById($id);
             if (!$usuario) {
                 throw new Exception("Usuario no encontrado");
             }
-            
-            // Log de la acción (antes de eliminar registros)
+
             $this->logAction($id, 'delete', "Usuario eliminado: {$usuario['nombre']} {$usuario['apellido']}");
-            
-            // Eliminar registros de log del usuario
+
             $deleteLogQuery = "DELETE FROM log WHERE id_usuario = :id_usuario";
             $deleteLogStmt = $this->db->prepare($deleteLogQuery);
             $deleteLogStmt->bindValue(':id_usuario', $id, PDO::PARAM_INT);
             $deleteLogStmt->execute();
-            
-            // Eliminar roles del usuario
+
             $deleteRolesQuery = "DELETE FROM usuario_rol WHERE id_usuario = :id_usuario";
             $deleteRolesStmt = $this->db->prepare($deleteRolesQuery);
             $deleteRolesStmt->bindValue(':id_usuario', $id, PDO::PARAM_INT);
             $deleteRolesStmt->execute();
-            
-            // Eliminar usuario
+
             $deleteQuery = "DELETE FROM usuario WHERE id_usuario = :id_usuario";
             $deleteStmt = $this->db->prepare($deleteQuery);
             $deleteStmt->bindValue(':id_usuario', $id, PDO::PARAM_INT);
@@ -319,13 +301,12 @@ class Usuario {
      * Actualizar roles de un usuario
      */
     private function updateRoles($userId, $roleNames) {
-        // Eliminar roles actuales
+
         $deleteQuery = "DELETE FROM usuario_rol WHERE id_usuario = :id_usuario";
         $deleteStmt = $this->db->prepare($deleteQuery);
         $deleteStmt->bindValue(':id_usuario', $userId, PDO::PARAM_INT);
         $deleteStmt->execute();
-        
-        // Asignar nuevos roles
+
         if (!empty($roleNames)) {
             $this->assignRoles($userId, $roleNames);
         }

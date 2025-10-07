@@ -6,18 +6,16 @@
  */
 
 return [
-    // Application settings
+
     'name' => 'Chronos',
     'version' => '2.0.0',
     'environment' => getenv('APP_ENV') ?: 'production',
     'debug' => getenv('APP_DEBUG') === 'true',
     'timezone' => 'America/Montevideo',
-    
-    // URL settings
+
     'url' => getenv('APP_URL') ?: 'http://localhost',
     'asset_url' => getenv('ASSET_URL') ?: '/assets',
-    
-    // Database settings
+
     'database' => [
         'default' => 'pgsql',
         'connections' => [
@@ -34,11 +32,10 @@ return [
             ]
         ]
     ],
-    
-    // Session settings
+
     'session' => [
         'driver' => 'file',
-        'lifetime' => 120, // minutes
+        'lifetime' => 120,
         'expire_on_close' => false,
         'encrypt' => true,
         'files' => __DIR__ . '/../storage/sessions',
@@ -53,8 +50,7 @@ return [
         'http_only' => true,
         'same_site' => 'lax',
     ],
-    
-    // Cache settings
+
     'cache' => [
         'default' => 'file',
         'stores' => [
@@ -69,8 +65,7 @@ return [
             ],
         ],
     ],
-    
-    // Logging settings
+
     'logging' => [
         'default' => 'file',
         'channels' => [
@@ -86,8 +81,7 @@ return [
             ],
         ],
     ],
-    
-    // Mail settings
+
     'mail' => [
         'driver' => 'smtp',
         'host' => getenv('MAIL_HOST') ?: 'localhost',
@@ -100,47 +94,41 @@ return [
             'name' => getenv('MAIL_FROM_NAME') ?: 'Chronos',
         ],
     ],
-    
-    // Security settings
+
     'security' => [
         'password_min_length' => 8,
         'password_require_special' => true,
-        'session_timeout' => 120, // minutes
+        'session_timeout' => 120,
         'max_login_attempts' => 5,
-        'lockout_duration' => 15, // minutes
+        'lockout_duration' => 15,
         'csrf_protection' => true,
         'xss_protection' => true,
     ],
-    
-    // Localization settings
+
     'locale' => [
         'default' => 'es',
         'fallback' => 'en',
         'available' => ['es', 'en', 'it'],
         'rtl_languages' => [],
     ],
-    
-    // Pagination settings
+
     'pagination' => [
         'per_page' => 15,
         'max_per_page' => 100,
     ],
-    
-    // File upload settings
+
     'uploads' => [
-        'max_size' => 2048, // KB
+        'max_size' => 2048,
         'allowed_types' => ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx'],
         'path' => __DIR__ . '/../storage/uploads',
     ],
-    
-    // API settings
+
     'api' => [
         'version' => 'v1',
-        'rate_limit' => 60, // requests per minute
+        'rate_limit' => 60,
         'throttle' => true,
     ],
-    
-    // School settings
+
     'school' => [
         'name' => 'Scuola Italiana di Montevideo',
         'address' => 'Av. Italia 2727, 11600 Montevideo, Uruguay',
@@ -151,8 +139,7 @@ return [
         'academic_year' => date('Y'),
         'semester' => 1, // 1 or 2
     ],
-    
-    // Feature flags
+
     'features' => [
         'notifications' => true,
         'reports' => true,

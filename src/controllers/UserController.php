@@ -131,8 +131,7 @@ class UserController {
                 ]);
                 return;
             }
-            
-            // Convertir roles string a array
+
             $usuario['roles'] = !empty($usuario['roles']) ? explode(', ', $usuario['roles']) : [];
             $usuario['role_names'] = !empty($usuario['role_names']) ? explode(', ', $usuario['role_names']) : [];
             
@@ -207,8 +206,7 @@ class UserController {
      */
     private function validateUsuarioData($data, $isUpdate = false) {
         $errors = [];
-        
-        // Validar campos requeridos
+
         if (empty($data['cedula'])) {
             $errors['cedula'] = 'La cédula es requerida';
         }
@@ -226,8 +224,7 @@ class UserController {
         } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             $errors['email'] = 'El email no es válido';
         }
-        
-        // Validar contraseña solo si no es actualización o si se proporciona
+
         if (!$isUpdate || !empty($data['contrasena'])) {
             if (empty($data['contrasena'])) {
                 $errors['contrasena'] = 'La contraseña es requerida';
@@ -235,8 +232,7 @@ class UserController {
                 $errors['contrasena'] = 'La contraseña debe tener al menos 6 caracteres';
             }
         }
-        
-        // Si hay errores, devolverlos
+
         if (!empty($errors)) {
             echo json_encode([
                 'success' => false,
@@ -245,8 +241,7 @@ class UserController {
             ]);
             return false;
         }
-        
-        // Preparar datos para el modelo
+
         $usuarioData = [
             'cedula' => trim($data['cedula']),
             'nombre' => trim($data['nombre']),
@@ -254,13 +249,11 @@ class UserController {
             'email' => trim($data['email']),
             'telefono' => trim($data['telefono'] ?? '')
         ];
-        
-        // Agregar contraseña si se proporciona
+
         if (!empty($data['contrasena'])) {
             $usuarioData['contrasena'] = $data['contrasena'];
         }
-        
-        // Agregar roles si se proporcionan
+
         if (!empty($data['roles'])) {
             $usuarioData['roles'] = is_array($data['roles']) ? $data['roles'] : explode(',', $data['roles']);
         }

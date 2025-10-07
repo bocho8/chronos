@@ -1,9 +1,4 @@
 <?php
-/**
- * Página de asignación de materias a docentes para administradores
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -13,40 +8,31 @@ require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 require_once __DIR__ . '/../../models/Docente.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-asignaciones.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');
     exit();
 }
 
-// Load database configuration and get data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get models
     $horarioModel = new Horario($database->getConnection());
     $docenteModel = new Docente($database->getConnection());
     
-    // Get data
     $docentes = $docenteModel->getAllDocentes();
     $materias = $horarioModel->getAllMaterias();
     
-    // Get current assignments
     $pdo = $database->getConnection();
     $stmt = $pdo->prepare("
         SELECT dm.*, d.id_docente, u.nombre, u.apellido, m.nombre as materia_nombre 
@@ -67,7 +53,6 @@ try {
     $error_message = 'Error interno del servidor';
 }
 
-// Function to get user initials
 function getUserInitials($nombre, $apellido) {
     return strtoupper(substr($nombre, 0, 1) . substr($apellido, 0, 1));
 }
@@ -132,8 +117,7 @@ function getUserInitials($nombre, $apellido) {
             right: 20px;
             z-index: 10000;
         }
-        
-        /* Modal styles */
+
         #asignacionModal {
             position: fixed !important;
             top: 0 !important;
@@ -321,7 +305,7 @@ function getUserInitials($nombre, $apellido) {
 
     <script src="/js/toast.js"></script>
     <script>
-        // Modal functions
+
         function openAsignacionModal() {
             document.getElementById('asignacionForm').reset();
             document.getElementById('asignacionModal').classList.remove('hidden');
@@ -335,7 +319,6 @@ function getUserInitials($nombre, $apellido) {
             document.getElementById('asignacionModal').classList.add('hidden');
         }
 
-        // Handle form submission
         function handleAsignacionFormSubmit(e) {
             e.preventDefault();
             
@@ -364,7 +347,6 @@ function getUserInitials($nombre, $apellido) {
             });
         }
 
-        // Remove assignment
         function removeAsignacion(idDocente, idMateria, materiaNombre) {
             const confirmMessage = `¿Está seguro de que desea remover la asignación de "${materiaNombre}"?`;
             if (confirm(confirmMessage)) {
@@ -393,16 +375,12 @@ function getUserInitials($nombre, $apellido) {
             }
         }
 
-        // Toast system is now handled by /js/toast.js
-
-        // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         });
 
-        // Close modal when clicking outside
         document.getElementById('asignacionModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeAsignacionModal();

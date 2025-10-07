@@ -6,7 +6,7 @@
     <title>Disponibilidad Horaria</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilos para el texto en las celdas */
+        
         .cell-text {
             font-size: 0.8rem;
         }
@@ -168,20 +168,19 @@
     </div>
 
     <script>
-        // Obtener todas las celdas con la clase 'cell'
+
         const cells = document.querySelectorAll('.cell');
 
-        // Agregar un event listener a cada celda
         cells.forEach(cell => {
             cell.addEventListener('click', () => {
-                // Comprobar si la celda es "Disponible" (verde)
+
                 if (cell.classList.contains('bg-green-200')) {
-                    // Cambiar a "No disponible" (rojo)
+
                     cell.classList.remove('bg-green-200', 'text-green-800');
                     cell.classList.add('bg-red-200', 'text-red-800');
                     cell.textContent = 'No disponible';
                 } else {
-                    // Si es "No disponible" (rojo), cambiar a "Disponible" (verde)
+
                     cell.classList.remove('bg-red-200', 'text-red-800');
                     cell.classList.add('bg-green-200', 'text-green-800');
                     cell.textContent = 'Disponible';

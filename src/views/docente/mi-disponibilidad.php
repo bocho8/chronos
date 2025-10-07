@@ -1,10 +1,4 @@
 <?php
-/**
- * Gestión de Disponibilidad del Docente
- * Registro de disponibilidad horaria por bloques de tiempo
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -12,31 +6,24 @@ require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('mi-disponibilidad.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and docente role
 AuthHelper::requireRole('DOCENTE');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Get current user info
 $currentUser = AuthHelper::getCurrentUser();
 $userId = $currentUser['id_usuario'] ?? null;
 
-// Handle form submission for availability
 $message = '';
 $messageType = '';
 
@@ -46,7 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $database = new Database($dbConfig);
         
         if ($_POST['action'] === 'save_availability') {
-            // Get docente ID from user ID
             $docenteQuery = "SELECT id_docente FROM docente WHERE id_usuario = :id_usuario";
             $stmt = $database->getConnection()->prepare($docenteQuery);
             $stmt->bindParam(':id_usuario', $userId, PDO::PARAM_INT);
@@ -54,18 +40,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $docenteId = $stmt->fetchColumn();
             
             if ($docenteId) {
-                // First, delete existing availability for this docente
+
                 $deleteQuery = "DELETE FROM disponibilidad WHERE id_docente = :id_docente";
                 $deleteStmt = $database->getConnection()->prepare($deleteQuery);
                 $deleteStmt->bindParam(':id_docente', $docenteId, PDO::PARAM_INT);
                 $deleteStmt->execute();
                 
-                // Save availability data according to database schema
                 $days = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
                 $insertQuery = "INSERT INTO disponibilidad (id_docente, id_bloque, dia, disponible) VALUES (:id_docente, :id_bloque, :dia, :disponible)";
                 $insertStmt = $database->getConnection()->prepare($insertQuery);
                 
-                // Get all time blocks
                 $blocksQuery = "SELECT id_bloque FROM bloque_horario ORDER BY hora_inicio";
                 $blocksStmt = $database->getConnection()->prepare($blocksQuery);
                 $blocksStmt->execute();
@@ -84,7 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     }
                 }
                 
-                // Update docente record with submission date and other info
                 $updateDocente = "UPDATE docente SET 
                                  fecha_envio_disponibilidad = CURRENT_DATE,
                                  trabaja_otro_liceo = :trabaja_otro_liceo
@@ -94,17 +77,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $updateStmt->bindParam(':trabaja_otro_liceo', $trabajaOtroLiceo, PDO::PARAM_BOOL);
                 $updateStmt->bindParam(':id_docente', $docenteId, PDO::PARAM_INT);
                 $updateStmt->execute();
-                
-                // Handle observations if needed
+
                 $observaciones = $_POST['observaciones'] ?? '';
                 if (!empty($observaciones)) {
-                    // Delete existing observations for this docente
                     $deleteObsQuery = "DELETE FROM observacion WHERE id_docente = :id_docente AND tipo = 'DISPONIBILIDAD'";
                     $deleteObsStmt = $database->getConnection()->prepare($deleteObsQuery);
                     $deleteObsStmt->bindParam(':id_docente', $docenteId, PDO::PARAM_INT);
                     $deleteObsStmt->execute();
-                    
-                    // Insert new observation
+
                     $obsQuery = "INSERT INTO observacion (id_docente, tipo, descripcion) VALUES (:id_docente, 'DISPONIBILIDAD', :descripcion)";
                     $obsStmt = $database->getConnection()->prepare($obsQuery);
                     $obsStmt->bindParam(':id_docente', $docenteId, PDO::PARAM_INT);
@@ -126,7 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Load current availability data and time blocks
 $currentAvailability = [];
 $timeBlocks = [];
 $docenteInfo = null;
@@ -136,13 +115,11 @@ try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get time blocks from database (same as admin views)
     $blocksQuery = "SELECT id_bloque, hora_inicio, hora_fin FROM bloque_horario ORDER BY hora_inicio";
     $stmt = $database->getConnection()->prepare($blocksQuery);
     $stmt->execute();
     $timeBlocks = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get docente information
     $docenteQuery = "SELECT d.*, u.nombre, u.apellido FROM docente d 
                      INNER JOIN usuario u ON d.id_usuario = u.id_usuario 
                      WHERE d.id_usuario = :id_usuario";
@@ -154,7 +131,6 @@ try {
     if ($docenteInfo) {
         $docenteId = $docenteInfo['id_docente'];
         
-        // Initialize availability grid
         $days = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
         foreach ($days as $day) {
             $availabilityGrid[$day] = [];
@@ -163,21 +139,18 @@ try {
             }
         }
         
-        // Get current availability by day and block
         $availQuery = "SELECT dia, id_bloque, disponible FROM disponibilidad WHERE id_docente = :id_docente";
         $stmt = $database->getConnection()->prepare($availQuery);
         $stmt->bindParam(':id_docente', $docenteId, PDO::PARAM_INT);
         $stmt->execute();
         $availabilityData = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Fill the availability grid
+
         foreach ($availabilityData as $row) {
             if (isset($availabilityGrid[$row['dia']][$row['id_bloque']])) {
                 $availabilityGrid[$row['dia']][$row['id_bloque']] = (bool)$row['disponible'];
             }
         }
         
-        // Get observations
         $obsQuery = "SELECT descripcion FROM observacion WHERE id_docente = :id_docente AND tipo = 'DISPONIBILIDAD' ORDER BY id_observacion DESC LIMIT 1";
         $stmt = $database->getConnection()->prepare($obsQuery);
         $stmt->bindParam(':id_docente', $docenteId, PDO::PARAM_INT);
@@ -435,14 +408,12 @@ try {
             const hiddenInput = document.getElementById(`disponible_${dia}_${bloque}`);
             const cell = hiddenInput.closest('td');
             const textElement = cell.querySelector('.disponible-text');
-            
-            // Toggle the value
+
             const currentValue = hiddenInput.value === '1';
             const newValue = !currentValue;
             
             hiddenInput.value = newValue ? '1' : '0';
             
-            // Update cell appearance
             if (newValue) {
                 cell.classList.remove('unavailable-cell');
                 cell.classList.add('available-cell');

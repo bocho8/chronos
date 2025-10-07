@@ -52,7 +52,6 @@ class HorarioController {
             ResponseHelper::notFound("Horario");
         }
         
-        // Get additional data for editing
         $horarioCompleto = $this->horarioModel->getHorarioCompletoById($id);
         
         if (!$horarioCompleto) {

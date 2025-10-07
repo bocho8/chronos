@@ -33,16 +33,13 @@ class StatusLabels {
     }
     
     createDropdown() {
-        // Find the header area to place the dropdown
         const header = this.container.querySelector('.flex.gap-2, .flex.justify-between, .flex.items-center');
         if (!header) return;
         
-        // Create dropdown container
         this.dropdownContainer = document.createElement('div');
         this.dropdownContainer.className = 'status-labels-dropdown-container';
         this.dropdownContainer.innerHTML = this.getDropdownHTML();
         
-        // Insert before the add button
         const addButton = header.querySelector('button');
         if (addButton) {
             addButton.parentNode.insertBefore(this.dropdownContainer, addButton);
@@ -73,8 +70,7 @@ class StatusLabels {
     
     bindEvents() {
         if (!this.dropdownContainer) return;
-        
-        // Toggle dropdown
+
         const toggle = this.dropdownContainer.querySelector('.status-labels-toggle');
         const content = this.dropdownContainer.querySelector('.status-labels-content');
         
@@ -84,8 +80,7 @@ class StatusLabels {
             const arrow = toggle.querySelector('.status-labels-arrow');
             arrow.textContent = content.classList.contains('hidden') ? '▼' : '▲';
         });
-        
-        // Close dropdown when clicking outside
+
         document.addEventListener('click', (e) => {
             if (!this.dropdownContainer.contains(e.target)) {
                 content.classList.add('hidden');
@@ -93,8 +88,7 @@ class StatusLabels {
                 arrow.textContent = '▼';
             }
         });
-        
-        // Clear selection button
+
         const clearBtn = this.dropdownContainer.querySelector('.clear-labels-btn');
         clearBtn.addEventListener('click', () => {
             this.clearSelection();
@@ -105,8 +99,7 @@ class StatusLabels {
         const allLabelsList = this.dropdownContainer.querySelector('#allLabelsList');
         
         if (!allLabelsList) return;
-        
-        // Get all unique label categories from items
+
         const items = this.container.querySelectorAll(this.itemSelector);
         const availableCategories = new Set();
         
@@ -123,8 +116,7 @@ class StatusLabels {
                 }
             }
         });
-        
-        // Populate available label categories
+
         Array.from(availableCategories).sort().forEach(category => {
             const labelElement = this.createDropdownLabel(category, 'label');
             allLabelsList.appendChild(labelElement);
@@ -140,14 +132,12 @@ class StatusLabels {
                 <span class="status-labels-text">${labelText}</span>
             </label>
         `;
-        
-        // Add click handler
+
         const checkbox = labelElement.querySelector('input[type="checkbox"]');
         checkbox.addEventListener('change', (e) => {
             this.handleLabelSelection(labelText, type, e.target.checked);
         });
-        
-        // If checked by default, add to selected labels
+
         if (checkedByDefault) {
             this.selectedLabels.add(labelText);
         }
@@ -174,33 +164,32 @@ class StatusLabels {
             if (!metaElement) return;
             
             if (this.selectedLabels.size > 0) {
-                // Show only selected labels
+
                 const selectedLabels = this.getSelectedLabelsForItem(item);
                 if (selectedLabels) {
                     const clickableLabels = this.makeLabelsClickable(selectedLabels);
                     metaElement.innerHTML = clickableLabels;
                     this.highlightSelectedLabels();
                 } else {
-                    // No labels match this item, show nothing
+
                     metaElement.textContent = '';
                 }
             } else {
-                // No labels selected, show nothing
+
                 metaElement.textContent = '';
             }
         });
     }
     
     getSelectedLabelsForItem(item) {
-        // Get the label mapping from the view
+
         const labelMapping = item.dataset.labelMapping;
         if (!labelMapping) return '';
         
         try {
             const mapping = JSON.parse(labelMapping);
             const selectedLabels = [];
-            
-            // For each selected label, get the corresponding value from the mapping
+
             this.selectedLabels.forEach(selectedLabel => {
                 if (mapping[selectedLabel]) {
                     selectedLabels.push(mapping[selectedLabel]);
@@ -216,10 +205,9 @@ class StatusLabels {
     
     checkItemForSelectedLabels(itemLabels) {
         const selectedLabels = [];
-        
-        // Check each selected label against the item's available labels
+
         this.selectedLabels.forEach(selectedLabel => {
-            // Find matching labels in the item's data
+
             const matchingLabels = itemLabels.filter(itemLabel => 
                 this.labelsMatch(selectedLabel, itemLabel)
             );
@@ -230,9 +218,7 @@ class StatusLabels {
     }
     
     labelsMatch(selectedLabel, itemLabel) {
-        // This method can be overridden by specific views if needed
-        // For now, we'll use a simple approach where the view provides
-        // the exact mapping through data attributes
+
         return itemLabel.includes(selectedLabel) || selectedLabel.includes(itemLabel);
     }
     
@@ -246,7 +232,7 @@ class StatusLabels {
     }
     
     loadDefaultSelection() {
-        // Look for default selection in the container's data attributes
+
         const defaultSelection = this.container.dataset.defaultLabels;
         if (defaultSelection) {
             try {
@@ -254,7 +240,7 @@ class StatusLabels {
                 defaultArray.forEach(label => {
                     this.selectedLabels.add(label);
                 });
-                // Update dropdown checkboxes after loading defaults
+
                 this.updateDropdownCheckboxes();
             } catch (e) {
                 console.warn('Could not parse default labels:', e);
@@ -301,7 +287,7 @@ class StatusLabels {
     }
     
     makeLabelsClickable(labelsText) {
-        // Convert text labels to clickable spans with same visual design as original text
+
         return labelsText.replace(/(Estado: [^•]+|Programa [^•]+|\d+ horas semanales|Pauta [^•]+|roles: [^•]+)/g, (match) => {
             let labelType, labelValue, cleanValue;
             
@@ -328,13 +314,12 @@ class StatusLabels {
     }
     
     highlightSelectedLabels() {
-        // Remove previous highlights
+
         const allLabels = this.container.querySelectorAll('.status-label.clickable');
         allLabels.forEach(label => {
             label.classList.remove('highlighted');
         });
-        
-        // Highlight selected labels
+
         this.selectedLabels.forEach(selectedLabel => {
             allLabels.forEach(label => {
                 if (label.dataset.original === selectedLabel) {
@@ -346,23 +331,20 @@ class StatusLabels {
     
     clearSelection() {
         this.selectedLabels.clear();
-        
-        // Uncheck all checkboxes
+
         const checkboxes = this.dropdownContainer.querySelectorAll('input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
             checkbox.checked = false;
         });
-        
-        // Update item labels to show only original text
+
         this.updateItemLabels();
         this.saveSelection();
     }
 }
 
-// CSS styles for status labels
 const statusLabelsStyles = `
 <style>
-/* Status Labels Dropdown */
+
 .status-labels-dropdown-container {
     display: inline-block;
     margin-right: 1rem;
@@ -479,7 +461,6 @@ const statusLabelsStyles = `
     background-color: #5a6268;
 }
 
-/* Clickable Status Labels - Same Design as Original Text */
 .status-label.clickable {
     cursor: pointer;
     color: #6b7280;
@@ -506,8 +487,6 @@ const statusLabelsStyles = `
 </style>
 `;
 
-// Inject styles
 document.head.insertAdjacentHTML('beforeend', statusLabelsStyles);
 
-// Export for use in other modules
 window.StatusLabels = StatusLabels;

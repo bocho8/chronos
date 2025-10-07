@@ -63,13 +63,10 @@ class Database {
         try {
             $pdo = $this->getConnection();
             
-            // Get PostgreSQL version
             $version = $pdo->query('SELECT version()')->fetchColumn();
             
-            // Get current database
             $currentDb = $pdo->query('SELECT current_database()')->fetchColumn();
             
-            // Get current user
             $currentUser = $pdo->query('SELECT current_user')->fetchColumn();
             
             return [

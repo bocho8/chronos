@@ -3,8 +3,7 @@ echo "Testing PDO: ";
 try {
     $pdo = new PDO('pgsql:host=postgres;dbname=chronos_db;user=chronos_user;password=chronos_pass');
     echo "Connected successfully!\n";
-    
-    // Check if admin user exists
+
     $stmt = $pdo->prepare("SELECT id_usuario FROM usuario WHERE cedula = ?");
     $stmt->execute(['12345678']);
     $existingUser = $stmt->fetch();
@@ -30,13 +29,12 @@ try {
         $pdo->beginTransaction();
         
         try {
-            // Insert user
+
             $stmt = $pdo->prepare("INSERT INTO usuario (cedula, nombre, apellido, email, telefono, contrasena_hash) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute(['12345678', 'Administrador', 'Sistema', 'admin@chronos.edu.uy', '099123456', $passwordHash]);
             
             $userId = $pdo->lastInsertId();
-            
-            // Assign admin role
+
             $stmt = $pdo->prepare("INSERT INTO usuario_rol (id_usuario, nombre_rol) VALUES (?, ?)");
             $stmt->execute([$userId, 'ADMIN']);
             

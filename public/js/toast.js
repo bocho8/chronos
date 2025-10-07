@@ -16,7 +16,6 @@ class ToastManager {
     }
 
     createContainer() {
-        // Check if container already exists
         this.container = document.getElementById('toastContainer');
         
         if (!this.container) {
@@ -170,12 +169,10 @@ class ToastManager {
         this.container.appendChild(toast);
         this.toasts.set(toastId, toast);
 
-        // Trigger animation
         setTimeout(() => {
             toast.classList.add('show', 'slide-in');
         }, 100);
 
-        // Auto hide
         if (duration > 0) {
             const progressBar = toast.querySelector('.toast-progress');
             if (progressBar) {
@@ -246,7 +243,6 @@ class ToastManager {
         return 'toast_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
-    // Convenience methods
     success(message, options = {}) {
         return this.show(message, 'success', options);
     }
@@ -264,10 +260,8 @@ class ToastManager {
     }
 }
 
-// Global instance
 const toastManager = new ToastManager();
 
-// Global functions for backward compatibility
 function showToast(message, type = 'info', options = {}) {
     return toastManager.show(message, type, options);
 }
@@ -276,7 +270,6 @@ function hideToast(toastId) {
     if (typeof toastId === 'string') {
         toastManager.hide(toastId);
     } else if (toastId && toastId.parentNode) {
-        // Handle old way of passing toast element
         const id = toastId.getAttribute('data-toast-id');
         if (id) {
             toastManager.hide(id);
@@ -284,7 +277,6 @@ function hideToast(toastId) {
     }
 }
 
-// Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { ToastManager, toastManager };
 }

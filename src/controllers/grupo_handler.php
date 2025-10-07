@@ -10,27 +10,21 @@ require_once __DIR__ . '/../helpers/ResponseHelper.php';
 require_once __DIR__ . '/../models/Database.php';
 require_once __DIR__ . '/../models/Grupo.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     ResponseHelper::error('Sesión expirada', 401);
     exit();
 }
 
-// Set content type to JSON
 header('Content-Type: application/json');
 
-// Get request method and action
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 try {
-    // Load database configuration
     $dbConfig = require __DIR__ . '/../config/database.php';
     $database = new Database($dbConfig);
     $grupoModel = new Grupo($database->getConnection());
@@ -75,7 +69,6 @@ function handleCreateGrupo($grupoModel) {
     $nombre = trim($_POST['nombre'] ?? '');
     $nivel = trim($_POST['nivel'] ?? '');
     
-    // Validate required fields
     if (empty($nombre)) {
         ResponseHelper::error('El nombre del grupo es requerido');
         return;
@@ -86,13 +79,11 @@ function handleCreateGrupo($grupoModel) {
         return;
     }
     
-    // Validate nombre length
     if (strlen($nombre) > 100) {
         ResponseHelper::error('El nombre del grupo no puede exceder 100 caracteres');
         return;
     }
     
-    // Validate nivel length
     if (strlen($nivel) > 50) {
         ResponseHelper::error('El nivel no puede exceder 50 caracteres');
         return;
@@ -115,7 +106,6 @@ function handleUpdateGrupo($grupoModel) {
     $nombre = trim($_POST['nombre'] ?? '');
     $nivel = trim($_POST['nivel'] ?? '');
     
-    // Validate required fields
     if (empty($id) || !is_numeric($id)) {
         ResponseHelper::error('ID de grupo inválido');
         return;
@@ -131,13 +121,11 @@ function handleUpdateGrupo($grupoModel) {
         return;
     }
     
-    // Validate nombre length
     if (strlen($nombre) > 100) {
         ResponseHelper::error('El nombre del grupo no puede exceder 100 caracteres');
         return;
     }
     
-    // Validate nivel length
     if (strlen($nivel) > 50) {
         ResponseHelper::error('El nivel no puede exceder 50 caracteres');
         return;
@@ -157,8 +145,7 @@ function handleUpdateGrupo($grupoModel) {
  */
 function handleDeleteGrupo($grupoModel) {
     $id = $_POST['id'] ?? $_GET['id'] ?? '';
-    
-    // Log the delete attempt
+
     error_log("Delete grupo request - ID: " . $id . ", Method: " . $_SERVER['REQUEST_METHOD']);
     
     if (empty($id) || !is_numeric($id)) {

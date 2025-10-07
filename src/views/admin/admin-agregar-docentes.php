@@ -1,10 +1,4 @@
 <?php
-/**
- * Vista para Agregar Docentes - Funciones de Dirección
- * Según ESRE 4.3: Solo la Dirección puede añadir nuevos docentes
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -14,27 +8,21 @@ require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Docente.php';
 require_once __DIR__ . '/../../models/Usuario.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-agregar-docentes.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role (acting as director)
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Handle form submission
 $message = '';
 $messageType = '';
 $errors = [];
@@ -47,7 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $usuarioModel = new Usuario($database->getConnection());
         
         if ($_POST['action'] === 'add_teacher') {
-            // Validate input
             $cedula = trim($_POST['cedula'] ?? '');
             $nombre = trim($_POST['nombre'] ?? '');
             $apellido = trim($_POST['apellido'] ?? '');
@@ -55,8 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $telefono = trim($_POST['telefono'] ?? '');
             $password = trim($_POST['password'] ?? '');
             $confirmPassword = trim($_POST['confirm_password'] ?? '');
-            
-            // Validation
+
             if (empty($cedula)) {
                 $errors['cedula'] = 'La cédula es requerida';
             } elseif (!preg_match('/^\d{7,8}$/', $cedula)) {
@@ -87,7 +73,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $errors['confirm_password'] = 'Las contraseñas no coinciden';
             }
             
-            // Check if user already exists
             if (empty($errors)) {
                 $existingUser = $usuarioModel->getUserByCedula($cedula);
                 if ($existingUser) {
@@ -101,22 +86,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             
             if (empty($errors)) {
-                // Create teacher
                 $result = $docenteModel->createTeacher($cedula, $nombre, $apellido, $email, $telefono, $password);
                 
                 if ($result) {
                     $message = 'Docente agregado exitosamente';
                     $messageType = 'success';
-                    
-                    // Log the action
+
                     $logQuery = "INSERT INTO log (id_usuario, accion, fecha) VALUES (?, ?, NOW())";
                     $logStmt = $database->getConnection()->prepare($logQuery);
                     $logStmt->execute([
                         $_SESSION['user']['id_usuario'],
                         "Agregó nuevo docente: $nombre $apellido (CI: $cedula)"
                     ]);
-                    
-                    // Clear form data
+
                     $_POST = [];
                 } else {
                     $message = 'Error al agregar el docente';
@@ -131,7 +113,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Load recent teachers
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
@@ -449,7 +430,7 @@ try {
     </div>
 
     <script>
-        // Form validation functions
+
         function validateCedula(input) {
             const cedula = input.value.trim();
             const errorDiv = document.getElementById('cedula-error');
@@ -501,7 +482,7 @@ try {
 
         function clearForm() {
             document.querySelector('form').reset();
-            // Clear all validation states
+
             const inputs = document.querySelectorAll('.form-input');
             inputs.forEach(input => {
                 input.classList.remove('border-red-500', 'border-green-500', 'focus:border-red-500', 'focus:border-green-500', 'focus:ring-red-500', 'focus:ring-green-500');
@@ -522,18 +503,15 @@ try {
             }
         }
 
-        // Form submission with loading state
         document.querySelector('form').addEventListener('submit', function(e) {
             const submitBtn = document.getElementById('submit-btn');
             const submitText = document.getElementById('submit-text');
             const submitSpinner = document.getElementById('submit-spinner');
             
-            // Validate all required fields
             const cedulaValid = validateCedula(document.getElementById('cedula'));
             const emailValid = validateEmail(document.getElementById('email'));
             
             if (cedulaValid && emailValid) {
-                // Show loading state
                 submitBtn.disabled = true;
                 submitText.textContent = 'Agregando...';
                 submitSpinner.classList.remove('hidden');

@@ -1,5 +1,4 @@
 <?php
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -8,39 +7,31 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-horarios.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Load database configuration and get schedule data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get schedule data
     $horarioModel = new Horario($database->getConnection());
     $horarios = $horarioModel->getAllHorarios();
     $bloques = $horarioModel->getAllBloques();
     $materias = $horarioModel->getAllMaterias();
     $docentes = $horarioModel->getAllDocentes();
     
-    // Get grupos using the dedicated Grupo model
     require_once __DIR__ . '/../../models/Grupo.php';
     $grupoModel = new Grupo($database->getConnection());
     $grupos = $grupoModel->getAllGrupos();
@@ -49,7 +40,6 @@ try {
         $horarios = [];
     }
     
-    // Organize schedule by day and time
     $scheduleGrid = [];
     $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
     
@@ -60,7 +50,6 @@ try {
         }
     }
     
-    // Fill the schedule grid with current assignments
     foreach ($horarios as $horario) {
         if (isset($scheduleGrid[$horario['dia']][$horario['id_bloque']])) {
             $scheduleGrid[$horario['dia']][$horario['id_bloque']] = $horario;
@@ -304,9 +293,7 @@ try {
         let currentBloque = null;
         let currentDia = null;
 
-        // Modal functions
         function openHorarioModal() {
-            // Show a message that user needs to select a time slot first
             alert('Por favor, haga clic en un horario disponible en la tabla para agregar una asignación.');
             return;
         }
@@ -318,7 +305,6 @@ try {
             document.getElementById('horario_id_bloque').value = idBloque;
             document.getElementById('horario_dia').value = dia;
             
-            // Find block time info
             const bloques = <?php echo json_encode($bloques); ?>;
             const bloque = bloques.find(b => b.id_bloque == idBloque);
             
@@ -337,7 +323,6 @@ try {
             currentDia = null;
         }
 
-        // Edit horario
         function editHorario(id) {
             isEditMode = true;
             document.getElementById('horarioModalTitle').textContent = '<?php _e('edit_schedule'); ?>';
@@ -365,7 +350,6 @@ try {
                     
                     document.getElementById('horarioModal').classList.remove('hidden');
                     
-                    // Focus on first select
                     setTimeout(() => {
                         document.getElementById('id_grupo').focus();
                     }, 100);
@@ -379,7 +363,6 @@ try {
             });
         }
 
-        // Delete horario
         function deleteHorario(id) {
             const confirmMessage = `¿Está seguro de que desea eliminar esta asignación de horario?`;
             if (confirm(confirmMessage)) {
@@ -407,7 +390,6 @@ try {
             }
         }
 
-        // Handle form submission
         function handleHorarioFormSubmit(e) {
             e.preventDefault();
             console.log('Form submission started');
@@ -417,7 +399,6 @@ try {
             const formData = new FormData(e.target);
             formData.append('action', isEditMode ? 'update' : 'create');
             
-            // Log form data
             console.log('Form data:');
             for (let [key, value] of formData.entries()) {
                 console.log(key + ': ' + value);
@@ -444,7 +425,6 @@ try {
                         setTimeout(() => location.reload(), 1000);
                     } else {
                         if (data.data && typeof data.data === 'object') {
-                            // Show validation errors
                             Object.keys(data.data).forEach(field => {
                                 const errorElement = document.getElementById(field + 'Error');
                                 if (errorElement) {
@@ -467,7 +447,6 @@ try {
             });
         }
 
-        // Clear validation errors
         function clearErrors() {
             const errorElements = document.querySelectorAll('[id$="Error"]');
             errorElements.forEach(element => {
@@ -475,39 +454,29 @@ try {
             });
         }
 
-        // Toast system is now handled by /js/toast.js
-
-        // Funcionalidad para la barra lateral
         document.addEventListener('DOMContentLoaded', function() {
-            // Obtener todos los enlaces de la barra lateral
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
             
-            // Función para manejar el clic en los enlaces
             function handleSidebarClick(event) {
-                // Remover la clase active de todos los enlaces
+
                 sidebarLinks.forEach(link => {
                     link.classList.remove('active');
                 });
-                
-                // Agregar la clase active al enlace clickeado
+
                 this.classList.add('active');
             }
-            
-            // Agregar event listener a cada enlace
+
             sidebarLinks.forEach(link => {
                 link.addEventListener('click', handleSidebarClick);
             });
-            
-            // Logout functionality
+
             const logoutButton = document.getElementById('logoutButton');
             if (logoutButton) {
                 logoutButton.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    // Show confirmation dialog
                     const confirmMessage = '<?php _e('confirm_logout'); ?>';
                     if (confirm(confirmMessage)) {
-                        // Create form and submit logout request
                         const form = document.createElement('form');
                         form.method = 'POST';
                         form.action = '/src/controllers/LogoutController.php';
@@ -523,8 +492,7 @@ try {
                     }
                 });
             }
-            
-            // User menu toggle
+
             const userMenuButton = document.getElementById('userMenuButton');
             const userMenu = document.getElementById('userMenu');
             
@@ -534,7 +502,6 @@ try {
                     userMenu.classList.toggle('hidden');
                 });
                 
-                // Close menu when clicking outside
                 document.addEventListener('click', function(e) {
                     if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
                         userMenu.classList.add('hidden');

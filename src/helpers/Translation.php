@@ -147,23 +147,11 @@ class Translation
     }
 }
 
-/**
- * Obtiene texto traducido para una clave con parámetros opcionales
- * 
- * @param string $key Clave de traducción
- * @param array $params Parámetros para reemplazar en la traducción (ej: ['nombre' => 'Juan'])
- */
 function __($key, $params = [])
 {
     return Translation::getInstance()->get($key, $params);
 }
 
-/**
- * Imprime texto traducido para una clave con parámetros opcionales
- * 
- * @param string $key Clave de traducción
- * @param array $params Parámetros para reemplazar en la traducción (ej: ['nombre' => 'Juan'])
- */
 function _e($key, $params = [])
 {
     echo __($key, $params);

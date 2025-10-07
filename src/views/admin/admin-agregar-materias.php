@@ -1,10 +1,4 @@
 <?php
-/**
- * Vista para Agregar Materias - Funciones de Dirección
- * Según ESRE 4.3: Solo la Dirección puede añadir nuevas materias
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -13,27 +7,21 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Materia.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-agregar-materias.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role (acting as director)
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Handle form submission
 $message = '';
 $messageType = '';
 $errors = [];
@@ -45,15 +33,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $materiaModel = new Materia($database->getConnection());
         
         if ($_POST['action'] === 'add_subject') {
-            // Validate input
             $nombre = trim($_POST['nombre'] ?? '');
             $descripcion = trim($_POST['descripcion'] ?? '');
             $horasSemanales = intval($_POST['horas_semanales'] ?? 0);
             $idPautaAnep = !empty($_POST['id_pauta_anep']) ? intval($_POST['id_pauta_anep']) : null;
             $compartidaConOtra = isset($_POST['compartida_con_otra']) ? 1 : 0;
             $idGrupoCompartido = !empty($_POST['id_grupo_compartido']) ? intval($_POST['id_grupo_compartido']) : null;
-            
-            // Validation
+
             if (empty($nombre)) {
                 $errors['nombre'] = 'El nombre de la materia es requerido';
             }
@@ -65,12 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if ($compartidaConOtra && empty($idGrupoCompartido)) {
                 $errors['id_grupo_compartido'] = 'Debe seleccionar un grupo cuando la materia es compartida';
             }
-            
-            // The createMateria method will check if subject already exists
-            
+
             if (empty($errors)) {
                 try {
-                    // Create subject
                     $materiaData = [
                         'nombre' => $nombre,
                         'horas_semanales' => $horasSemanales,
@@ -83,14 +66,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     if ($result) {
                         $message = 'Materia agregada exitosamente';
                         $messageType = 'success';
-                        
-                        // Log the action
+
                         $database->query("INSERT INTO log (id_usuario, accion, fecha) VALUES (?, ?, NOW())", [
                             $_SESSION['user']['id_usuario'],
                             "Agregó nueva materia: $nombre ($horasSemanales horas semanales)"
                         ]);
-                        
-                        // Clear form data
+
                         $_POST = [];
                     }
                 } catch (Exception $createException) {
@@ -110,7 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Load related data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
@@ -484,7 +464,6 @@ try {
             }
         }
 
-        // Initialize shared group visibility on page load
         document.addEventListener('DOMContentLoaded', function() {
             toggleSharedGroup();
         });

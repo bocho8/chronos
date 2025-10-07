@@ -32,13 +32,11 @@ class AsignacionController {
     private function createAsignacion() {
         $id_docente = $_POST['id_docente'] ?? null;
         $id_materia = $_POST['id_materia'] ?? null;
-        
-        // Validation
+
         if (!$id_docente || !$id_materia) {
             ResponseHelper::error('ID de docente y materia son requeridos');
         }
         
-        // Check if assignment already exists
         $checkQuery = "SELECT COUNT(*) FROM docente_materia WHERE id_docente = ? AND id_materia = ?";
         $checkStmt = $this->db->prepare($checkQuery);
         $checkStmt->execute([$id_docente, $id_materia]);
@@ -47,12 +45,11 @@ class AsignacionController {
             ResponseHelper::error('Esta asignación ya existe');
         }
         
-        // Create assignment
         $insertQuery = "INSERT INTO docente_materia (id_docente, id_materia) VALUES (?, ?)";
         $insertStmt = $this->db->prepare($insertQuery);
         
         if ($insertStmt->execute([$id_docente, $id_materia])) {
-            // Log the action
+
             $this->logActivity("Asignó docente ID $id_docente a materia ID $id_materia");
             ResponseHelper::success('Asignación creada exitosamente');
         } else {
@@ -72,7 +69,7 @@ class AsignacionController {
         $deleteStmt = $this->db->prepare($deleteQuery);
         
         if ($deleteStmt->execute([$id_docente, $id_materia])) {
-            // Log the action
+
             $this->logActivity("Eliminó asignación de docente ID $id_docente a materia ID $id_materia");
             ResponseHelper::success('Asignación eliminada exitosamente');
         } else {

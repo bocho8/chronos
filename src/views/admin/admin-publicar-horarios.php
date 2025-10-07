@@ -1,10 +1,4 @@
 <?php
-/**
- * Vista para Publicar Horarios - Funciones de Dirección
- * Según ESRE 4.3: Solo la Dirección puede publicar horarios generados
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -13,27 +7,21 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-publicar-horarios.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role (acting as director)
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Handle form submission
 $message = '';
 $messageType = '';
 
@@ -47,14 +35,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $scheduleId = $_POST['schedule_id'] ?? null;
             
             if ($scheduleId) {
-                // Update schedule status to published
                 $result = $horarioModel->publishSchedule($scheduleId);
                 
                 if ($result) {
                     $message = $translation->get('schedule_published_success');
                     $messageType = 'success';
-                    
-                    // Log the action
+
                     $database->query("INSERT INTO log (id_usuario, accion, fecha) VALUES (?, ?, NOW())", [
                         $_SESSION['user']['id_usuario'],
                         "Publicó horario ID: $scheduleId"
@@ -72,16 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Load schedule data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     $horarioModel = new Horario($database->getConnection());
     
-    // Get unpublished schedules
     $unpublishedSchedules = $horarioModel->getUnpublishedSchedules();
     
-    // Get published schedules
     $publishedSchedules = $horarioModel->getPublishedSchedules();
     
     if ($unpublishedSchedules === false) {
@@ -333,7 +316,7 @@ try {
         }
 
         function viewSchedule(scheduleId) {
-            // Redirect to schedule view page
+
             window.location.href = 'admin-horarios.php?view=' + scheduleId;
         }
 

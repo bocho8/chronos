@@ -1,9 +1,4 @@
 <?php
-/**
- * Vista de estudiantes para padres
- * Permite a los padres ver información de estudiantes (sus hijos)
- */
-
 require_once __DIR__ . '/../../config/session.php'; 
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -12,46 +7,34 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize components
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-estudiantes.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and padre role
 AuthHelper::requireRole('PADRE'); 
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Load current user info
 $currentUser = AuthHelper::getCurrentUser();
 
-// Load database configuration and get data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get models
     $horarioModel = new Horario($database->getConnection());
     
-    // Get grupos (representing students by groups)
     $grupos = $horarioModel->getAllGrupos();
     
-    // Get search and filter parameters
     $searchTerm = $_GET['search'] ?? '';
     $selectedGrupo = $_GET['grupo'] ?? '';
-    
-    // Get estudiantes (students) - in this context, we'll show groups as students
-    // since there's no specific student table, groups represent students
+
     $estudiantes = [];
     
     if (!empty($searchTerm) || !empty($selectedGrupo)) {
@@ -83,7 +66,6 @@ try {
         $stmt->execute();
         $estudiantes = $stmt->fetchAll();
     } else {
-        // Show all groups as students
         $query = "SELECT DISTINCT g.id_grupo as id, g.nombre as nombre_grupo, g.nivel,
                          g.nivel as tipo,
                          COUNT(DISTINCT h.id_horario) as total_horarios
@@ -285,14 +267,13 @@ try {
     </div>
 
     <script>
-        // Logout functionality
+
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         });
-        
-        // Loading indicators and form validation
+
         document.addEventListener('DOMContentLoaded', function() {
             const searchForm = document.getElementById('searchForm');
             const searchBtn = document.getElementById('searchBtn');
@@ -300,17 +281,14 @@ try {
             const searchSpinner = document.getElementById('searchSpinner');
             const searchInput = document.getElementById('search');
             const searchError = document.getElementById('searchError');
-            
-            // Form validation
+
             if (searchForm) {
                 searchForm.addEventListener('submit', function(e) {
                     const searchValue = searchInput.value.trim();
-                    
-                    // Clear previous errors
+
                     searchError.classList.add('hidden');
                     searchInput.classList.remove('border-red-500');
                     
-                    // Validate search term
                     if (searchValue.length > 0 && searchValue.length < 2) {
                         e.preventDefault();
                         searchError.textContent = 'El término de búsqueda debe tener al menos 2 caracteres';
@@ -319,7 +297,6 @@ try {
                         return false;
                     }
                     
-                    // Validate special characters
                     const invalidChars = /[<>'"&]/;
                     if (invalidChars.test(searchValue)) {
                         e.preventDefault();
@@ -329,7 +306,6 @@ try {
                         return false;
                     }
                     
-                    // Show loading indicator
                     if (searchBtn) {
                         searchText.textContent = '<?php _e('loading'); ?>';
                         searchSpinner.classList.remove('hidden');

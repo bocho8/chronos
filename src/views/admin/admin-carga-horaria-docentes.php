@@ -6,20 +6,16 @@ require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 
-// Initialize language switcher
 $languageSwitcher = new LanguageSwitcher();
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Obtener datos de docentes
 $db = new Database();
 $query = "
     SELECT 
@@ -41,7 +37,6 @@ $stmt = $db->getConnection()->prepare($query);
 $stmt->execute();
 $docentes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Procesar datos
 $processedTeachers = [];
 foreach ($docentes as $teacher) {
     $processedTeachers[] = [
@@ -53,7 +48,6 @@ foreach ($docentes as $teacher) {
     ];
 }
 
-// Calcular estadísticas
 $totalTeachers = count($processedTeachers);
 $totalHours = array_sum(array_column($processedTeachers, 'hours'));
 $averageHours = $totalTeachers > 0 ? round($totalHours / $totalTeachers, 1) : 0;
@@ -183,7 +177,7 @@ $overloadedCount = count(array_filter($processedTeachers, function($t) { return 
     </div>
 
     <script>
-        // Filtros y búsqueda
+
         const searchInput = document.getElementById('searchInput');
         const filterSelect = document.getElementById('filterSelect');
         const teachersList = document.getElementById('teachersList');
@@ -212,7 +206,6 @@ $overloadedCount = count(array_filter($processedTeachers, function($t) { return 
         searchInput.addEventListener('input', filterTeachers);
         filterSelect.addEventListener('change', filterTeachers);
 
-        // Exportar
         document.getElementById('exportBtn').addEventListener('click', function() {
             const visibleCards = Array.from(teacherCards).filter(card => card.style.display !== 'none');
             const data = visibleCards.map(card => ({

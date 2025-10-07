@@ -103,7 +103,6 @@ class Router
         $method = $_SERVER['REQUEST_METHOD'];
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         
-        // Remove base path if exists
         $basePath = dirname($_SERVER['SCRIPT_NAME']);
         if ($basePath !== '/') {
             $path = substr($path, strlen($basePath));
@@ -115,7 +114,6 @@ class Router
             }
         }
         
-        // No route found
         $this->handleNotFound();
     }
     
@@ -128,7 +126,6 @@ class Router
             return false;
         }
         
-        // Convert route pattern to regex
         $pattern = preg_replace('/\{([^}]+)\}/', '([^/]+)', $route['path']);
         $pattern = '#^' . $pattern . '$#';
         
@@ -140,24 +137,20 @@ class Router
      */
     private function executeRoute($route, $path)
     {
-        // Extract parameters
         $params = $this->extractParams($route['path'], $path);
         
-        // Execute middleware
         foreach ($route['middleware'] as $middlewareName) {
             if (isset($this->middleware[$middlewareName])) {
                 $result = call_user_func($this->middleware[$middlewareName]);
                 if ($result === false) {
-                    return; // Middleware blocked the request
+                    return;
                 }
             }
         }
         
-        // Execute handler
         $handler = $route['handler'];
         
         if (is_string($handler)) {
-            // Format: "Controller@method"
             list($controller, $method) = explode('@', $handler);
             $controllerClass = "App\\Controllers\\{$controller}";
             
@@ -185,12 +178,11 @@ class Router
     {
         $params = [];
         
-        // Convert route pattern to regex
         $pattern = preg_replace('/\{([^}]+)\}/', '([^/]+)', $routePath);
         $pattern = '#^' . $pattern . '$#';
         
         if (preg_match($pattern, $actualPath, $matches)) {
-            array_shift($matches); // Remove full match
+            array_shift($matches);
             $params = $matches;
         }
         

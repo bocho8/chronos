@@ -1,9 +1,4 @@
 <?php
-/**
- * Página de gestión de docentes
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Docente.php';
@@ -12,35 +7,27 @@ require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-docentes.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');
     exit();
 }
 
-// Load database configuration
 $dbConfig = require __DIR__ . '/../../config/database.php';
 $database = new Database($dbConfig);
 
-// Get all docentes
 $docenteModel = new Docente($database->getConnection());
 $docentes = $docenteModel->getAllDocentes();
 
-// Function to get user initials
 function getUserInitials($nombre, $apellido) {
     return strtoupper(substr($nombre, 0, 1) . substr($apellido, 0, 1));
 }
@@ -113,8 +100,7 @@ function getUserInitials($nombre, $apellido) {
       right: 20px;
       z-index: 10000;
     }
-    
-    /* Modal styles */
+
     #docenteModal {
       position: fixed !important;
       top: 0 !important;
@@ -336,7 +322,6 @@ function getUserInitials($nombre, $apellido) {
                     <p id="contrasenaHelp" class="text-xs text-gray-500 mt-1"><?php _e('password_help'); ?></p>
                     <p id="contrasenaError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
-                
 
                 <div class="flex justify-end space-x-3 pt-4">
                     <button type="button" onclick="closeDocenteModal()" 
@@ -359,26 +344,22 @@ function getUserInitials($nombre, $apellido) {
     <script>
         let isEditMode = false;
 
-        // Mostrar modal para agregar docente
         function showAddDocenteModal() {
             isEditMode = false;
             document.getElementById('modalTitle').textContent = '<?php _e('add_teacher'); ?>';
             document.getElementById('docenteForm').reset();
             
-            // Hacer contraseña requerida para nuevo docente
             document.getElementById('contrasena').required = true;
             document.getElementById('passwordRequired').style.display = 'inline';
             
             clearErrors();
             document.getElementById('docenteModal').classList.remove('hidden');
             
-            // Focus on first input
             setTimeout(() => {
                 document.getElementById('cedula').focus();
             }, 100);
         }
 
-        // Editar docente
         function editDocente(id) {
             isEditMode = true;
             document.getElementById('modalTitle').textContent = '<?php _e('edit_teacher'); ?>';
@@ -397,7 +378,6 @@ function getUserInitials($nombre, $apellido) {
                     document.getElementById('email').value = teacher.email;
                     document.getElementById('telefono').value = teacher.telefono || '';
                     
-                    // No hacer contraseña requerida para edición
                     document.getElementById('contrasena').required = false;
                     document.getElementById('contrasena').value = '';
                     document.getElementById('passwordRequired').style.display = 'none';
@@ -405,7 +385,6 @@ function getUserInitials($nombre, $apellido) {
                     clearErrors();
                     document.getElementById('docenteModal').classList.remove('hidden');
                     
-                    // Focus on first input
                     setTimeout(() => {
                         document.getElementById('cedula').focus();
                     }, 100);
@@ -419,7 +398,6 @@ function getUserInitials($nombre, $apellido) {
             });
         }
 
-        // Eliminar docente
         function deleteDocente(id, nombre) {
             const confirmMessage = `¿Está seguro de que desea eliminar al docente "${nombre}"?`;
             if (confirm(confirmMessage)) {
@@ -442,14 +420,12 @@ function getUserInitials($nombre, $apellido) {
             }
         }
 
-        // Cerrar modal
         function closeDocenteModal() {
             const modal = document.getElementById('docenteModal');
             modal.classList.add('hidden');
             clearErrors();
         }
 
-        // Manejar envío del formulario
         function handleFormSubmit(e) {
             e.preventDefault();
             
@@ -467,7 +443,6 @@ function getUserInitials($nombre, $apellido) {
             let contentType;
             
             if (isEditMode) {
-                // For PUT requests, send as URL-encoded data
                 const formData = new FormData(e.target);
                 const urlEncodedData = new URLSearchParams();
                 for (let [key, value] of formData.entries()) {
@@ -476,9 +451,8 @@ function getUserInitials($nombre, $apellido) {
                 requestBody = urlEncodedData.toString();
                 contentType = 'application/x-www-form-urlencoded';
             } else {
-                // For POST requests, use FormData
                 requestBody = new FormData(e.target);
-                contentType = null; // Let browser set it
+                contentType = null;
             }
             
             const fetchOptions = {
@@ -501,7 +475,6 @@ function getUserInitials($nombre, $apellido) {
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     if (data.data && typeof data.data === 'object') {
-                        // Show validation errors from server
                         Object.keys(data.data).forEach(field => {
                             showFieldError(field, data.data[field]);
                         });
@@ -516,7 +489,6 @@ function getUserInitials($nombre, $apellido) {
             });
         }
 
-        // Limpiar errores de validación
         function clearErrors() {
             const errorElements = document.querySelectorAll('[id$="Error"]');
             errorElements.forEach(element => {
@@ -528,8 +500,7 @@ function getUserInitials($nombre, $apellido) {
                 element.classList.remove('error-input');
             });
         }
-        
-        // Toggle password visibility
+
         function togglePasswordVisibility() {
             const passwordInput = document.getElementById('contrasena');
             const passwordIcon = document.getElementById('passwordIcon');
@@ -547,13 +518,11 @@ function getUserInitials($nombre, $apellido) {
                 `;
             }
         }
-        
-        // Validation functions
+
         function validateDocenteForm() {
             let isValid = true;
             clearErrors();
             
-            // Validate cédula
             const cedula = document.getElementById('cedula').value.trim();
             if (!cedula) {
                 showFieldError('cedula', '<?php _e('cedula_required'); ?>');
@@ -563,7 +532,6 @@ function getUserInitials($nombre, $apellido) {
                 isValid = false;
             }
             
-            // Validate nombre
             const nombre = document.getElementById('nombre').value.trim();
             if (!nombre) {
                 showFieldError('nombre', '<?php _e('name_required'); ?>');
@@ -573,7 +541,6 @@ function getUserInitials($nombre, $apellido) {
                 isValid = false;
             }
             
-            // Validate apellido
             const apellido = document.getElementById('apellido').value.trim();
             if (!apellido) {
                 showFieldError('apellido', '<?php _e('lastname_required'); ?>');
@@ -583,21 +550,18 @@ function getUserInitials($nombre, $apellido) {
                 isValid = false;
             }
             
-            // Validate email (optional)
             const email = document.getElementById('email').value.trim();
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 showFieldError('email', '<?php _e('email_invalid_format'); ?>');
                 isValid = false;
             }
             
-            // Validate phone (optional but if provided, must be valid)
             const telefono = document.getElementById('telefono').value.trim();
             if (telefono && !/^[0-9\s\-\+\(\)]+$/.test(telefono)) {
                 showFieldError('telefono', '<?php _e('phone_invalid_format'); ?>');
                 isValid = false;
             }
             
-            // Validate password
             const contrasena = document.getElementById('contrasena').value;
             if (!isEditMode && (!contrasena || contrasena.length < 8)) {
                 showFieldError('contrasena', '<?php _e('password_required_min_length'); ?>');
@@ -623,22 +587,17 @@ function getUserInitials($nombre, $apellido) {
             }
         }
 
-        // Toast system is now handled by /js/toast.js
-
-        // Cerrar modal al hacer clic fuera
         document.getElementById('docenteModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeDocenteModal();
             }
         });
-        
-        // Toggle password visibility
+
         const togglePasswordBtn = document.getElementById('togglePassword');
         if (togglePasswordBtn) {
             togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
         }
 
-        // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';

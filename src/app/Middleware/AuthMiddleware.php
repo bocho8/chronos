@@ -11,13 +11,11 @@ class AuthMiddleware
      */
     public static function handle()
     {
-        // Initialize session if not already done
         if (session_status() === PHP_SESSION_NONE) {
             require_once __DIR__ . '/../../config/session.php';
             initSecureSession();
         }
         
-        // Check if user is logged in
         if (!\AuthHelper::isLoggedIn()) {
             if (self::isAjaxRequest()) {
                 http_response_code(401);
@@ -29,7 +27,6 @@ class AuthMiddleware
             }
         }
         
-        // Check session timeout
         if (!\AuthHelper::checkSessionTimeout()) {
             if (self::isAjaxRequest()) {
                 http_response_code(401);

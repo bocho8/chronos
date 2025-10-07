@@ -73,15 +73,13 @@
   </div>
 
   <script>
-    // Add some interactive animations
     document.addEventListener('DOMContentLoaded', function() {
-      // Animate the 404 number on page load
+
       const number404 = document.querySelector('section div:first-child');
       if (number404) {
         number404.style.animation = 'pulse 2s infinite';
       }
       
-      // Add hover effects to buttons
       const buttons = document.querySelectorAll('button, a');
       buttons.forEach(button => {
         button.addEventListener('mouseenter', function() {
@@ -94,7 +92,6 @@
       });
     });
     
-    // Add CSS animations via JavaScript
     const style = document.createElement('style');
     style.textContent = `
       @keyframes pulse {

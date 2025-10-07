@@ -5,7 +5,7 @@
  */
 
 return [
-    // General
+
     'app_name' => 'Sistema de Horarios SIM',
     'scuola_italiana' => 'Scuola Italiana',
     'welcome' => 'Bienvenido',
@@ -43,8 +43,7 @@ return [
     'success' => 'Éxito',
     'warning' => 'Advertencia',
     'info' => 'Información',
-    
-    // Multiple Selection
+
     'select_all' => 'Seleccionar todo',
     'deselect_all' => 'Deseleccionar todo',
     'selected_items' => 'elementos seleccionados',
@@ -62,8 +61,7 @@ return [
     'bulk_update_error' => 'Error al actualizar elementos',
     'no_items_selected' => 'No hay elementos seleccionados',
     'select_items_to_continue' => 'Selecciona elementos para continuar',
-    
-    // Statistics labels
+
     'total_hours' => 'Total Horas',
     'assigned' => 'Asignadas',
     'unassigned' => 'Sin Asignar',
@@ -79,8 +77,7 @@ return [
     'foreign_key_violation_docentes' => '⚠️ Los docentes seleccionados están siendo utilizados en horarios. Para eliminarlos, primero debes eliminar los horarios asociados desde la sección de gestión de horarios.',
     'foreign_key_violation_usuarios' => '⚠️ Los usuarios seleccionados tienen roles asignados. Para eliminarlos, primero debes remover sus roles desde la gestión de usuarios.',
     'foreign_key_violation_generic' => '⚠️ Los elementos seleccionados están siendo utilizados en otras partes del sistema. Revisa las dependencias antes de eliminar.',
-    
-    // Login Page
+
     'login_title' => 'Inicio de Sesión',
     'ci_label' => 'C.I',
     'ci_placeholder' => 'C.I',
@@ -89,15 +86,13 @@ return [
     'role_label' => 'Seleccione su rol:',
     'role_placeholder' => 'Seleccione un rol',
     'forgot_password' => '¿Olvidaste tu contraseña?',
-    
-    // Roles
+
     'role_admin' => 'Administrador',
     'role_director' => 'Director',
     'role_coordinator' => 'Coordinador',
     'role_teacher' => 'Docente',
     'role_parent' => 'Padre/Madre',
-    
-    // Validation Messages
+
     'validation_ci_required' => 'El C.I es obligatorio',
     'validation_ci_format' => 'El C.I debe tener 7 u 8 dígitos numéricos',
     'validation_password_required' => 'La contraseña es obligatoria',
@@ -106,8 +101,7 @@ return [
     'validation_auth_failed' => 'C.I, contraseña o rol incorrectos',
     'validation_system_error' => 'Error del sistema. Por favor, intente más tarde.',
     'validation_correct_errors' => 'Por favor, corrija los errores antes de continuar.',
-    
-    // Admin Panel
+
     'admin_panel' => 'Panel de Administración',
     'teachers' => 'Docentes',
     'coordinators' => 'Coordinadores',
@@ -118,15 +112,13 @@ return [
     'registered_teachers' => 'Docentes registrados',
     'add_teacher' => 'Agregar Docente',
     'delete_selected' => 'Eliminar Seleccionados',
-    
-    // Teacher Management
+
     'teacher_name' => 'Nombre',
     'teacher_subject' => 'Materia',
     'teacher_actions' => 'Acciones',
     'edit_teacher' => 'Editar Docente',
     'delete_teacher' => 'Eliminar Docente',
-    
-    // Common Subjects
+
     'subject_mathematics' => 'Matemáticas',
     'subject_history' => 'Historia',
     'subject_biology' => 'Biología',
@@ -137,12 +129,10 @@ return [
     'subject_italian' => 'Italiano',
     'subject_english' => 'Inglés',
     'subject_spanish' => 'Español',
-    
-    // Language Switcher
+
     'language' => 'Idioma',
     'select_language' => 'Seleccionar idioma',
-    
-    // Time and Date
+
     'monday' => 'Lunes',
     'tuesday' => 'Martes',
     'wednesday' => 'Miércoles',
@@ -150,8 +140,7 @@ return [
     'friday' => 'Viernes',
     'saturday' => 'Sábado',
     'sunday' => 'Domingo',
-    
-    // Months
+
     'january' => 'Enero',
     'february' => 'Febrero',
     'march' => 'Marzo',
@@ -164,36 +153,31 @@ return [
     'october' => 'Octubre',
     'november' => 'Noviembre',
     'december' => 'Diciembre',
-    
-    // Status
+
     'active' => 'Activo',
     'inactive' => 'Inactivo',
     'pending' => 'Pendiente',
     'completed' => 'Completado',
     'cancelled' => 'Cancelado',
-    
-    // Notifications
+
     'notification_success' => 'Operación completada exitosamente',
     'notification_error' => 'Ha ocurrido un error',
     'notification_warning' => 'Advertencia',
     'notification_info' => 'Información',
-    
-    // Forms
+
     'form_required' => 'Este campo es obligatorio',
     'form_invalid_email' => 'El email no es válido',
     'form_password_mismatch' => 'Las contraseñas no coinciden',
     'form_save_success' => 'Datos guardados correctamente',
     'form_save_error' => 'Error al guardar los datos',
-    
-    // Navigation
+
     'home' => 'Inicio',
     'dashboard' => 'Panel Principal',
     'profile' => 'Perfil',
     'settings' => 'Configuración',
     'help' => 'Ayuda',
     'about' => 'Acerca de',
-    
-    // Actions
+
     'view' => 'Ver',
     'create' => 'Crear',
     'update' => 'Actualizar',
@@ -208,8 +192,7 @@ return [
     'upload' => 'Subir',
     'print' => 'Imprimir',
     'share' => 'Compartir',
-    
-    // Messages
+
     'no_data' => 'No hay datos disponibles',
     'no_results' => 'No se encontraron resultados',
     'try_again' => 'Intente nuevamente',
@@ -224,8 +207,7 @@ return [
     'logout_confirm_user' => '¿Está seguro que desea cerrar sesión, %s?',
     'auto_logout_in' => 'Cierre automático en',
     'seconds' => 'segundos',
-    
-    // Dashboard
+
     'admin_dashboard' => 'Panel de Administración',
     'dashboard' => 'Dashboard',
     'dashboard_description' => 'Resumen general del sistema y acceso rápido a las funciones principales',
@@ -246,8 +228,7 @@ return [
     'no_recent_activity' => 'No hay actividad reciente',
     'teachers_management' => 'Gestión de Docentes',
     'teachers_management_description' => 'Administrar todos los docentes del sistema',
-    
-    // User Management
+
     'users_management' => 'Gestión de Usuarios',
     'users_management_description' => 'Administrar todos los usuarios del sistema',
     'add_user' => 'Agregar Usuario',
@@ -271,8 +252,7 @@ return [
     'profile' => 'Perfil',
     'settings' => 'Configuración',
     'confirm_logout' => '¿Está seguro de que desea cerrar sesión?',
-    
-    // Coordinadores
+
     'coordinators' => 'Coordinadores',
     'manage_coordinators' => 'Gestionar Coordinadores',
     'manage_coordinators_description' => 'Administrar todos los coordinadores del sistema',
@@ -294,8 +274,7 @@ return [
     'invalid_email' => 'Email inválido',
     'password_too_short' => 'La contraseña debe tener al menos 6 caracteres',
     'invalid_action' => 'Acción inválida',
-    
-    // Subjects Management
+
     'subjects' => 'Materias',
     'subjects_management' => 'Gestión de Materias',
     'subjects_management_description' => 'Administrar todas las materias del sistema',
@@ -310,8 +289,7 @@ return [
     'no_subjects_found' => 'No se encontraron materias',
     'add_first_subject' => 'Agregue la primera materia al sistema',
     'delete_selected' => 'Eliminar Seleccionados',
-    
-    // Schedules Management
+
     'schedules' => 'Horarios',
     'schedules_management' => 'Gestión de Horarios',
     'schedules_management_description' => 'Administrar todos los horarios del sistema',
@@ -335,8 +313,7 @@ return [
     'select_subject' => 'Seleccionar materia',
     'select_teacher' => 'Seleccionar docente',
     'admin_panel' => 'Panel de Administración',
-    
-    // Advanced Schedule Management
+
     'schedule_management' => 'Gestión de Horarios Avanzada',
     'teacher_workload' => 'Carga Horaria Docentes',
     'teacher_workload_management' => 'Gestión de Carga Horaria de Docentes',
@@ -360,16 +337,14 @@ return [
     'schedule_validation' => 'Validación de Horarios',
     'bulk_operations' => 'Operaciones en Lote',
     'schedule_statistics' => 'Estadísticas de Horarios',  
-    
-    // Navigation sections
+
     'administration' => 'Administración',
     'academic_management' => 'Gestión Académica',
     'coordinator_functions' => 'Funciones de Coordinador',
     'director_functions' => 'Funciones de Dirección',
     'teacher_functions' => 'Funciones de Docente',
     'parent_functions' => 'Funciones de Padre',
-    
-    // New menu items
+
     'coordinators' => 'Coordinadores',
     'groups' => 'Grupos',
     'teacher_availability' => 'Disponibilidad Docentes',
@@ -379,8 +354,7 @@ return [
     'my_availability' => 'Mi Disponibilidad',
     'students' => 'Estudiantes',
     'student_schedules' => 'Horarios de Estudiantes',
-    
-    // Director Functions
+
     'publish_schedules' => 'Publicar Horarios',
     'add_new_teachers' => 'Agregar Docentes',
     'add_new_subjects' => 'Agregar Materias',
@@ -390,16 +364,14 @@ return [
     'schedule_publication' => 'Publicación de Horarios',
     'schedule_published_success' => 'Horario publicado exitosamente',
     'schedule_publication_failed' => 'Error al publicar el horario',
-    
-    // Coordinators Management
+
     'coordinators_management' => 'Gestión de Coordinadores',
     'coordinators_management_description' => 'Administrar todos los coordinadores del sistema',
     'add_coordinator' => 'Agregar Coordinador',
     'edit_coordinator' => 'Editar Coordinador',
     'no_coordinators_found' => 'No se encontraron coordinadores',
     'add_first_coordinator' => 'Agregue el primer coordinador al sistema',
-    
-    // Groups Management
+
     'groups_management' => 'Gestión de Grupos',
     'groups_management_description' => 'Administrar todos los grupos del sistema',
     'add_group' => 'Agregar Grupo',
@@ -430,8 +402,7 @@ return [
     'groups_by_level' => 'Grupos por Nivel',
     'manage_teacher_availability' => 'Gestionar disponibilidad de docentes',
     'generate_reports' => 'Generar reportes del sistema',
-    
-    // Availability Management
+
     'teacher_availability_description' => 'Gestionar la disponibilidad horaria de los docentes',
     'select_teacher_to_manage_availability' => 'Seleccione un docente para gestionar su disponibilidad',
     'no_teacher_selected' => 'Ningún docente seleccionado',
@@ -439,8 +410,7 @@ return [
     'click_to_toggle_availability' => 'Haga clic en las celdas para cambiar la disponibilidad',
     'load' => 'Cargar',
     'save_changes' => 'Guardar Cambios',
-    
-    // Subject Assignments
+
     'subject_assignments_description' => 'Asignar materias a docentes del sistema',
     'current_assignments' => 'Asignaciones Actuales',
     'assign_subject' => 'Asignar Materia',
@@ -449,8 +419,7 @@ return [
     'assign' => 'Asignar',
     'no_assignments_found' => 'No se encontraron asignaciones',
     'assign_first_subject' => 'Asigne la primera materia a un docente',
-    
-    // Reports
+
     'reports_description' => 'Generar reportes y estadísticas del sistema',
     'quick_reports' => 'Reportes Rápidos',
     'system_overview' => 'Resumen del Sistema',
@@ -468,8 +437,7 @@ return [
     'active_schedules' => 'Horarios Activos',
     'total_subjects' => 'Total de Materias',
     'total_schedules' => 'Total de Horarios',
-    
-    // Teacher Functions
+
     'my_schedule_description' => 'Ver horario personal como docente',
     'view_as_teacher' => 'Ver como Docente',
     'select_teacher_to_view_schedule' => 'Seleccione un docente para ver su horario',
@@ -480,8 +448,7 @@ return [
     'admin_availability_note' => 'Como administrador, puede gestionar la disponibilidad de todos los docentes desde la sección correspondiente.',
     'manage_all_availability' => 'Gestionar Toda la Disponibilidad',
     'as_admin_manage_all_teachers' => 'Como administrador, puede gestionar la disponibilidad de todos los docentes del sistema.',
-    
-    // Parent Functions  
+
     'students_management' => 'Gestión de Estudiantes',
     'students_management_description' => 'Ver y gestionar información de estudiantes',
     'filter_by_group' => 'Filtrar por Grupo',
@@ -494,8 +461,7 @@ return [
     'select_group_to_view_schedule' => 'Seleccione un grupo para ver su horario',
     'group_schedule' => 'Horario del Grupo',
     'print' => 'Imprimir',
-    
-    // Additional missing translations
+
     'my_schedule_description' => 'Ver horario personal como docente',
     'view_as_teacher' => 'Ver como Docente',
     'select_teacher_to_view_schedule' => 'Seleccione un docente para ver su horario',
@@ -506,8 +472,7 @@ return [
     'admin_availability_note' => 'Como administrador, puede gestionar la disponibilidad de todos los docentes desde la sección correspondiente.',
     'manage_all_availability' => 'Gestionar Toda la Disponibilidad',
     'as_admin_manage_all_teachers' => 'Como administrador, puede gestionar la disponibilidad de todos los docentes del sistema.',
-    
-    // Schedule view translations
+
     'choose_teacher' => 'Elegir docente',
     'assigned_hours' => 'Horas asignadas',
     'margin_percentage' => 'Porcentaje de margen',
@@ -526,8 +491,7 @@ return [
     'profile' => 'Perfil',
     'settings' => 'Configuración',
     'confirm_logout' => '¿Está seguro que desea cerrar sesión?',
-    
-    // Dashboard and navigation
+
     'dashboard' => 'Panel Principal',
     'users' => 'Usuarios',
     'teachers' => 'Docentes',
@@ -535,14 +499,12 @@ return [
     'subjects' => 'Materias',
     'schedules' => 'Horarios',
     'groups' => 'Grupos',
-    
-    // Additional parent/student related translations
+
     'parent_role' => 'Padre',
     'group' => 'Grupo',
     'view_schedule' => 'Ver Horario',
     'export' => 'Exportar',
-    
-    // Parent Dashboard specific translations
+
     'parent_dashboard' => 'Panel de Seguimiento',
     'parent_dashboard_description' => 'Aquí puedes monitorear el progreso académico de tu hijo',
     'weekly_schedule' => 'Horario Semanal',
@@ -551,8 +513,7 @@ return [
     'notifications' => 'Notificaciones',
     'parent_functions' => 'Funciones de Padre',
     'parent_functions_description' => 'Acceso a funciones específicas para padres',
-    
-    // Parent Views specific translations
+
     'no_students_found' => 'No se encontraron estudiantes',
     'try_adjusting_your_search' => 'Intenta ajustar tu búsqueda o filtros',
     'type' => 'Tipo',

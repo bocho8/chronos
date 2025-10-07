@@ -41,8 +41,6 @@ class AssignmentController
      */
     public function create()
     {
-        // This would typically return a view for creating assignments
-        // For API responses, we can return available teachers and subjects
         try {
             $teachers = $this->assignmentModel->getAvailableTeachers();
             $subjects = $this->assignmentModel->getAvailableSubjects();
@@ -65,19 +63,16 @@ class AssignmentController
         try {
             $teacherId = $_POST['teacher_id'] ?? null;
             $subjectId = $_POST['subject_id'] ?? null;
-            
-            // Validation
+
             $errors = $this->validateAssignmentData($_POST);
             if (!empty($errors)) {
                 ResponseHelper::validationError($errors);
             }
             
-            // Check if assignment already exists
             if ($this->assignmentModel->assignmentExists($teacherId, $subjectId)) {
                 ResponseHelper::error('This assignment already exists');
             }
             
-            // Create assignment
             $assignmentId = $this->assignmentModel->createAssignment($teacherId, $subjectId);
             
             if ($assignmentId) {
@@ -145,19 +140,16 @@ class AssignmentController
         try {
             $teacherId = $_POST['teacher_id'] ?? null;
             $subjectId = $_POST['subject_id'] ?? null;
-            
-            // Validation
+
             $errors = $this->validateAssignmentData($_POST);
             if (!empty($errors)) {
                 ResponseHelper::validationError($errors);
             }
             
-            // Check if assignment exists
             if (!$this->assignmentModel->getAssignmentById($id)) {
                 ResponseHelper::notFound('Assignment');
             }
             
-            // Update assignment
             $result = $this->assignmentModel->updateAssignment($id, $teacherId, $subjectId);
             
             if ($result) {
@@ -178,7 +170,6 @@ class AssignmentController
     public function destroy($id)
     {
         try {
-            // Check if assignment exists
             if (!$this->assignmentModel->getAssignmentById($id)) {
                 ResponseHelper::notFound('Assignment');
             }

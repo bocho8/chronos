@@ -40,8 +40,6 @@ class TeacherController
      */
     public function create()
     {
-        // This would typically return a view for creating teachers
-        // For API responses, we can return form data or validation rules
         \ResponseHelper::success('Form data retrieved successfully', [
             'validation_rules' => $this->getValidationRules()
         ]);
@@ -131,7 +129,7 @@ class TeacherController
     public function update($id)
     {
         try {
-            // Handle PUT request data
+
             $inputData = $_POST;
             if (empty($inputData) && $_SERVER['REQUEST_METHOD'] === 'PUT') {
                 parse_str(file_get_contents('php://input'), $inputData);
@@ -244,8 +242,7 @@ class TeacherController
     private function validateTeacherData($data, $requirePassword = true, $isUpdate = false)
     {
         $errors = [];
-        
-        // Only validate cédula for new teachers, not for updates
+
         if (!$isUpdate) {
             $errors['cedula'] = \ValidationHelper::validateCedula($data['cedula'] ?? '');
         }

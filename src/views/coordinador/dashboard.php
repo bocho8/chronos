@@ -6,7 +6,7 @@
     <title>Panel Coordinador</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Puedes añadir aquí pequeñas personalizaciones si es necesario */
+        
     </style>
 </head>
 <body class="bg-gray-100">

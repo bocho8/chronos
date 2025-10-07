@@ -26,7 +26,6 @@ try {
     require_once __DIR__ . '/ScheduleController.php';
     $controller = new HorarioController($database->getConnection());
     
-    // Call the controller directly
     $controller->handleRequest();
     
 } catch (Exception $e) {

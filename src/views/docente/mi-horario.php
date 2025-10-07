@@ -4,7 +4,6 @@
  * Consulta de horarios de clases asignados
  */
 
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -12,27 +11,21 @@ require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('mi-horario.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and docente role
 AuthHelper::requireRole('DOCENTE');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Load published schedules for this docente (ESRE 4.3.166)
 $currentUser = AuthHelper::getCurrentUser();
 $userId = $currentUser['id_usuario'] ?? null;
 $miHorario = [];
@@ -43,7 +36,6 @@ try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get docente ID and basic info
     $docenteQuery = "SELECT d.*, u.nombre, u.apellido FROM docente d 
                      INNER JOIN usuario u ON d.id_usuario = u.id_usuario 
                      WHERE d.id_usuario = :id_usuario";
@@ -56,7 +48,6 @@ try {
         $cargaHoraria = $docenteInfo['horas_asignadas'] ?? 0;
         $porcentajeMargen = $docenteInfo['porcentaje_margen'] ?? 0;
         
-        // Get schedules using the same structure as admin views
         $scheduleQuery = "SELECT h.*, m.nombre as materia_nombre, g.nombre as grupo_nombre,
                                  b.hora_inicio, b.hora_fin
                          FROM horario h
@@ -70,7 +61,6 @@ try {
         $stmt->execute();
         $miHorario = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Get time blocks for table structure
         $blocksQuery = "SELECT id_bloque, hora_inicio, hora_fin FROM bloque_horario ORDER BY hora_inicio";
         $stmt = $database->getConnection()->prepare($blocksQuery);
         $stmt->execute();
@@ -81,7 +71,6 @@ try {
     error_log("Error cargando horario del docente: " . $e->getMessage());
 }
 
-// Helper function to generate schedule table using proper time blocks (ESRE 4.4.8)
 function generateScheduleTable($horario, $timeBlocks) {
     if (empty($horario)) {
         return '<div class="text-center py-8">
@@ -90,8 +79,7 @@ function generateScheduleTable($horario, $timeBlocks) {
                     <p class="text-xs text-gray-400">Los horarios serán visibles una vez que la Dirección los publique</p>
                 </div>';
     }
-    
-    // Generate weekly schedule table according to ESRE 4.4.8 (same as admin views)
+
     $html = '<div class="overflow-x-auto">
                 <table class="w-full border-collapse border border-gray-300">
                     <thead>

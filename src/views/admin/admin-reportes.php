@@ -1,9 +1,4 @@
 <?php
-/**
- * Página de reportes para administradores
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -11,51 +6,39 @@ require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-reportes.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');
     exit();
 }
 
-// Load database configuration and get statistics
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     $pdo = $database->getConnection();
     
-    // Get comprehensive statistics
     $stats = [];
     
-    // Total counts
     $stats['total_usuarios'] = $database->queryCount("SELECT COUNT(*) FROM usuario");
     $stats['total_docentes'] = $database->queryCount("SELECT COUNT(*) FROM docente");
     $stats['total_materias'] = $database->queryCount("SELECT COUNT(*) FROM materia");
     $stats['total_grupos'] = $database->queryCount("SELECT COUNT(*) FROM grupo");
     $stats['total_horarios'] = $database->queryCount("SELECT COUNT(*) FROM horario");
-    
-    // Docentes by availability
     $stmt = $pdo->query("SELECT COUNT(DISTINCT id_docente) as count FROM disponibilidad WHERE disponible = true");
     $stats['docentes_disponibles'] = $stmt->fetch()['count'] ?? 0;
-    
-    // Materias by program
+
     $stmt = $pdo->query("SELECT COUNT(*) as count FROM materia WHERE es_programa_italiano = true");
     $stats['materias_italiano'] = $stmt->fetch()['count'] ?? 0;
-    
-    // Recent activity
+
     $stmt = $pdo->prepare("SELECT l.*, u.nombre, u.apellido FROM log l 
                           LEFT JOIN usuario u ON l.id_usuario = u.id_usuario 
                           ORDER BY l.fecha DESC LIMIT 20");
@@ -341,13 +324,11 @@ try {
             
             const reportName = reportTypes[type] || type;
             
-            // Show loading state
             const button = event.target;
             const originalText = button.innerHTML;
             button.innerHTML = '<span class="text-sm">⏳</span> Generando...';
             button.disabled = true;
-            
-            // Simulate report generation
+
             setTimeout(() => {
                 alert(`Reporte generado: ${reportName}\n\nEl reporte se ha generado exitosamente.`);
                 button.innerHTML = originalText;
@@ -355,14 +336,12 @@ try {
             }, 2000);
         }
 
-        // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         });
 
-        // User menu toggle
         document.addEventListener('DOMContentLoaded', function() {
             const userMenuButton = document.getElementById('userMenuButton');
             const userMenu = document.getElementById('userMenu');
@@ -373,7 +352,6 @@ try {
                     userMenu.classList.toggle('hidden');
                 });
                 
-                // Close menu when clicking outside
                 document.addEventListener('click', function(e) {
                     if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
                         userMenu.classList.add('hidden');

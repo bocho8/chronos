@@ -1,5 +1,4 @@
 <?php
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -8,36 +7,28 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Usuario.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-usuarios.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Load database configuration
 $dbConfig = require __DIR__ . '/../../config/database.php';
 $database = new Database($dbConfig);
 
-// Get users and roles
 $usuarioModel = new Usuario($database->getConnection());
 $usuarios = $usuarioModel->getAllUsuarios();
 $roles = $usuarioModel->getAllRoles();
 
-// Function to get user initials
 function getUserInitials($nombre, $apellido) {
     return strtoupper(substr($nombre, 0, 1) . substr($apellido, 0, 1));
 }
@@ -130,8 +121,7 @@ function getUserInitials($nombre, $apellido) {
       right: 20px;
       z-index: 10000;
     }
-    
-    /* Modal styles - Improved for accessibility and responsiveness */
+
     #usuarioModal {
       position: fixed !important;
       top: 0 !important;
@@ -190,8 +180,7 @@ function getUserInitials($nombre, $apellido) {
       background-color: #1a2d5a !important;
       transform: translateY(-1px) !important;
     }
-    
-    /* Focus styles for accessibility */
+
     #usuarioModal input:focus,
     #usuarioModal select:focus,
     #usuarioModal textarea:focus,
@@ -199,14 +188,12 @@ function getUserInitials($nombre, $apellido) {
       outline: 2px solid #1f366d !important;
       outline-offset: 2px !important;
     }
-    
-    /* Error state styles */
+
     .error-input {
       border-color: #ef4444 !important;
       box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
     }
-    
-    /* Screen reader only class */
+
     .sr-only {
       position: absolute !important;
       width: 1px !important;
@@ -218,8 +205,7 @@ function getUserInitials($nombre, $apellido) {
       white-space: nowrap !important;
       border: 0 !important;
     }
-    
-    /* Responsive adjustments */
+
     @media (max-width: 640px) {
       #usuarioModal {
         padding: 0.5rem !important;
@@ -487,7 +473,6 @@ function getUserInitials($nombre, $apellido) {
           <p id="rolesError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
         </div>
 
-
         <div class="flex justify-end space-x-3 pt-4">
           <button type="button" onclick="closeUsuarioModal()" 
                   class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
@@ -507,29 +492,23 @@ function getUserInitials($nombre, $apellido) {
   <script>
     let isEditMode = false;
 
-    // Modal functions
     function openUsuarioModal() {
       isEditMode = false;
       document.getElementById('modalTitle').textContent = '<?php _e('add_user'); ?>';
       document.getElementById('usuarioForm').reset();
       document.getElementById('id_usuario').value = '';
       
-      // Limpiar checkboxes de roles
       document.querySelectorAll('input[name="roles[]"]').forEach(checkbox => {
         checkbox.checked = false;
       });
       
-      // Mostrar asterisco de contraseña requerida
       document.getElementById('passwordRequired').style.display = 'inline';
       document.getElementById('contrasena').required = true;
       
-      // Limpiar errores
       clearAllErrors();
       
       const modal = document.getElementById('usuarioModal');
       modal.classList.remove('hidden');
-      
-      // Focus on first input
       setTimeout(() => {
         document.getElementById('cedula').focus();
       }, 100);
@@ -545,7 +524,6 @@ function getUserInitials($nombre, $apellido) {
       isEditMode = true;
       document.getElementById('modalTitle').textContent = '<?php _e('edit_user'); ?>';
       
-      // Ocultar asterisco de contraseña requerida
       document.getElementById('passwordRequired').style.display = 'none';
       document.getElementById('contrasena').required = false;
       
@@ -567,12 +545,10 @@ function getUserInitials($nombre, $apellido) {
           document.getElementById('email').value = data.data.email;
           document.getElementById('telefono').value = data.data.telefono || '';
           
-          // Limpiar checkboxes de roles
           document.querySelectorAll('input[name="roles[]"]').forEach(checkbox => {
             checkbox.checked = false;
           });
           
-          // Marcar roles del usuario
           if (data.data.role_names && data.data.role_names.length > 0) {
             data.data.role_names.forEach(roleName => {
               const checkbox = document.querySelector(`input[name="roles[]"][value="${roleName}"]`);
@@ -582,13 +558,10 @@ function getUserInitials($nombre, $apellido) {
             });
           }
           
-          // Limpiar errores
           clearAllErrors();
           
           const modal = document.getElementById('usuarioModal');
           modal.classList.remove('hidden');
-          
-          // Focus on first input
           setTimeout(() => {
             document.getElementById('cedula').focus();
           }, 100);
@@ -629,12 +602,10 @@ function getUserInitials($nombre, $apellido) {
       }
     }
 
-    // Validation functions
     function validateForm() {
       let isValid = true;
       clearAllErrors();
       
-      // Validate cédula
       const cedula = document.getElementById('cedula').value.trim();
       if (!cedula) {
         showFieldError('cedula', '<?php _e('cedula_required'); ?>');
@@ -644,7 +615,6 @@ function getUserInitials($nombre, $apellido) {
         isValid = false;
       }
       
-      // Validate nombre
       const nombre = document.getElementById('nombre').value.trim();
       if (!nombre) {
         showFieldError('nombre', '<?php _e('name_required'); ?>');
@@ -654,7 +624,6 @@ function getUserInitials($nombre, $apellido) {
         isValid = false;
       }
       
-      // Validate apellido
       const apellido = document.getElementById('apellido').value.trim();
       if (!apellido) {
         showFieldError('apellido', '<?php _e('lastname_required'); ?>');
@@ -664,7 +633,6 @@ function getUserInitials($nombre, $apellido) {
         isValid = false;
       }
       
-      // Validate email
       const email = document.getElementById('email').value.trim();
       if (!email) {
         showFieldError('email', '<?php _e('email_required'); ?>');
@@ -674,14 +642,12 @@ function getUserInitials($nombre, $apellido) {
         isValid = false;
       }
       
-      // Validate phone (optional but if provided, must be valid)
       const telefono = document.getElementById('telefono').value.trim();
       if (telefono && !/^[0-9\s\-\+\(\)]+$/.test(telefono)) {
         showFieldError('telefono', '<?php _e('phone_invalid_format'); ?>');
         isValid = false;
       }
       
-      // Validate password
       const contrasena = document.getElementById('contrasena').value;
       if (!isEditMode && (!contrasena || contrasena.length < 8)) {
         showFieldError('contrasena', '<?php _e('password_required_min_length'); ?>');
@@ -691,7 +657,6 @@ function getUserInitials($nombre, $apellido) {
         isValid = false;
       }
       
-      // Validate roles
       const roles = document.querySelectorAll('input[name="roles[]"]:checked');
       if (roles.length === 0) {
         showFieldError('roles', '<?php _e('at_least_one_role_required'); ?>');
@@ -725,8 +690,7 @@ function getUserInitials($nombre, $apellido) {
         element.classList.remove('error-input');
       });
     }
-    
-    // Toggle password visibility
+
     function togglePasswordVisibility() {
       const passwordInput = document.getElementById('contrasena');
       const passwordIcon = document.getElementById('passwordIcon');
@@ -744,20 +708,17 @@ function getUserInitials($nombre, $apellido) {
         `;
       }
     }
-    
-    // Individual field validation
+
     function validateField(field) {
       const value = field.value.trim();
       const fieldName = field.id;
-      
-      // Clear previous error
+
       field.classList.remove('error-input');
       const errorElement = document.getElementById(fieldName + 'Error');
       if (errorElement) {
         errorElement.textContent = '';
       }
       
-      // Validate based on field type
       switch (fieldName) {
         case 'cedula':
           if (!value) {
@@ -806,8 +767,7 @@ function getUserInitials($nombre, $apellido) {
           break;
       }
     }
-    
-    // Form submission
+
     document.getElementById('usuarioForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
@@ -831,7 +791,6 @@ function getUserInitials($nombre, $apellido) {
           setTimeout(() => location.reload(), 1000);
         } else {
           if (data.data && typeof data.data === 'object') {
-            // Show validation errors from server
             Object.keys(data.data).forEach(field => {
               showFieldError(field, data.data[field]);
             });
@@ -846,15 +805,13 @@ function getUserInitials($nombre, $apellido) {
       });
     });
 
-    // Funcionalidad para la barra lateral
     document.addEventListener('DOMContentLoaded', function() {
-      // Toggle password visibility
+
       const togglePasswordBtn = document.getElementById('togglePassword');
       if (togglePasswordBtn) {
         togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
       }
-      
-      // Real-time validation
+
       const formInputs = document.querySelectorAll('#usuarioForm input, #usuarioForm select');
       formInputs.forEach(input => {
         input.addEventListener('blur', function() {
@@ -862,7 +819,7 @@ function getUserInitials($nombre, $apellido) {
         });
         
         input.addEventListener('input', function() {
-          // Clear error state on input
+
           this.classList.remove('error-input');
           const errorElement = document.getElementById(this.id + 'Error');
           if (errorElement) {
@@ -870,36 +827,29 @@ function getUserInitials($nombre, $apellido) {
           }
         });
       });
-      
-      // Obtener todos los enlaces de la barra lateral
+
       const sidebarLinks = document.querySelectorAll('.sidebar-link');
-      
-      // Función para manejar el clic en los enlaces
+
       function handleSidebarClick(event) {
-        // Remover la clase active de todos los enlaces
+
         sidebarLinks.forEach(link => {
           link.classList.remove('active');
         });
-        
-        // Agregar la clase active al enlace clickeado
+
         this.classList.add('active');
       }
-      
-      // Agregar event listener a cada enlace
+
       sidebarLinks.forEach(link => {
         link.addEventListener('click', handleSidebarClick);
       });
-      
-      // Logout functionality
+
       const logoutButton = document.getElementById('logoutButton');
       if (logoutButton) {
         logoutButton.addEventListener('click', function(e) {
           e.preventDefault();
           
-          // Show confirmation dialog
           const confirmMessage = '<?php _e('confirm_logout'); ?>';
           if (confirm(confirmMessage)) {
-            // Create form and submit logout request
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/src/controllers/LogoutController.php';
@@ -915,8 +865,7 @@ function getUserInitials($nombre, $apellido) {
           }
         });
       }
-      
-      // User menu toggle
+
       const userMenuButton = document.getElementById('userMenuButton');
       const userMenu = document.getElementById('userMenu');
       
@@ -926,7 +875,6 @@ function getUserInitials($nombre, $apellido) {
           userMenu.classList.toggle('hidden');
         });
         
-        // Close menu when clicking outside
         document.addEventListener('click', function(e) {
           if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
             userMenu.classList.add('hidden');
@@ -934,7 +882,6 @@ function getUserInitials($nombre, $apellido) {
         });
       }
 
-      // Initialize multiple selection
       const multipleSelection = new MultipleSelection({
         container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
         itemSelector: '.item-row',
@@ -943,14 +890,13 @@ function getUserInitials($nombre, $apellido) {
         bulkActionsSelector: '#bulkActions',
         entityType: 'usuarios',
         onSelectionChange: function(selectedItems) {
-          // Selection changed
+
         },
         onBulkAction: function(action, selectedIds) {
-          // Bulk action triggered
+
         }
       });
 
-      // Initialize status labels
       const statusLabels = new StatusLabels({
         container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
         itemSelector: '.item-row',

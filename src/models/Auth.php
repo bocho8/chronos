@@ -60,31 +60,26 @@ class Auth {
      */
     public function createUser($userData) {
         try {
-            // Validate required fields
             if (empty($userData['cedula']) || empty($userData['nombre']) || 
                 empty($userData['apellido']) || empty($userData['contrasena']) || 
                 empty($userData['nombre_rol'])) {
                 return false;
             }
             
-            // Validate cedula format
             if (!$this->validateCedula($userData['cedula'])) {
                 return false;
             }
             
-            // Check if cedula already exists
             if ($this->cedulaExists($userData['cedula'])) {
                 return false;
             }
-            
-            // Hash password
+
             $passwordHash = password_hash($userData['contrasena'], PASSWORD_DEFAULT);
             
-            // Begin transaction to ensure both user and role assignment are created
             $this->db->beginTransaction();
             
             try {
-                // Insert user first
+
                 $query = "INSERT INTO usuario (cedula, nombre, apellido, email, telefono, contrasena_hash) 
                           VALUES (:cedula, :nombre, :apellido, :email, :telefono, :contrasena_hash)";
                 
@@ -98,27 +93,24 @@ class Auth {
                 
                 $stmt->execute();
                 
-                // Get the user ID
                 $userId = $this->db->lastInsertId();
-                
-                // Insert role assignment
+
                 $roleQuery = "INSERT INTO usuario_rol (id_usuario, nombre_rol) VALUES (:id_usuario, :nombre_rol)";
                 $roleStmt = $this->db->prepare($roleQuery);
                 $roleStmt->bindParam(':id_usuario', $userId, PDO::PARAM_INT);
                 $roleStmt->bindParam(':nombre_rol', $userData['nombre_rol'], PDO::PARAM_STR);
                 
                 $result = $roleStmt->execute();
-                
-                // Commit transaction
+
                 $this->db->commit();
             } catch (Exception $e) {
-                // Rollback transaction on error
+
                 $this->db->rollback();
                 throw $e;
             }
             
             if ($result) {
-                // Log user creation
+
                 $this->logLogin($userData['cedula'], 'USUARIO_CREADO', 'Nuevo usuario creado');
             }
             
@@ -218,7 +210,6 @@ class Auth {
      */
     private function logLogin($cedula, $accion, $detalle) {
         try {
-            // Get user ID from cedula first
             $userQuery = "SELECT id_usuario FROM usuario WHERE cedula = :cedula";
             $userStmt = $this->db->prepare($userQuery);
             $userStmt->bindParam(':cedula', $cedula, PDO::PARAM_STR);
@@ -271,14 +262,12 @@ class Auth {
      */
     public function logout($cedula) {
         try {
-            // Log logout action
+
             $this->logLogin($cedula, 'LOGOUT', 'Cierre de sesión');
-            
-            // Clear session data
+
             if (session_status() === PHP_SESSION_ACTIVE) {
                 $_SESSION = array();
-                
-                // Destroy session cookie
+
                 if (ini_get("session.use_cookies")) {
                     $params = session_get_cookie_params();
                     setcookie(session_name(), '', time() - 42000,
@@ -286,8 +275,7 @@ class Auth {
                         $params["secure"], $params["httponly"]
                     );
                 }
-                
-                // Destroy session
+
                 session_destroy();
             }
             
@@ -315,9 +303,8 @@ class Auth {
             return false;
         }
         
-        // Check session timeout
         $lastActivity = $_SESSION['last_activity'] ?? time();
-        $timeout = $timeoutMinutes * 60; // Convert to seconds
+        $timeout = $timeoutMinutes * 60;
         
         if ((time() - $lastActivity) > $timeout) {
             return false;

@@ -44,7 +44,7 @@ function isSessionValid() {
         return false;
     }
     
-    $timeout = SESSION_TIMEOUT * 60; // Convert to seconds
+    $timeout = SESSION_TIMEOUT * 60;
     return (time() - $_SESSION['last_activity']) <= $timeout;
 }
 

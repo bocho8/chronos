@@ -49,7 +49,7 @@ class Grupo {
      */
     public function createGrupo($nombre, $nivel) {
         try {
-            // Verificar si ya existe un grupo con el mismo nombre y nivel
+
             $checkQuery = "SELECT COUNT(*) FROM grupo WHERE nombre = :nombre AND nivel = :nivel";
             $checkStmt = $this->db->prepare($checkQuery);
             $checkStmt->bindParam(':nombre', $nombre);
@@ -81,7 +81,7 @@ class Grupo {
      */
     public function updateGrupo($idGrupo, $nombre, $nivel) {
         try {
-            // Verificar si ya existe otro grupo con el mismo nombre y nivel
+
             $checkQuery = "SELECT COUNT(*) FROM grupo WHERE nombre = :nombre AND nivel = :nivel AND id_grupo != :id_grupo";
             $checkStmt = $this->db->prepare($checkQuery);
             $checkStmt->bindParam(':nombre', $nombre);
@@ -119,13 +119,12 @@ class Grupo {
      */
     public function deleteGrupo($idGrupo) {
         try {
-            // Validar que el ID sea numérico
+
             if (!is_numeric($idGrupo) || $idGrupo <= 0) {
                 error_log("Invalid grupo ID provided for deletion: " . $idGrupo);
                 return ['success' => false, 'message' => 'ID de grupo inválido'];
             }
-            
-            // Verificar que el grupo existe
+
             $existsQuery = "SELECT id_grupo, nombre FROM grupo WHERE id_grupo = :id_grupo";
             $existsStmt = $this->db->prepare($existsQuery);
             $existsStmt->bindParam(':id_grupo', $idGrupo, PDO::PARAM_INT);
@@ -138,8 +137,7 @@ class Grupo {
             }
             
             error_log("Attempting to delete grupo: " . $grupo['nombre'] . " (ID: " . $idGrupo . ")");
-            
-            // Verificar si el grupo tiene horarios asignados
+
             $checkQuery = "SELECT COUNT(*) FROM horario WHERE id_grupo = :id_grupo";
             $checkStmt = $this->db->prepare($checkQuery);
             $checkStmt->bindParam(':id_grupo', $idGrupo, PDO::PARAM_INT);
@@ -150,8 +148,7 @@ class Grupo {
                 error_log("Cannot delete grupo " . $idGrupo . " - has " . $horariosCount . " horarios assigned");
                 return ['success' => false, 'message' => 'No se puede eliminar el grupo porque tiene horarios asignados'];
             }
-            
-            // Verificar si el grupo tiene materias compartidas
+
             $checkQuery2 = "SELECT COUNT(*) FROM materia WHERE id_grupo_compartido = :id_grupo";
             $checkStmt2 = $this->db->prepare($checkQuery2);
             $checkStmt2->bindParam(':id_grupo', $idGrupo, PDO::PARAM_INT);
@@ -162,8 +159,7 @@ class Grupo {
                 error_log("Cannot delete grupo " . $idGrupo . " - has " . $materiasCount . " materias compartidas");
                 return ['success' => false, 'message' => 'No se puede eliminar el grupo porque tiene materias compartidas asignadas'];
             }
-            
-            // Iniciar transacción para asegurar consistencia
+
             $this->db->beginTransaction();
             
             try {

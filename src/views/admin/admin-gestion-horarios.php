@@ -1,5 +1,4 @@
 <?php
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -8,66 +7,54 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-gestion-horarios.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Load database configuration and get schedule data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get schedule data
     $horarioModel = new Horario($database->getConnection());
     $horarios = $horarioModel->getAllHorarios();
     $bloques = $horarioModel->getAllBloques();
     $materias = $horarioModel->getAllMaterias();
     $docentes = $horarioModel->getAllDocentes();
     
-    // Get grupos using the dedicated Grupo model
     require_once __DIR__ . '/../../models/Grupo.php';
     $grupoModel = new Grupo($database->getConnection());
     $grupos = $grupoModel->getAllGrupos();
-    
-    
+
     if ($horarios === false) {
         $horarios = [];
     }
     
-    // Organize schedule by day and time
     $scheduleGrid = [];
     $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
     
     foreach ($dias as $dia) {
         $scheduleGrid[$dia] = [];
         foreach ($bloques as $bloque) {
-            $id_bloque = (int)$bloque['id_bloque']; // Force integer conversion
+            $id_bloque = (int)$bloque['id_bloque'];
             $scheduleGrid[$dia][$id_bloque] = null;
         }
     }
     
-    // Fill the schedule grid with current assignments
     foreach ($horarios as $horario) {
         $dia = $horario['dia'];
         $id_bloque = (int)$horario['id_bloque'];
         
-        // Direct assignment without checking isset
         $scheduleGrid[$dia][$id_bloque] = $horario;
     }
     
@@ -173,9 +160,7 @@ try {
                 font-size: 0.65rem;
             }
         }
-        
-        
-        /* Conflict detection styles */
+
         .conflict-warning {
             background-color: #fef2f2 !important;
             border: 2px solid #ef4444 !important;
@@ -380,27 +365,22 @@ try {
         let currentBloque = null;
         let currentDia = null;
 
-        // Modal functions
         function openHorarioModal() {
             isEditMode = false;
             document.getElementById('horarioModalTitle').textContent = '<?php _e('add_schedule'); ?>';
             document.getElementById('horarioForm').reset();
             document.getElementById('horario_id').value = '';
             
-            // Clear search fields
             document.getElementById('grupo_search').value = '';
             document.getElementById('materia_search').value = '';
             document.getElementById('docente_search').value = '';
             
-            // Reset all options to visible
             resetSelectOptions('id_grupo');
             resetSelectOptions('id_materia');
             resetSelectOptions('id_docente');
             
             clearErrors();
             document.getElementById('horarioModal').classList.remove('hidden');
-            
-            // Focus on first input
             setTimeout(() => {
                 document.getElementById('grupo_search').focus();
             }, 100);
@@ -413,7 +393,6 @@ try {
             document.getElementById('horario_id_bloque').value = idBloque;
             document.getElementById('horario_dia').value = dia;
                 
-                // Find block time info
                 const bloques = <?php echo json_encode($bloques); ?>;
                 const bloque = bloques.find(b => b.id_bloque == idBloque);
                 
@@ -432,12 +411,9 @@ try {
             currentDia = null;
         }
         
-        // Edit horario
         function editHorario(id) {
             isEditMode = true;
             document.getElementById('horarioModalTitle').textContent = '<?php _e('edit_schedule'); ?>';
-            
-            // Use the correct API endpoint
             const formData = new FormData();
             formData.append('action', 'get');
             formData.append('id', id);
@@ -457,7 +433,6 @@ try {
                     document.getElementById('id_materia').value = schedule.id_materia;
                     document.getElementById('id_docente').value = schedule.id_docente;
                     
-                    // Show schedule info
                     const scheduleInfo = document.getElementById('scheduleInfo');
                     scheduleInfo.innerHTML = `
                         <strong><?php _e('schedule_time'); ?>:</strong> ${schedule.dia} ${schedule.hora_inicio.substring(0,5)} - ${schedule.hora_fin.substring(0,5)}
@@ -466,7 +441,6 @@ try {
                     clearErrors();
                     document.getElementById('horarioModal').classList.remove('hidden');
                     
-                    // Focus on first input
                     setTimeout(() => {
                         document.getElementById('id_grupo').focus();
                     }, 100);
@@ -480,7 +454,6 @@ try {
             });
         }
         
-        // Delete horario
         function deleteHorario(id) {
             const confirmMessage = `¿Está seguro de que desea eliminar esta asignación de horario?`;
             if (confirm(confirmMessage)) {
@@ -508,7 +481,6 @@ try {
             }
         }
         
-        // Handle form submission
         function handleHorarioFormSubmit(e) {
             e.preventDefault();
             
@@ -526,7 +498,6 @@ try {
             let contentType;
             
             if (isEditMode) {
-                // For PUT requests, send as URL-encoded data
                 const formData = new FormData(e.target);
                 const urlEncodedData = new URLSearchParams();
                 for (let [key, value] of formData.entries()) {
@@ -535,9 +506,8 @@ try {
                 requestBody = urlEncodedData.toString();
                 contentType = 'application/x-www-form-urlencoded';
                 } else {
-                // For POST requests, use FormData
                 requestBody = new FormData(e.target);
-                contentType = null; // Let browser set it
+                contentType = null;
             }
             
             const fetchOptions = {
@@ -560,7 +530,6 @@ try {
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     if (data.data && typeof data.data === 'object') {
-                        // Show validation errors from server
                         Object.keys(data.data).forEach(field => {
                             showFieldError(field, data.data[field]);
                         });
@@ -575,7 +544,6 @@ try {
             });
         }
         
-        // Clear validation errors
         function clearErrors() {
             const errorElements = document.querySelectorAll('[id$="Error"]');
             errorElements.forEach(element => {
@@ -588,26 +556,22 @@ try {
             });
         }
         
-        // Validation functions
         function validateHorarioForm() {
             let isValid = true;
             clearErrors();
             
-            // Validate grupo
             const grupo = document.getElementById('id_grupo').value;
             if (!grupo) {
                 showFieldError('id_grupo', '<?php _e('group_required'); ?>');
                 isValid = false;
             }
             
-            // Validate materia
             const materia = document.getElementById('id_materia').value;
             if (!materia) {
                 showFieldError('id_materia', '<?php _e('subject_required'); ?>');
                 isValid = false;
             }
             
-            // Validate docente
             const docente = document.getElementById('id_docente').value;
             if (!docente) {
                 showFieldError('id_docente', '<?php _e('teacher_required'); ?>');
@@ -629,10 +593,7 @@ try {
                 inputElement.classList.add('error-input');
             }
         }
-        
-        // Toast system is now handled by /js/toast.js
 
-        // Helper function to reset select options visibility
         function resetSelectOptions(selectId) {
             const select = document.getElementById(selectId);
             if (select) {
@@ -643,15 +604,13 @@ try {
             }
         }
 
-        // Conflict detection functionality
         function detectConflicts() {
-            // Clear previous conflict warnings
+
             clearConflictWarnings();
             
             const cells = document.querySelectorAll('.horario-cell');
             const assignments = [];
-            
-            // Collect all assignments with their data
+
             cells.forEach(cell => {
                 const assignment = cell.querySelector('.bg-blue-100');
                 if (assignment) {
@@ -673,7 +632,6 @@ try {
                 }
             });
             
-            // Check for conflicts
             assignments.forEach(assignment => {
                 const conflicts = findConflicts(assignment, assignments);
                 if (conflicts.length > 0) {
@@ -688,7 +646,6 @@ try {
             allAssignments.forEach(otherAssignment => {
                 if (currentAssignment === otherAssignment) return;
                 
-                // Check for docente conflict (same teacher, same time slot)
                 if (currentAssignment.docenteId === otherAssignment.docenteId && 
                     currentAssignment.bloqueId === otherAssignment.bloqueId && 
                     currentAssignment.dia === otherAssignment.dia) {
@@ -699,7 +656,6 @@ try {
                     });
                 }
                 
-                // Check for grupo conflict (same group, same time slot)
                 if (currentAssignment.grupoId === otherAssignment.grupoId && 
                     currentAssignment.bloqueId === otherAssignment.bloqueId && 
                     currentAssignment.dia === otherAssignment.dia) {
@@ -717,7 +673,6 @@ try {
         function markAsConflict(assignment, conflicts) {
             assignment.element.classList.add('conflict-warning');
             
-            // Add conflict indicator
             const conflictIndicator = document.createElement('div');
             conflictIndicator.className = 'text-red-600 text-xs font-bold mt-1';
             conflictIndicator.innerHTML = `⚠️ ${conflicts.map(c => c.message).join(' | ')}`;
@@ -730,7 +685,6 @@ try {
             conflictCells.forEach(cell => {
                 cell.classList.remove('conflict-warning');
                 
-                // Remove conflict indicators
                 const conflictIndicators = cell.querySelectorAll('.text-red-600.text-xs.font-bold');
                 conflictIndicators.forEach(indicator => {
                     indicator.remove();
@@ -738,7 +692,6 @@ try {
             });
         }
 
-        // Filter functionality for schedule table
         function setupFilterFunctionality() {
             const filterGrupo = document.getElementById('filter_grupo');
             const filterMateria = document.getElementById('filter_materia');
@@ -753,35 +706,29 @@ try {
                 let visibleCount = 0;
                 let totalCount = 0;
                 
-                // Get all schedule cells
                 const cells = document.querySelectorAll('.horario-cell');
                 
                 cells.forEach((cell, index) => {
                     const assignment = cell.querySelector('.bg-blue-100');
                     let assignmentShouldShow = true;
-                    
-                    // Always show the cell (disponible)
+
                     cell.style.display = 'table-cell';
                     
                     if (assignment) {
                         totalCount++;
                         
-                        // Get assignment data from data attributes
                         const grupoId = assignment.getAttribute('data-grupo-id');
                         const materiaId = assignment.getAttribute('data-materia-id');
                         const docenteId = assignment.getAttribute('data-docente-id');
                         
-                        // Check grupo filter
                         if (selectedGrupo && grupoId !== selectedGrupo) {
                             assignmentShouldShow = false;
                         }
                         
-                        // Check materia filter
                         if (selectedMateria && materiaId !== selectedMateria) {
                             assignmentShouldShow = false;
                         }
                         
-                        // Check docente filter
                         if (selectedDocente && docenteId !== selectedDocente) {
                             assignmentShouldShow = false;
                         }
@@ -790,15 +737,11 @@ try {
                             visibleCount++;
                         }
                         
-                        // Show/hide only the assignment, not the cell
                         assignment.style.display = assignmentShouldShow ? 'block' : 'none';
                         
-                        // If assignment is hidden, show "Disponible" text
                         if (!assignmentShouldShow) {
-                            // Hide the assignment
                             assignment.style.display = 'none';
                             
-                            // Create or show "Disponible" text
                             let disponibleDiv = cell.querySelector('.text-gray-400');
                             if (!disponibleDiv) {
                                 disponibleDiv = document.createElement('div');
@@ -813,14 +756,12 @@ try {
                             }
                             disponibleDiv.style.display = 'block';
                 } else {
-                            // If assignment is shown, hide "Disponible" text
                             const disponibleDiv = cell.querySelector('.text-gray-400');
                             if (disponibleDiv) {
                                 disponibleDiv.style.display = 'none';
                             }
                         }
                     } else {
-                        // For empty cells, always show them as "Disponible"
                         const disponibleDiv = cell.querySelector('.text-gray-400');
                         if (disponibleDiv) {
                             disponibleDiv.style.display = 'block';
@@ -828,7 +769,6 @@ try {
                     }
                 });
                 
-                // Update filter results
                 if (selectedGrupo || selectedMateria || selectedDocente) {
                     filterResults.textContent = `Mostrando ${visibleCount} de ${totalCount} asignaciones`;
                 } else {
@@ -836,7 +776,6 @@ try {
                 }
             }
             
-            // Add event listeners
             if (filterGrupo) filterGrupo.addEventListener('change', applyFilters);
             if (filterMateria) filterMateria.addEventListener('change', applyFilters);
             if (filterDocente) filterDocente.addEventListener('change', applyFilters);
@@ -848,7 +787,6 @@ try {
             document.getElementById('filter_docente').value = '';
             document.getElementById('filterResults').textContent = '';
             
-            // Show all cells and assignments
             const cells = document.querySelectorAll('.horario-cell');
             cells.forEach(cell => {
                 cell.style.display = 'table-cell';
@@ -859,9 +797,8 @@ try {
             });
         }
 
-        // Search functionality for form selects
         function setupSearchFunctionality() {
-            // Grupo search
+
             const grupoSearch = document.getElementById('grupo_search');
             const grupoSelect = document.getElementById('id_grupo');
             
@@ -885,8 +822,7 @@ try {
                     });
                 });
             }
-            
-            // Materia search
+
             const materiaSearch = document.getElementById('materia_search');
             const materiaSelect = document.getElementById('id_materia');
             
@@ -910,8 +846,7 @@ try {
                     });
                 });
             }
-            
-            // Docente search
+
             const docenteSearch = document.getElementById('docente_search');
             const docenteSelect = document.getElementById('id_docente');
             
@@ -937,43 +872,33 @@ try {
             }
         }
 
-        // Funcionalidad para la barra lateral
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize search functionality
             setupSearchFunctionality();
             
-            // Initialize filter functionality
             setupFilterFunctionality();
-            
-            // Obtener todos los enlaces de la barra lateral
+
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
-            
-            // Función para manejar el clic en los enlaces
+
             function handleSidebarClick(event) {
-                // Remover la clase active de todos los enlaces
+
                 sidebarLinks.forEach(link => {
                     link.classList.remove('active');
                 });
-                
-                // Agregar la clase active al enlace clickeado
+
                 this.classList.add('active');
             }
-            
-            // Agregar event listener a cada enlace
+
             sidebarLinks.forEach(link => {
                 link.addEventListener('click', handleSidebarClick);
             });
-            
-            // Logout functionality
+
             const logoutButton = document.getElementById('logoutButton');
             if (logoutButton) {
                 logoutButton.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    // Show confirmation dialog
                     const confirmMessage = '<?php _e('confirm_logout'); ?>';
                     if (confirm(confirmMessage)) {
-                        // Create form and submit logout request
                         const form = document.createElement('form');
                         form.method = 'POST';
                         form.action = '/src/controllers/LogoutController.php';
@@ -989,8 +914,7 @@ try {
                     }
                 });
             }
-            
-            // User menu toggle
+
             const userMenuButton = document.getElementById('userMenuButton');
             const userMenu = document.getElementById('userMenu');
             
@@ -1000,7 +924,6 @@ try {
                     userMenu.classList.toggle('hidden');
                 });
                 
-                // Close menu when clicking outside
                 document.addEventListener('click', function(e) {
                     if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
                         userMenu.classList.add('hidden');

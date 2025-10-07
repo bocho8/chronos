@@ -16,8 +16,7 @@ class LanguageSwitcher
         $currentLang = $this->translation->getCurrentLanguage();
         $supportedLangs = $this->translation->getSupportedLanguages();
         $langNames = $this->translation->getLanguageNames();
-        
-        // Build language options
+
         $languageOptions = '';
         foreach ($supportedLangs as $langCode) {
             $isActive = $langCode === $currentLang;
@@ -83,27 +82,24 @@ class LanguageSwitcher
             const languageOptions = document.querySelectorAll(".language-option");
             
             if (languageBtn && languageDropdown) {
-                // Toggle dropdown
+
                 languageBtn.addEventListener("click", function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     languageDropdown.classList.toggle("hidden");
                 });
                 
-                // Close dropdown when clicking outside
                 document.addEventListener("click", function(e) {
                     if (!languageBtn.contains(e.target) && !languageDropdown.contains(e.target)) {
                         languageDropdown.classList.add("hidden");
                     }
                 });
-                
-                // Handle language selection
+
                 languageOptions.forEach(option => {
                     option.addEventListener("click", function(e) {
                         e.preventDefault();
                         const selectedLang = this.getAttribute("data-lang");
                         
-                        // Create form to submit language change
                         const form = document.createElement("form");
                         form.method = "POST";
                         form.action = window.location.href;

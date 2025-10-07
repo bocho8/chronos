@@ -1,5 +1,4 @@
 <?php
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -8,32 +7,25 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Materia.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-materias.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Load database configuration and get materias
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get materias and related data
     $materiaModel = new Materia($database->getConnection());
     $materias = $materiaModel->getAllMaterias();
     $pautasAnep = $materiaModel->getAllPautasAnep();
@@ -127,8 +119,7 @@ try {
             right: 20px;
             z-index: 10000;
         }
-        
-        /* Modal styles - Improved for accessibility and responsiveness */
+
         #materiaModal {
             position: fixed !important;
             top: 0 !important;
@@ -187,8 +178,7 @@ try {
             background-color: #1a2d5a !important;
             transform: translateY(-1px) !important;
         }
-        
-        /* Focus styles for accessibility */
+
         #materiaModal input:focus,
         #materiaModal select:focus,
         #materiaModal textarea:focus,
@@ -196,14 +186,12 @@ try {
             outline: 2px solid #1f366d !important;
             outline-offset: 2px !important;
         }
-        
-        /* Error state styles */
+
         .error-input {
             border-color: #ef4444 !important;
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
         }
-        
-        /* Screen reader only class */
+
         .sr-only {
             position: absolute !important;
             width: 1px !important;
@@ -215,8 +203,7 @@ try {
             white-space: nowrap !important;
             border: 0 !important;
         }
-        
-        /* Responsive adjustments */
+
         @media (max-width: 640px) {
             #materiaModal {
                 padding: 0.5rem !important;
@@ -410,7 +397,6 @@ try {
 
         let isEditMode = false;
 
-        // Modal functions
         function openMateriaModal() {
             isEditMode = false;
             document.getElementById('modalTitle').textContent = '<?php _e('add_subject'); ?>';
@@ -421,7 +407,6 @@ try {
             clearErrors();
             document.getElementById('materiaModal').classList.remove('hidden');
             
-            // Focus on first input
             setTimeout(() => {
                 document.getElementById('nombre').focus();
             }, 100);
@@ -432,7 +417,6 @@ try {
             clearErrors();
         }
 
-        // Edit materia
         function editMateria(id) {
             isEditMode = true;
             document.getElementById('modalTitle').textContent = '<?php _e('edit_subject'); ?>';
@@ -455,18 +439,16 @@ try {
                     document.getElementById('en_conjunto').checked = data.data.en_conjunto;
                     document.getElementById('es_programa_italiano').checked = data.data.es_programa_italiano;
                     
-                    // Handle grupo compartido
                     if (data.data.en_conjunto && data.data.id_grupo_compartido) {
                         document.getElementById('id_grupo_compartido').value = data.data.id_grupo_compartido;
-                        toggleGrupoCompartido(); // Show the field
+                        toggleGrupoCompartido();
                     } else {
-                        toggleGrupoCompartido(); // Hide the field
+                        toggleGrupoCompartido();
                     }
                     
                     clearErrors();
                     document.getElementById('materiaModal').classList.remove('hidden');
                     
-                    // Focus on first input
                     setTimeout(() => {
                         document.getElementById('nombre').focus();
                     }, 100);
@@ -480,7 +462,6 @@ try {
             });
         }
 
-        // Delete materia
         function deleteMateria(id, nombre) {
             const confirmMessage = `¿Está seguro de que desea eliminar la materia "${nombre}"?`;
             if (confirm(confirmMessage)) {
@@ -508,7 +489,6 @@ try {
             }
         }
 
-        // Handle form submission
         function handleMateriaFormSubmit(e) {
             e.preventDefault();
             
@@ -532,7 +512,6 @@ try {
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     if (data.data && typeof data.data === 'object') {
-                        // Show validation errors from server
                         Object.keys(data.data).forEach(field => {
                             showFieldError(field, data.data[field]);
                         });
@@ -547,7 +526,6 @@ try {
             });
         }
 
-        // Clear validation errors
         function clearErrors() {
             const errorElements = document.querySelectorAll('[id$="Error"]');
             errorElements.forEach(element => {
@@ -560,7 +538,6 @@ try {
             });
         }
         
-        // Toggle grupo compartido visibility
         function toggleGrupoCompartido() {
             const enConjunto = document.getElementById('en_conjunto').checked;
             const grupoCompartidoDiv = document.getElementById('grupoCompartidoDiv');
@@ -576,12 +553,10 @@ try {
             }
         }
         
-        // Validation functions
         function validateMateriaForm() {
             let isValid = true;
             clearErrors();
             
-            // Validate nombre
             const nombre = document.getElementById('nombre').value.trim();
             if (!nombre) {
                 showFieldError('nombre', '<?php _e('subject_name_required'); ?>');
@@ -591,21 +566,18 @@ try {
                 isValid = false;
             }
             
-            // Validate horas_semanales
             const horasSemanales = document.getElementById('horas_semanales').value;
             if (!horasSemanales || horasSemanales < 1 || horasSemanales > 40) {
                 showFieldError('horas_semanales', '<?php _e('weekly_hours_invalid'); ?>');
                 isValid = false;
             }
             
-            // Validate pauta ANEP
             const pautaAnep = document.getElementById('id_pauta_anep').value;
             if (!pautaAnep) {
                 showFieldError('id_pauta_anep', '<?php _e('anep_guideline_required'); ?>');
                 isValid = false;
             }
             
-            // Validate grupo compartido if en_conjunto is checked
             const enConjunto = document.getElementById('en_conjunto').checked;
             if (enConjunto) {
                 const grupoCompartido = document.getElementById('id_grupo_compartido').value;
@@ -631,37 +603,30 @@ try {
             }
         }
 
-        // Funcionalidad para la barra lateral
         document.addEventListener('DOMContentLoaded', function() {
-            // Obtener todos los enlaces de la barra lateral
+
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
-            
-            // Función para manejar el clic en los enlaces
+
             function handleSidebarClick(event) {
-                // Remover la clase active de todos los enlaces
+
                 sidebarLinks.forEach(link => {
                     link.classList.remove('active');
                 });
-                
-                // Agregar la clase active al enlace clickeado
+
                 this.classList.add('active');
             }
-            
-            // Agregar event listener a cada enlace
+
             sidebarLinks.forEach(link => {
                 link.addEventListener('click', handleSidebarClick);
             });
-            
-            // Logout functionality
+
             const logoutButton = document.getElementById('logoutButton');
             if (logoutButton) {
                 logoutButton.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    // Show confirmation dialog
                     const confirmMessage = '<?php _e('confirm_logout'); ?>';
                     if (confirm(confirmMessage)) {
-                        // Create form and submit logout request
                         const form = document.createElement('form');
                         form.method = 'POST';
                         form.action = '/src/controllers/LogoutController.php';
@@ -677,8 +642,7 @@ try {
                     }
                 });
             }
-            
-            // User menu toggle
+
             const userMenuButton = document.getElementById('userMenuButton');
             const userMenu = document.getElementById('userMenu');
             
@@ -688,7 +652,6 @@ try {
                     userMenu.classList.toggle('hidden');
                 });
                 
-                // Close menu when clicking outside
                 document.addEventListener('click', function(e) {
                     if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
                         userMenu.classList.add('hidden');
@@ -696,7 +659,6 @@ try {
                 });
             }
 
-            // Initialize multiple selection
             const multipleSelection = new MultipleSelection({
                 container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
                 itemSelector: '.item-row',
@@ -705,14 +667,13 @@ try {
                 bulkActionsSelector: '#bulkActions',
                 entityType: 'materias',
                 onSelectionChange: function(selectedItems) {
-                    // Selection changed
+
                 },
                 onBulkAction: function(action, selectedIds) {
-                    // Bulk action triggered
+
                 }
             });
 
-            // Initialize status labels
             const statusLabels = new StatusLabels({
                 container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
                 itemSelector: '.item-row',

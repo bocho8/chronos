@@ -9,20 +9,16 @@ require_once __DIR__ . '/../helpers/AuthHelper.php';
 require_once __DIR__ . '/../helpers/ResponseHelper.php';
 require_once __DIR__ . '/../models/Database.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Require authentication
 if (!AuthHelper::isLoggedIn()) {
     ResponseHelper::error('Authentication required');
     exit;
 }
 
-// Set content type to JSON
 header('Content-Type: application/json');
 
 try {
-    // Get JSON input
     $input = json_decode(file_get_contents('php://input'), true);
     
     if (!$input) {
@@ -41,7 +37,6 @@ try {
         throw new Exception('No items selected');
     }
     
-    // Load database configuration
     $dbConfig = require __DIR__ . '/../config/database.php';
     $database = new Database($dbConfig);
     $connection = $database->getConnection();
@@ -101,8 +96,7 @@ function handleBulkDelete($connection, $entityType, $ids) {
     
     $table = $tableMap[$entityType];
     $idField = getPrimaryKeyField($entityType);
-    
-    // Sanitize IDs
+
     $sanitizedIds = array_map('intval', $ids);
     $placeholders = str_repeat('?,', count($sanitizedIds) - 1) . '?';
     
@@ -112,7 +106,6 @@ function handleBulkDelete($connection, $entityType, $ids) {
     try {
         return $stmt->execute($sanitizedIds);
     } catch (PDOException $e) {
-        // Check if it's a foreign key constraint violation
         if ($e->getCode() == '23503') {
             $errorMessage = getForeignKeyErrorMessage($e->getMessage(), $entityType);
             throw new Exception($errorMessage);
@@ -143,8 +136,7 @@ function handleBulkUpdateStatus($connection, $entityType, $ids, $status) {
     if (!$statusField) {
         throw new Exception('Status field not available for this entity type');
     }
-    
-    // Sanitize IDs and status
+
     $sanitizedIds = array_map('intval', $ids);
     $placeholders = str_repeat('?,', count($sanitizedIds) - 1) . '?';
     
@@ -172,8 +164,7 @@ function handleBulkExport($connection, $entityType, $ids) {
     
     $table = $tableMap[$entityType];
     $idField = getPrimaryKeyField($entityType);
-    
-    // Sanitize IDs
+
     $sanitizedIds = array_map('intval', $ids);
     $placeholders = str_repeat('?,', count($sanitizedIds) - 1) . '?';
     
@@ -182,11 +173,9 @@ function handleBulkExport($connection, $entityType, $ids) {
     $stmt->execute($sanitizedIds);
     
     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Generate CSV
+
     $csv = generateCSV($data, $entityType);
     
-    // Set headers for file download
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="' . $entityType . '_export_' . date('Y-m-d_H-i-s') . '.csv"');
     
@@ -214,10 +203,10 @@ function getPrimaryKeyField($entityType) {
  */
 function getStatusField($entityType) {
     $statusMap = [
-        'usuarios' => null,  // No status field
-        'materias' => null,  // No status field
-        'grupos' => null,    // No status field
-        'docentes' => null   // No status field
+        'usuarios' => null,
+        'materias' => null,
+        'grupos' => null,
+        'docentes' => null
     ];
     
     return $statusMap[$entityType] ?? null;
@@ -234,10 +223,8 @@ function generateCSV($data, $entityType) {
     $headers = array_keys($data[0]);
     $csv = '';
     
-    // Add headers
     $csv .= implode(',', array_map('wrapCSVField', $headers)) . "\n";
     
-    // Add data rows
     foreach ($data as $row) {
         $csv .= implode(',', array_map('wrapCSVField', array_values($row))) . "\n";
     }
@@ -257,11 +244,9 @@ function wrapCSVField($field) {
  * Get user-friendly error message for foreign key constraint violations
  */
 function getForeignKeyErrorMessage($errorMessage, $entityType) {
-    // Load translation helper
     require_once __DIR__ . '/../helpers/Translation.php';
     $translation = Translation::getInstance();
     
-    // Check for specific foreign key references
     if (strpos($errorMessage, 'horario_id_materia_fkey') !== false) {
         return $translation->get('foreign_key_violation_materias');
     }
@@ -277,8 +262,7 @@ function getForeignKeyErrorMessage($errorMessage, $entityType) {
     if (strpos($errorMessage, 'usuario_rol_id_usuario_fkey') !== false) {
         return $translation->get('foreign_key_violation_usuarios');
     }
-    
-    // Generic message for other foreign key violations
+
     return $translation->get('foreign_key_violation_generic');
 }
 ?>

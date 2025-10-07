@@ -3,30 +3,23 @@
  * Módulo de Asignación de Docentes para el director
  */
 
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 
-// Initialize secure session first
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 
-// Require authentication and director role
 AuthHelper::requireRole('DIRECTOR');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Get user data (aunque no se use en esta vista, es necesario para la estructura)
 $user = AuthHelper::getCurrentUser();
 
-// Definimos la variable para saber en qué archivo estamos.
 $current_page = basename($_SERVER['PHP_SELF']); 
 ?>
 

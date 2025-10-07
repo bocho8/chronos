@@ -21,7 +21,6 @@ class AuthService
     public function authenticate($cedula, $password)
     {
         try {
-            // Validate input
             if (empty($cedula) || empty($password)) {
                 return [
                     'success' => false,
@@ -29,7 +28,6 @@ class AuthService
                 ];
             }
             
-            // Validate cedula format
             if (!ValidationHelper::validateCedula($cedula)) {
                 return [
                     'success' => false,
@@ -37,7 +35,6 @@ class AuthService
                 ];
             }
             
-            // Get user by cedula
             $user = $this->userModel->getUserByCedula($cedula);
             
             if (!$user) {
@@ -47,7 +44,6 @@ class AuthService
                 ];
             }
             
-            // Verify password
             if (!password_verify($password, $user['contrasena_hash'])) {
                 return [
                     'success' => false,
@@ -55,7 +51,6 @@ class AuthService
                 ];
             }
             
-            // Check if user is active
             if (!$user['activo']) {
                 return [
                     'success' => false,
@@ -63,7 +58,6 @@ class AuthService
                 ];
             }
             
-            // Get user roles
             $roles = $this->userModel->getUserRoles($user['id_usuario']);
             
             if (empty($roles)) {
@@ -73,10 +67,8 @@ class AuthService
                 ];
             }
             
-            // Create session
             $this->createSession($user, $roles);
-            
-            // Log successful login
+
             $this->logActivity($user['id_usuario'], 'LOGIN', 'Usuario inició sesión');
             
             return [
@@ -102,12 +94,10 @@ class AuthService
         try {
             if (isset($_SESSION['user'])) {
                 $userId = $_SESSION['user']['id_usuario'];
-                
-                // Log logout
+
                 $this->logActivity($userId, 'LOGOUT', 'Usuario cerró sesión');
             }
-            
-            // Destroy session
+
             session_destroy();
             
             return [
@@ -162,7 +152,6 @@ class AuthService
     public function changePassword($userId, $currentPassword, $newPassword)
     {
         try {
-            // Validate new password
             $passwordError = ValidationHelper::validatePassword($newPassword, true);
             if ($passwordError) {
                 return [
@@ -171,7 +160,6 @@ class AuthService
                 ];
             }
             
-            // Get current user
             $user = $this->userModel->getUserById($userId);
             if (!$user) {
                 return [
@@ -180,7 +168,6 @@ class AuthService
                 ];
             }
             
-            // Verify current password
             if (!password_verify($currentPassword, $user['contrasena_hash'])) {
                 return [
                     'success' => false,
@@ -188,7 +175,6 @@ class AuthService
                 ];
             }
             
-            // Update password
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
             $result = $this->userModel->updatePassword($userId, $hashedPassword);
             
@@ -230,7 +216,6 @@ class AuthService
             'login_time' => time()
         ];
         
-        // Set session timeout (2 hours)
         $_SESSION['timeout'] = time() + (2 * 60 * 60);
     }
     

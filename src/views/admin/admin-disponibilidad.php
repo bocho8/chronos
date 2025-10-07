@@ -1,9 +1,4 @@
 <?php
-/**
- * Página de gestión de disponibilidad de docentes para administradores
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -13,40 +8,31 @@ require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 require_once __DIR__ . '/../../models/Docente.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-disponibilidad.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');
     exit();
 }
 
-// Load database configuration and get data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get models
     $horarioModel = new Horario($database->getConnection());
     $docenteModel = new Docente($database->getConnection());
     
-    // Get data
     $docentes = $docenteModel->getAllDocentes();
     $bloques = $horarioModel->getAllBloques();
     
-    // Get selected docente if any
     $selectedDocenteId = $_GET['docente'] ?? null;
     $selectedDocente = null;
     $disponibilidad = [];
@@ -71,7 +57,6 @@ try {
     $error_message = 'Error interno del servidor';
 }
 
-// Function to get user initials
 function getUserInitials($nombre, $apellido) {
     return strtoupper(substr($nombre, 0, 1) . substr($apellido, 0, 1));
 }
@@ -250,17 +235,15 @@ function getUserInitials($nombre, $apellido) {
                                 <tbody>
                                     <?php 
                                     $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
-                                    
-                                    // Organizar disponibilidad por día y bloque
+
                                     $disponibilidadGrid = [];
                                     foreach ($dias as $dia) {
                                         $disponibilidadGrid[$dia] = [];
                                         foreach ($bloques as $bloque) {
-                                            $disponibilidadGrid[$dia][$bloque['id_bloque']] = true; // Default disponible
+                                            $disponibilidadGrid[$dia][$bloque['id_bloque']] = true;
                                         }
                                     }
-                                    
-                                    // Llenar con datos reales
+
                                     foreach ($disponibilidad as $disp) {
                                         if (isset($disponibilidadGrid[$disp['dia']][$disp['id_bloque']])) {
                                             $disponibilidadGrid[$disp['dia']][$disp['id_bloque']] = $disp['disponible'];
@@ -335,13 +318,11 @@ function getUserInitials($nombre, $apellido) {
             const currentState = cell.dataset.disponible === 'true';
             const newState = !currentState;
             
-            // Update UI immediately
             cell.dataset.disponible = newState.toString();
             cell.className = cell.className.replace(currentState ? 'disponible' : 'no-disponible', 
                                                    newState ? 'disponible' : 'no-disponible');
             cell.textContent = newState ? 'Disponible' : 'No disponible';
             
-            // Save to database
             const formData = new FormData();
             formData.append('action', 'update_disponibilidad');
             formData.append('id_docente', docente);
@@ -356,7 +337,7 @@ function getUserInitials($nombre, $apellido) {
             .then(response => response.json())
             .then(data => {
                 if (!data.success) {
-                    // Revert UI changes if save failed
+
                     cell.dataset.disponible = currentState.toString();
                     cell.className = cell.className.replace(newState ? 'disponible' : 'no-disponible', 
                                                            currentState ? 'disponible' : 'no-disponible');
@@ -366,7 +347,7 @@ function getUserInitials($nombre, $apellido) {
             })
             .catch(error => {
                 console.error('Error:', error);
-                // Revert UI changes
+
                 cell.dataset.disponible = currentState.toString();
                 cell.className = cell.className.replace(newState ? 'disponible' : 'no-disponible', 
                                                        currentState ? 'disponible' : 'no-disponible');
@@ -379,7 +360,6 @@ function getUserInitials($nombre, $apellido) {
             alert('Cambios guardados automáticamente al hacer clic en cada celda');
         }
 
-        // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';

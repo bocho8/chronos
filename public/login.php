@@ -234,7 +234,7 @@ function getRedirectUrl($role) {
   </main>
 
   <script>
-    // Validación JavaScript del lado del cliente
+
     document.addEventListener('DOMContentLoaded', function() {
       const form = document.getElementById('loginForm');
       const ciInput = document.getElementById('ci');
@@ -268,8 +268,7 @@ function getRedirectUrl($role) {
         input.classList.add('input-success');
         errorElement.style.display = 'none';
       }
-      
-      // Translation messages for JavaScript validation
+
       const translations = {
         ci_required: '<?php _e('validation_ci_required'); ?>',
         ci_format: '<?php _e('validation_ci_format'); ?>',
@@ -320,8 +319,7 @@ function getRedirectUrl($role) {
         }
         return '';
       }
-      
-      // Event listeners para validación en tiempo real
+
       /**
        * Event listener para validar el C.I cuando el usuario sale del campo (evento blur)
        * Realiza validación inmediata y muestra/oculta errores según corresponda
@@ -368,8 +366,7 @@ function getRedirectUrl($role) {
        */
       form.addEventListener('submit', function(e) {
         let hasErrors = false;
-        
-        // Validar CI
+
         const ciErrorMsg = validateCI(ciInput.value);
         if (ciErrorMsg) {
           showError(ciInput, ciError, ciErrorMsg);
@@ -377,8 +374,7 @@ function getRedirectUrl($role) {
         } else {
           showSuccess(ciInput, ciError);
         }
-        
-        // Validar contraseña
+
         const passwordErrorMsg = validatePassword(passwordInput.value);
         if (passwordErrorMsg) {
           showError(passwordInput, passwordError, passwordErrorMsg);
@@ -386,8 +382,7 @@ function getRedirectUrl($role) {
         } else {
           showSuccess(passwordInput, passwordError);
         }
-        
-        // Validar rol
+
         const roleErrorMsg = validateRole(roleSelect.value);
         if (roleErrorMsg) {
           showError(roleSelect, roleError, roleErrorMsg);
@@ -395,15 +390,13 @@ function getRedirectUrl($role) {
         } else {
           showSuccess(roleSelect, roleError);
         }
-        
-        // Si hay errores, prevenir el envío del formulario
+
         if (hasErrors) {
           e.preventDefault();
           alert(translations.correct_errors);
         }
       });
-      
-      // Limpiar errores cuando el usuario empiece a escribir/seleccionar
+
       /**
        * Event listener para limpiar errores del C.I mientras el usuario escribe (evento input)
        * Si el campo tenía error y ahora es válido, se muestra el estado de éxito

@@ -11,12 +11,11 @@ class RoleMiddleware
      */
     public static function handle($requiredRole)
     {
-        // First check authentication
+
         if (!AuthMiddleware::handle()) {
             return false;
         }
         
-        // Check if user has required role
         if (!\AuthHelper::hasRole($requiredRole)) {
             if (self::isAjaxRequest()) {
                 http_response_code(403);

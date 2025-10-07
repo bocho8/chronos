@@ -72,11 +72,9 @@ class ScheduleManagementController
     private function createSchedule()
     {
         $data = $this->validateScheduleData($_POST);
-        
-        // Detectar conflictos
+
         $conflicts = $this->conflictService->detectConflicts($data);
-        
-        // Si hay conflictos críticos, no permitir crear
+
         $criticalConflicts = array_filter($conflicts, function($conflict) {
             return $conflict['severity'] === 'error';
         });
@@ -126,11 +124,9 @@ class ScheduleManagementController
         }
         
         $data = $this->validateScheduleData($_POST, false);
-        
-        // Detectar conflictos (excluyendo el horario actual)
+
         $conflicts = $this->conflictService->detectConflicts($data, $id);
-        
-        // Si hay conflictos críticos, no permitir actualizar
+
         $criticalConflicts = array_filter($conflicts, function($conflict) {
             return $conflict['severity'] === 'error';
         });
@@ -212,8 +208,7 @@ class ScheduleManagementController
         
         $conflicts = $this->conflictService->detectConflicts($data, $excludeId);
         $suggestions = $this->conflictService->getConflictSuggestions($conflicts);
-        
-        // Separar conflictos ANEP de conflictos regulares
+
         $anepConflicts = null;
         $regularConflicts = [];
         
@@ -261,8 +256,7 @@ class ScheduleManagementController
             if ($bloques === false) {
                 throw new Exception("Error obteniendo bloques de la base de datos");
             }
-            
-            // Organizar en grilla
+
             $grid = $this->organizeScheduleGrid($horarios, $bloques);
             
             ResponseHelper::success('Grilla de horarios obtenida', [
@@ -365,8 +359,7 @@ class ScheduleManagementController
             foreach ($schedules as $index => $scheduleData) {
                 try {
                     $validatedData = $this->validateScheduleData($scheduleData);
-                    
-                    // Verificar conflictos
+
                     $conflicts = $this->conflictService->detectConflicts($validatedData);
                     $criticalConflicts = array_filter($conflicts, function($conflict) {
                         return $conflict['severity'] === 'error';
@@ -437,11 +430,7 @@ class ScheduleManagementController
             'warnings' => [],
             'suggestions' => []
         ];
-        
-        // Aquí implementarías validaciones más complejas
-        // como verificar que todas las materias tengan sus horas completas,
-        // que se cumplan las pautas ANEP, etc.
-        
+
         ResponseHelper::success('Validación completada', $validation);
     }
     
@@ -626,7 +615,7 @@ class ScheduleManagementController
     private function getTeacherWorkload()
     {
         try {
-            // Consulta corregida según el esquema de la base de datos
+
             $query = "
                 SELECT 
                     d.id_docente,
@@ -646,8 +635,7 @@ class ScheduleManagementController
             $stmt = $this->db->prepare($query);
             $stmt->execute();
             $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Process the data
+
             $processedTeachers = [];
             foreach ($teachers as $teacher) {
                 $processedTeachers[] = [

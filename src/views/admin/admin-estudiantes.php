@@ -1,9 +1,4 @@
 <?php
-/**
- * Vista de gestión de estudiantes para administradores (funcionalidad de padre)
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -12,39 +7,28 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-estudiantes.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');
     exit();
 }
 
-// Load database configuration and get data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get models
     $horarioModel = new Horario($database->getConnection());
     
-    // Get grupos (representing students by groups)
     $grupos = $horarioModel->getAllGrupos();
-    
-    // Get padres (parents) and their associated users as "estudiantes"
-    // Since there's no specific student table, we'll use padres as student representatives
     $query = "SELECT u.id_usuario as id, u.nombre, u.apellido, u.email, u.cedula, 
                      'Sin Grupo Asignado' as grupo, 'Sin Nivel' as nivel
               FROM usuario u 
@@ -56,7 +40,6 @@ try {
     $stmt->execute();
     $estudiantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // If no parents exist, create an empty array
     if (empty($estudiantes)) {
         $estudiantes = [];
     }
@@ -68,7 +51,6 @@ try {
     $error_message = 'Error interno del servidor';
 }
 
-// Function to get user initials
 function getUserInitials($nombre, $apellido) {
     return strtoupper(substr($nombre, 0, 1) . substr($apellido, 0, 1));
 }
@@ -251,15 +233,13 @@ function getUserInitials($nombre, $apellido) {
             const cards = document.querySelectorAll('.student-card');
             const buttons = document.querySelectorAll('.filter-btn');
             
-            // Update button states
             buttons.forEach(btn => {
                 btn.classList.remove('active', 'bg-darkblue', 'text-white');
                 btn.classList.add('bg-white', 'text-gray-700');
             });
             event.target.classList.add('active', 'bg-darkblue', 'text-white');
             event.target.classList.remove('bg-white', 'text-gray-700');
-            
-            // Filter cards
+
             cards.forEach(card => {
                 if (grupo === '' || card.dataset.grupo === grupo) {
                     card.style.display = 'block';
@@ -281,7 +261,6 @@ function getUserInitials($nombre, $apellido) {
             alert('Agregar nuevo estudiante\n\nEsta funcionalidad será implementada en una versión futura.');
         }
 
-        // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';

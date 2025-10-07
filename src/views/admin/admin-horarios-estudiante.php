@@ -3,7 +3,6 @@
  * Vista de horarios de estudiantes para administradores (funcionalidad de padre)
  */
 
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -12,39 +11,30 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-horarios-estudiante.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');
     exit();
 }
 
-// Load database configuration and get data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get models
     $horarioModel = new Horario($database->getConnection());
     
-    // Get data
     $grupos = $horarioModel->getAllGrupos();
     $bloques = $horarioModel->getAllBloques();
     
-    // Get selected grupo
     $selectedGrupo = $_GET['grupo'] ?? null;
     $selectedGrupoData = null;
     $horarios = [];
@@ -60,8 +50,7 @@ try {
             $horarios = $horarioModel->getHorariosByGrupo($selectedGrupoData['id_grupo']);
         }
     }
-    
-    // Organize schedule by day and time
+
     $scheduleGrid = [];
     $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
     
@@ -71,8 +60,7 @@ try {
             $scheduleGrid[$dia][$bloque['id_bloque']] = null;
         }
     }
-    
-    // Fill the schedule grid with current assignments
+
     foreach ($horarios as $horario) {
         if (isset($scheduleGrid[$horario['dia']][$horario['id_bloque']])) {
             $scheduleGrid[$horario['dia']][$horario['id_bloque']] = $horario;
@@ -289,7 +277,6 @@ try {
             window.print();
         }
 
-        // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';

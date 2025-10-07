@@ -1,9 +1,4 @@
 <?php
-/**
- * Página de gestión de coordinadores para administradores
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -12,32 +7,24 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Coordinador.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-coordinadores.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');
     exit();
 }
 
-// Load database configuration and get coordinadores
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
-    
-    // Get coordinadores
     $coordinadorModel = new Coordinador($database->getConnection());
     $coordinadores = $coordinadorModel->getAllCoordinadores();
     
@@ -50,7 +37,6 @@ try {
     $error_message = 'Error interno del servidor';
 }
 
-// Function to get user initials
 function getUserInitials($nombre, $apellido) {
     return strtoupper(substr($nombre, 0, 1) . substr($apellido, 0, 1));
 }
@@ -123,8 +109,7 @@ function getUserInitials($nombre, $apellido) {
             right: 20px;
             z-index: 10000;
         }
-        
-        /* Modal styles - Improved for accessibility and responsiveness */
+
         #coordinadorModal {
             position: fixed !important;
             top: 0 !important;
@@ -183,8 +168,7 @@ function getUserInitials($nombre, $apellido) {
             background-color: #1a2d5a !important;
             transform: translateY(-1px) !important;
         }
-        
-        /* Focus styles for accessibility */
+
         #coordinadorModal input:focus,
         #coordinadorModal select:focus,
         #coordinadorModal textarea:focus,
@@ -192,14 +176,12 @@ function getUserInitials($nombre, $apellido) {
             outline: 2px solid #1f366d !important;
             outline-offset: 2px !important;
         }
-        
-        /* Error state styles */
+
         .error-input {
             border-color: #ef4444 !important;
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
         }
-        
-        /* Screen reader only class */
+
         .sr-only {
             position: absolute !important;
             width: 1px !important;
@@ -211,8 +193,7 @@ function getUserInitials($nombre, $apellido) {
             white-space: nowrap !important;
             border: 0 !important;
         }
-        
-        /* Responsive adjustments */
+
         @media (max-width: 640px) {
             #coordinadorModal {
                 padding: 0.5rem !important;
@@ -434,26 +415,22 @@ function getUserInitials($nombre, $apellido) {
     <script>
         let isEditMode = false;
 
-        // Mostrar modal para agregar coordinador
         function showAddCoordinadorModal() {
             isEditMode = false;
             document.getElementById('modalTitle').textContent = '<?php _e('add_coordinator'); ?>';
             document.getElementById('coordinadorForm').reset();
             
-            // Hacer contraseña requerida para nuevo coordinador
             document.getElementById('contrasena').required = true;
             document.getElementById('passwordRequired').style.display = 'inline';
             
             clearErrors();
             document.getElementById('coordinadorModal').classList.remove('hidden');
             
-            // Focus on first input
             setTimeout(() => {
                 document.getElementById('cedula').focus();
             }, 100);
         }
 
-        // Editar coordinador
         function editCoordinador(id) {
             isEditMode = true;
             document.getElementById('modalTitle').textContent = '<?php _e('edit_coordinator'); ?>';
@@ -476,7 +453,6 @@ function getUserInitials($nombre, $apellido) {
                     document.getElementById('email').value = data.data.email;
                     document.getElementById('telefono').value = data.data.telefono || '';
                     
-                    // No hacer contraseña requerida para edición
                     document.getElementById('contrasena').required = false;
                     document.getElementById('contrasena').value = '';
                     document.getElementById('passwordRequired').style.display = 'none';
@@ -484,7 +460,6 @@ function getUserInitials($nombre, $apellido) {
                     clearErrors();
                     document.getElementById('coordinadorModal').classList.remove('hidden');
                     
-                    // Focus on first input
                     setTimeout(() => {
                         document.getElementById('cedula').focus();
                     }, 100);
@@ -498,7 +473,6 @@ function getUserInitials($nombre, $apellido) {
             });
         }
 
-        // Eliminar coordinador
         function deleteCoordinador(id, nombre) {
             const confirmMessage = `¿Está seguro de que desea eliminar al coordinador "${nombre}"?`;
             if (confirm(confirmMessage)) {
@@ -526,14 +500,12 @@ function getUserInitials($nombre, $apellido) {
             }
         }
 
-        // Cerrar modal
         function closeCoordinadorModal() {
             const modal = document.getElementById('coordinadorModal');
             modal.classList.add('hidden');
             clearErrors();
         }
 
-        // Manejar envío del formulario
         function handleFormSubmit(e) {
             e.preventDefault();
             
@@ -557,7 +529,6 @@ function getUserInitials($nombre, $apellido) {
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     if (data.data && typeof data.data === 'object') {
-                        // Show validation errors from server
                         Object.keys(data.data).forEach(field => {
                             showFieldError(field, data.data[field]);
                         });
@@ -572,7 +543,6 @@ function getUserInitials($nombre, $apellido) {
             });
         }
 
-        // Limpiar errores de validación
         function clearErrors() {
             const errorElements = document.querySelectorAll('[id$="Error"]');
             errorElements.forEach(element => {
@@ -584,8 +554,7 @@ function getUserInitials($nombre, $apellido) {
                 element.classList.remove('error-input');
             });
         }
-        
-        // Toggle password visibility
+
         function togglePasswordVisibility() {
             const passwordInput = document.getElementById('contrasena');
             const passwordIcon = document.getElementById('passwordIcon');
@@ -604,12 +573,10 @@ function getUserInitials($nombre, $apellido) {
             }
         }
         
-        // Validation functions
         function validateCoordinadorForm() {
             let isValid = true;
             clearErrors();
             
-            // Validate cédula
             const cedula = document.getElementById('cedula').value.trim();
             if (!cedula) {
                 showFieldError('cedula', '<?php _e('cedula_required'); ?>');
@@ -619,7 +586,6 @@ function getUserInitials($nombre, $apellido) {
                 isValid = false;
             }
             
-            // Validate nombre
             const nombre = document.getElementById('nombre').value.trim();
             if (!nombre) {
                 showFieldError('nombre', '<?php _e('name_required'); ?>');
@@ -629,7 +595,6 @@ function getUserInitials($nombre, $apellido) {
                 isValid = false;
             }
             
-            // Validate apellido
             const apellido = document.getElementById('apellido').value.trim();
             if (!apellido) {
                 showFieldError('apellido', '<?php _e('lastname_required'); ?>');
@@ -639,7 +604,6 @@ function getUserInitials($nombre, $apellido) {
                 isValid = false;
             }
             
-            // Validate email
             const email = document.getElementById('email').value.trim();
             if (!email) {
                 showFieldError('email', '<?php _e('email_required'); ?>');
@@ -649,14 +613,12 @@ function getUserInitials($nombre, $apellido) {
                 isValid = false;
             }
             
-            // Validate phone (optional but if provided, must be valid)
             const telefono = document.getElementById('telefono').value.trim();
             if (telefono && !/^[0-9\s\-\+\(\)]+$/.test(telefono)) {
                 showFieldError('telefono', '<?php _e('phone_invalid_format'); ?>');
                 isValid = false;
             }
             
-            // Validate password
             const contrasena = document.getElementById('contrasena').value;
             if (!isEditMode && (!contrasena || contrasena.length < 8)) {
                 showFieldError('contrasena', '<?php _e('password_required_min_length'); ?>');
@@ -682,22 +644,17 @@ function getUserInitials($nombre, $apellido) {
             }
         }
 
-        // Toast system is now handled by /js/toast.js
-
-        // Cerrar modal al hacer clic fuera
         document.getElementById('coordinadorModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeCoordinadorModal();
             }
         });
-        
-        // Toggle password visibility
+
         const togglePasswordBtn = document.getElementById('togglePassword');
         if (togglePasswordBtn) {
             togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
         }
 
-        // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';

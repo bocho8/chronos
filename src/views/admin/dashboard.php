@@ -258,7 +258,7 @@ try {
 
     <script src="/js/menu.js"></script>
     <script>
-        // Logout functionality
+
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';

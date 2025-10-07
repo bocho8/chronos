@@ -1,9 +1,4 @@
 <?php
-/**
- * Vista de "Mi Horario" para administradores (simulando vista de docente)
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -13,40 +8,31 @@ require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 require_once __DIR__ . '/../../models/Docente.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-mi-horario.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');
     exit();
 }
 
-// Load database configuration and get data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get models
     $horarioModel = new Horario($database->getConnection());
     $docenteModel = new Docente($database->getConnection());
     
-    // Get docentes for selection
     $docentes = $docenteModel->getAllDocentes();
     $bloques = $horarioModel->getAllBloques();
     
-    // Get selected docente
     $selectedDocenteId = $_GET['docente'] ?? null;
     $selectedDocente = null;
     $horarios = [];
@@ -62,8 +48,7 @@ try {
             $horarios = $horarioModel->getHorariosByDocente($selectedDocenteId);
         }
     }
-    
-    // Organize schedule by day and time
+
     $scheduleGrid = [];
     $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
     
@@ -73,8 +58,7 @@ try {
             $scheduleGrid[$dia][$bloque['id_bloque']] = null;
         }
     }
-    
-    // Fill the schedule grid with current assignments
+
     foreach ($horarios as $horario) {
         if (isset($scheduleGrid[$horario['dia']][$horario['id_bloque']])) {
             $scheduleGrid[$horario['dia']][$horario['id_bloque']] = $horario;
@@ -90,7 +74,6 @@ try {
     $error_message = 'Error interno del servidor';
 }
 
-// Function to get user initials
 function getUserInitials($nombre, $apellido) {
     return strtoupper(substr($nombre, 0, 1) . substr($apellido, 0, 1));
 }
@@ -405,14 +388,12 @@ function getUserInitials($nombre, $apellido) {
             }
         }
 
-        // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         });
 
-        // User menu toggle
         document.addEventListener('DOMContentLoaded', function() {
             const userMenuButton = document.getElementById('userMenuButton');
             const userMenu = document.getElementById('userMenu');
@@ -423,7 +404,6 @@ function getUserInitials($nombre, $apellido) {
                     userMenu.classList.toggle('hidden');
                 });
                 
-                // Close menu when clicking outside
                 document.addEventListener('click', function(e) {
                     if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
                         userMenu.classList.add('hidden');

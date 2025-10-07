@@ -58,28 +58,23 @@ class Coordinador {
     public function createCoordinador($coordinadorData) {
         try {
             $this->db->beginTransaction();
-            
-            // Validar datos requeridos
+
             if (empty($coordinadorData['cedula']) || empty($coordinadorData['nombre']) || 
                 empty($coordinadorData['apellido']) || empty($coordinadorData['email']) || 
                 empty($coordinadorData['contrasena'])) {
                 throw new Exception("Todos los campos son requeridos");
             }
-            
-            // Verificar si la cédula ya existe
+
             if ($this->cedulaExists($coordinadorData['cedula'])) {
                 throw new Exception("La cédula ya está en uso");
             }
-            
-            // Verificar si el email ya existe
+
             if ($this->emailExists($coordinadorData['email'])) {
                 throw new Exception("El email ya está en uso");
             }
-            
-            // Hash de la contraseña
+
             $passwordHash = password_hash($coordinadorData['contrasena'], PASSWORD_DEFAULT);
-            
-            // Insertar usuario
+
             $userQuery = "INSERT INTO usuario (cedula, nombre, apellido, email, telefono, contrasena_hash) 
                          VALUES (:cedula, :nombre, :apellido, :email, :telefono, :contrasena_hash)";
             
@@ -93,11 +88,9 @@ class Coordinador {
             
             $userStmt->execute();
             $userId = $this->db->lastInsertId();
-            
-            // Asignar rol de coordinador
+
             $this->assignRole($userId, 'COORDINADOR');
-            
-            // Log de la acción
+
             $this->logAction($userId, 'create', "Coordinador creado: {$coordinadorData['nombre']} {$coordinadorData['apellido']}");
             
             $this->db->commit();
@@ -116,24 +109,20 @@ class Coordinador {
     public function updateCoordinador($id, $coordinadorData) {
         try {
             $this->db->beginTransaction();
-            
-            // Obtener coordinador actual
+
             $currentCoordinador = $this->getCoordinadorById($id);
             if (!$currentCoordinador) {
                 throw new Exception("Coordinador no encontrado");
             }
-            
-            // Verificar si la cédula ya existe (excluyendo el coordinador actual)
+
             if ($coordinadorData['cedula'] !== $currentCoordinador['cedula'] && $this->cedulaExists($coordinadorData['cedula'])) {
                 throw new Exception("La cédula ya está en uso");
             }
-            
-            // Verificar si el email ya existe (excluyendo el coordinador actual)
+
             if ($coordinadorData['email'] !== $currentCoordinador['email'] && $this->emailExists($coordinadorData['email'])) {
                 throw new Exception("El email ya está en uso");
             }
-            
-            // Actualizar datos del usuario
+
             $updateQuery = "UPDATE usuario SET 
                            cedula = :cedula, 
                            nombre = :nombre, 
@@ -151,8 +140,7 @@ class Coordinador {
             $updateStmt->bindValue(':id_usuario', $id, PDO::PARAM_INT);
             
             $updateStmt->execute();
-            
-            // Actualizar contraseña si se proporciona
+
             if (!empty($coordinadorData['contrasena'])) {
                 $passwordHash = password_hash($coordinadorData['contrasena'], PASSWORD_DEFAULT);
                 $passwordQuery = "UPDATE usuario SET contrasena_hash = :contrasena_hash WHERE id_usuario = :id_usuario";
@@ -161,8 +149,7 @@ class Coordinador {
                 $passwordStmt->bindValue(':id_usuario', $id, PDO::PARAM_INT);
                 $passwordStmt->execute();
             }
-            
-            // Log de la acción
+
             $this->logAction($id, 'update', "Coordinador actualizado: {$coordinadorData['nombre']} {$coordinadorData['apellido']}");
             
             $this->db->commit();
@@ -181,29 +168,24 @@ class Coordinador {
     public function deleteCoordinador($id) {
         try {
             $this->db->beginTransaction();
-            
-            // Obtener datos del coordinador antes de eliminar
+
             $coordinador = $this->getCoordinadorById($id);
             if (!$coordinador) {
                 throw new Exception("Coordinador no encontrado");
             }
-            
-            // Log de la acción (antes de eliminar registros)
+
             $this->logAction($id, 'delete', "Coordinador eliminado: {$coordinador['nombre']} {$coordinador['apellido']}");
-            
-            // Eliminar registros de log del usuario
+
             $deleteLogQuery = "DELETE FROM log WHERE id_usuario = :id_usuario";
             $deleteLogStmt = $this->db->prepare($deleteLogQuery);
             $deleteLogStmt->bindValue(':id_usuario', $id, PDO::PARAM_INT);
             $deleteLogStmt->execute();
-            
-            // Eliminar roles del usuario
+
             $deleteRolesQuery = "DELETE FROM usuario_rol WHERE id_usuario = :id_usuario";
             $deleteRolesStmt = $this->db->prepare($deleteRolesQuery);
             $deleteRolesStmt->bindValue(':id_usuario', $id, PDO::PARAM_INT);
             $deleteRolesStmt->execute();
-            
-            // Eliminar usuario
+
             $deleteQuery = "DELETE FROM usuario WHERE id_usuario = :id_usuario";
             $deleteStmt = $this->db->prepare($deleteQuery);
             $deleteStmt->bindValue(':id_usuario', $id, PDO::PARAM_INT);

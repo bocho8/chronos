@@ -8,13 +8,10 @@ require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/../helpers/Translation.php';
 require_once __DIR__ . '/../helpers/AuthHelper.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 
-// Check if user is logged in
 if (!AuthHelper::isLoggedIn()) {
     header("Location: /src/views/login.php");
     exit();
@@ -88,7 +85,7 @@ $userName = AuthHelper::getUserDisplayName() ?: 'Usuario';
     </main>
 
     <script>
-        // Auto-logout after 30 seconds if no action
+
         let countdown = 30;
         const countdownElement = document.createElement('div');
         countdownElement.className = 'text-sm text-gray-500 mt-4';

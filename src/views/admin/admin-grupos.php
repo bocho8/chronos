@@ -1,9 +1,4 @@
 <?php
-/**
- * Página de gestión de grupos para administradores
- */
-
-// Include required files
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -12,32 +7,25 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize translation system
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('admin-grupos.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and admin role
 AuthHelper::requireRole('ADMIN');
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');
     exit();
 }
 
-// Load database configuration and get grupos
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get grupos using Grupo model
     require_once __DIR__ . '/../../models/Grupo.php';
     $grupoModel = new Grupo($database->getConnection());
     $grupos = $grupoModel->getAllGrupos();
@@ -51,7 +39,6 @@ try {
     $error_message = 'Error interno del servidor';
 }
 
-// Function to get group initials
 function getGroupInitials($nombre) {
     $words = explode(' ', $nombre);
     if (count($words) >= 2) {
@@ -130,8 +117,7 @@ function getGroupInitials($nombre) {
             right: 20px;
             z-index: 10000;
         }
-        
-        /* Modal styles */
+
         #grupoModal {
             position: fixed !important;
             top: 0 !important;
@@ -396,7 +382,6 @@ function getGroupInitials($nombre) {
     <script>
         let isEditMode = false;
 
-        // Mostrar modal para agregar grupo
         function showAddGrupoModal() {
             isEditMode = false;
             document.getElementById('modalTitle').textContent = '<?php _e('add_group'); ?>';
@@ -406,18 +391,15 @@ function getGroupInitials($nombre) {
             clearErrors();
             document.getElementById('grupoModal').classList.remove('hidden');
             
-            // Focus on first input
             setTimeout(() => {
                 document.getElementById('nombre_grupo').focus();
             }, 100);
         }
 
-        // Editar grupo
         function editGrupo(id) {
             isEditMode = true;
             document.getElementById('modalTitle').textContent = '<?php _e('edit_group'); ?>';
             
-            // Obtener datos del grupo
             fetch(`/src/controllers/grupo_handler.php?action=get&id=${id}`)
                 .then(response => response.json())
                 .then(data => {
@@ -429,7 +411,6 @@ function getGroupInitials($nombre) {
                         clearErrors();
                         document.getElementById('grupoModal').classList.remove('hidden');
                         
-                        // Focus on first input
                         setTimeout(() => {
                             document.getElementById('nombre_grupo').focus();
                         }, 100);
@@ -443,11 +424,9 @@ function getGroupInitials($nombre) {
                 });
         }
 
-        // Eliminar grupo
         function deleteGrupo(id, nombre) {
             const confirmMessage = `<?php _e('confirm_delete_group'); ?> "${nombre}"?`;
             if (confirm(confirmMessage)) {
-                // Crear FormData para enviar datos
                 const formData = new FormData();
                 formData.append('action', 'delete');
                 formData.append('id', id);
@@ -460,7 +439,6 @@ function getGroupInitials($nombre) {
                 .then(data => {
                     if (data.success) {
                         showToast('<?php _e('group_deleted_successfully'); ?>', 'success');
-                        // Recargar la página para mostrar los cambios
                         setTimeout(() => {
                             window.location.reload();
                         }, 1500);
@@ -475,20 +453,17 @@ function getGroupInitials($nombre) {
             }
         }
 
-        // Ver horario del grupo
         function viewGroupSchedule(id) {
-            // Redirigir a la vista de horarios con filtro por grupo
+
             window.location.href = `admin-horarios.php?grupo=${id}`;
         }
 
-        // Cerrar modal
         function closeGrupoModal() {
             const modal = document.getElementById('grupoModal');
             modal.classList.add('hidden');
             clearErrors();
         }
 
-        // Manejar envío del formulario
         function handleGrupoFormSubmit(e) {
             e.preventDefault();
             
@@ -498,7 +473,6 @@ function getGroupInitials($nombre) {
             const action = isEditMode ? 'update' : 'create';
             formData.append('action', action);
             
-            // Validar campos requeridos
             const nombre = formData.get('nombre').trim();
             const nivel = formData.get('nivel').trim();
             
@@ -512,7 +486,6 @@ function getGroupInitials($nombre) {
                 return;
             }
             
-            // Validar longitud de campos
             if (nombre.length > 100) {
                 showToast('<?php _e('group_name_too_long'); ?>', 'error');
                 return;
@@ -535,8 +508,7 @@ function getGroupInitials($nombre) {
                         '<?php _e('group_created_successfully'); ?>';
                     showToast(message, 'success');
                     closeGrupoModal();
-                    
-                    // Recargar la página para mostrar los cambios
+
                     setTimeout(() => {
                         window.location.reload();
                     }, 1500);
@@ -550,7 +522,6 @@ function getGroupInitials($nombre) {
             });
         }
 
-        // Limpiar errores de validación
         function clearErrors() {
             const errorElements = document.querySelectorAll('[id$="Error"]');
             errorElements.forEach(element => {
@@ -558,29 +529,24 @@ function getGroupInitials($nombre) {
             });
         }
 
-        // Toast system is now handled by /js/toast.js
-
-        // Cerrar modal al hacer clic fuera
         document.getElementById('grupoModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeGrupoModal();
             }
         });
 
-        // Función de búsqueda
         function searchGrupos(searchTerm) {
             const grupos = document.querySelectorAll('.grupo-item');
             const searchLower = searchTerm.toLowerCase().trim();
             
             if (searchLower === '') {
-                // Mostrar todos los grupos
+
                 grupos.forEach(grupo => {
                     grupo.style.display = 'flex';
                 });
                 return;
             }
-            
-            // Filtrar grupos
+
             grupos.forEach(grupo => {
                 const nombre = grupo.dataset.nombre || '';
                 const nivel = grupo.dataset.nivel || '';
@@ -591,8 +557,7 @@ function getGroupInitials($nombre) {
                     grupo.style.display = 'none';
                 }
             });
-            
-            // Mostrar mensaje si no hay resultados
+
             const visibleGrupos = Array.from(grupos).filter(grupo => grupo.style.display !== 'none');
             const noResultsMessage = document.getElementById('noResultsMessage');
             
@@ -613,14 +578,12 @@ function getGroupInitials($nombre) {
             }
         }
 
-        // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         });
 
-        // Initialize multiple selection
         const multipleSelection = new MultipleSelection({
             container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
             itemSelector: '.item-row',
@@ -629,14 +592,13 @@ function getGroupInitials($nombre) {
             bulkActionsSelector: '#bulkActions',
             entityType: 'grupos',
             onSelectionChange: function(selectedItems) {
-                // Selection changed
+
             },
             onBulkAction: function(action, selectedIds) {
-                // Bulk action triggered
+
             }
         });
 
-        // Initialize status labels
         const statusLabels = new StatusLabels({
             container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
             itemSelector: '.item-row',

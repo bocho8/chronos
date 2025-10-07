@@ -28,7 +28,6 @@ class ScheduleService
     public function createSchedule($scheduleData)
     {
         try {
-            // Validate schedule data
             $validation = $this->validateScheduleData($scheduleData);
             if (!$validation['valid']) {
                 return [
@@ -38,7 +37,6 @@ class ScheduleService
                 ];
             }
             
-            // Check for conflicts
             $conflicts = $this->checkScheduleConflicts($scheduleData);
             if (!empty($conflicts)) {
                 return [
@@ -48,7 +46,6 @@ class ScheduleService
                 ];
             }
             
-            // Create schedule
             $scheduleId = $this->scheduleModel->createSchedule($scheduleData);
             
             if ($scheduleId) {
@@ -80,7 +77,6 @@ class ScheduleService
     public function updateSchedule($scheduleId, $scheduleData)
     {
         try {
-            // Check if schedule exists
             $existingSchedule = $this->scheduleModel->getScheduleById($scheduleId);
             if (!$existingSchedule) {
                 return [
@@ -89,7 +85,6 @@ class ScheduleService
                 ];
             }
             
-            // Validate schedule data
             $validation = $this->validateScheduleData($scheduleData);
             if (!$validation['valid']) {
                 return [
@@ -99,7 +94,6 @@ class ScheduleService
                 ];
             }
             
-            // Check for conflicts (excluding current schedule)
             $conflicts = $this->checkScheduleConflicts($scheduleData, $scheduleId);
             if (!empty($conflicts)) {
                 return [
@@ -109,7 +103,6 @@ class ScheduleService
                 ];
             }
             
-            // Update schedule
             $result = $this->scheduleModel->updateSchedule($scheduleId, $scheduleData);
             
             if ($result) {
@@ -140,7 +133,6 @@ class ScheduleService
     public function deleteSchedule($scheduleId)
     {
         try {
-            // Check if schedule exists
             $schedule = $this->scheduleModel->getScheduleById($scheduleId);
             if (!$schedule) {
                 return [
@@ -149,7 +141,6 @@ class ScheduleService
                 ];
             }
             
-            // Delete schedule
             $result = $this->scheduleModel->deleteSchedule($scheduleId);
             
             if ($result) {
@@ -225,7 +216,6 @@ class ScheduleService
     {
         $conflicts = [];
         
-        // Check teacher availability
         $teacherConflicts = $this->scheduleModel->checkTeacherConflicts(
             $scheduleData['teacher_id'],
             $scheduleData['day_of_week'],
@@ -241,7 +231,6 @@ class ScheduleService
             ];
         }
         
-        // Check group availability
         $groupConflicts = $this->scheduleModel->checkGroupConflicts(
             $scheduleData['group_id'],
             $scheduleData['day_of_week'],
@@ -257,7 +246,6 @@ class ScheduleService
             ];
         }
         
-        // Check classroom availability (if classroom is specified)
         if (isset($scheduleData['classroom_id'])) {
             $classroomConflicts = $this->scheduleModel->checkClassroomConflicts(
                 $scheduleData['classroom_id'],
@@ -284,8 +272,7 @@ class ScheduleService
     private function validateScheduleData($data)
     {
         $errors = [];
-        
-        // Required fields
+
         $requiredFields = ['teacher_id', 'subject_id', 'group_id', 'day_of_week', 'start_time', 'end_time'];
         foreach ($requiredFields as $field) {
             if (empty($data[$field])) {
@@ -293,12 +280,10 @@ class ScheduleService
             }
         }
         
-        // Validate day of week (1-7)
         if (isset($data['day_of_week']) && (!is_numeric($data['day_of_week']) || $data['day_of_week'] < 1 || $data['day_of_week'] > 7)) {
             $errors['day_of_week'] = 'Día de la semana debe ser entre 1 y 7';
         }
         
-        // Validate time format
         if (isset($data['start_time']) && !preg_match('/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $data['start_time'])) {
             $errors['start_time'] = 'Formato de hora de inicio inválido (HH:MM)';
         }
@@ -307,7 +292,6 @@ class ScheduleService
             $errors['end_time'] = 'Formato de hora de fin inválido (HH:MM)';
         }
         
-        // Validate that end time is after start time
         if (isset($data['start_time']) && isset($data['end_time'])) {
             $startTime = strtotime($data['start_time']);
             $endTime = strtotime($data['end_time']);

@@ -20,8 +20,7 @@ class ConflictDetectionService
     public function detectConflicts($scheduleData, $excludeId = null)
     {
         $conflicts = [];
-        
-        // 1. Conflicto de grupo (grupo ya tiene clase en ese horario)
+
         $groupConflict = $this->checkGroupConflict($scheduleData, $excludeId);
         if ($groupConflict) {
             $conflicts[] = [
@@ -31,8 +30,7 @@ class ConflictDetectionService
                 'details' => $groupConflict
             ];
         }
-        
-        // 2. Conflicto de docente (docente ya tiene clase en ese horario)
+
         $teacherConflict = $this->checkTeacherConflict($scheduleData, $excludeId);
         if ($teacherConflict) {
             $conflicts[] = [
@@ -42,8 +40,7 @@ class ConflictDetectionService
                 'details' => $teacherConflict
             ];
         }
-        
-        // 3. Conflicto de disponibilidad (docente no está disponible)
+
         $availabilityConflict = $this->checkAvailabilityConflict($scheduleData);
         if ($availabilityConflict) {
             $conflicts[] = [
@@ -53,8 +50,7 @@ class ConflictDetectionService
                 'details' => $availabilityConflict
             ];
         }
-        
-        // 4. Conflicto de carga horaria (materia excede horas semanales)
+
         $workloadConflict = $this->checkWorkloadConflict($scheduleData);
         if ($workloadConflict) {
             $conflicts[] = [
@@ -64,8 +60,7 @@ class ConflictDetectionService
                 'details' => $workloadConflict
             ];
         }
-        
-        // 5. Conflicto de pautas ANEP (distribución de días)
+
         $anepConflict = $this->checkANEPConflict($scheduleData);
         if ($anepConflict) {
             $conflicts[] = [
@@ -182,7 +177,7 @@ class ConflictDetectionService
     private function checkWorkloadConflict($data)
     {
         try {
-            // Obtener horas semanales de la materia
+
             $materiaQuery = "SELECT horas_semanales FROM materia WHERE id_materia = :id_materia";
             $materiaStmt = $this->db->prepare($materiaQuery);
             $materiaStmt->bindParam(':id_materia', $data['id_materia'], PDO::PARAM_INT);
@@ -194,8 +189,7 @@ class ConflictDetectionService
             }
             
             $horasRequeridas = $materia['horas_semanales'];
-            
-            // Contar horas ya asignadas para esta materia y grupo
+
             $horasQuery = "SELECT COUNT(*) as horas_asignadas
                           FROM horario h
                           WHERE h.id_materia = :id_materia 
@@ -230,7 +224,7 @@ class ConflictDetectionService
     private function checkANEPConflict($data)
     {
         try {
-            // Obtener información de la materia y su pauta ANEP
+
             $query = "SELECT m.horas_semanales, m.nombre as materia_nombre, 
                              pa.dias_minimos, pa.dias_maximos, pa.condiciones_especiales,
                              pa.nombre as pauta_nombre
@@ -246,8 +240,7 @@ class ConflictDetectionService
             if (!$materia) {
                 return false;
             }
-            
-            // Contar días únicos ya asignados para esta materia y grupo
+
             $diasQuery = "SELECT COUNT(DISTINCT h.dia) as dias_asignados,
                                 COUNT(h.id_horario) as horas_asignadas,
                                 ARRAY_AGG(DISTINCT h.dia ORDER BY h.dia) as dias_especificos
@@ -269,8 +262,7 @@ class ConflictDetectionService
             $horasSemanales = (int)$materia['horas_semanales'];
             
             $conflicts = [];
-            
-            // 1. Verificar distribución de días
+
             if ($diasAsignados < $diasMinimos) {
                 $conflicts[] = [
                     'type' => 'dias_insuficientes',
@@ -292,8 +284,7 @@ class ConflictDetectionService
                     'suggestion' => "Consolidar horarios en menos días"
                 ];
             }
-            
-            // 2. Verificar distribución de horas por día
+
             $horasPorDia = $this->getHorasPorDia($data['id_materia'], $data['id_grupo']);
             foreach ($horasPorDia as $dia => $horas) {
                 if ($horas > 2) {
@@ -307,8 +298,7 @@ class ConflictDetectionService
                     ];
                 }
             }
-            
-            // 3. Verificar distribución según carga horaria
+
             $distribucionRecomendada = $this->getDistribucionRecomendada($horasSemanales);
             if ($diasAsignados < $distribucionRecomendada['dias_minimos']) {
                 $conflicts[] = [
@@ -320,8 +310,7 @@ class ConflictDetectionService
                     'suggestion' => $distribucionRecomendada['suggestion']
                 ];
             }
-            
-            // 4. Verificar condiciones especiales
+
             if (!empty($materia['condiciones_especiales'])) {
                 $condiciones = json_decode($materia['condiciones_especiales'], true);
                 if ($condiciones) {
@@ -333,8 +322,7 @@ class ConflictDetectionService
                     }
                 }
             }
-            
-            // 5. Verificar distribución de días consecutivos
+
             if ($this->tieneDiasConsecutivos($diasEspecificos) && $horasSemanales >= 4) {
                 $conflicts[] = [
                     'type' => 'dias_consecutivos',

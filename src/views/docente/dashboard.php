@@ -10,45 +10,37 @@ require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize components
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('dashboard.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and padre role
 AuthHelper::requireRole('PADRE'); 
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Load current user info
 $currentUser = AuthHelper::getCurrentUser();
 
 function generate_class_row() {
     $row = '';
-    // Genera 5 celdas: Lunes a Viernes
+
     for ($i = 0; $i < 5; $i++) {
         $row .= '<div class="py-2 px-1 border-r border-b border-gray-200 text-gray-700 bg-gray-50">Text</div>';
     }
     return $row;
 }
 
-// Generar 4 filas pre-almuerzo
 $pre_lunch_rows = '';
 for ($i = 0; $i < 4; $i++) {
     $pre_lunch_rows .= generate_class_row();
 }
 
-// Generar 4 filas post-almuerzo
 $post_lunch_rows = '';
 for ($i = 0; $i < 4; $i++) {
     $post_lunch_rows .= generate_class_row();
@@ -203,7 +195,7 @@ for ($i = 0; $i < 4; $i++) {
     </div>
 
     <script>
-        // Logout functionality
+
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';

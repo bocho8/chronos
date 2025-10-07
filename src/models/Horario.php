@@ -91,20 +91,18 @@ class Horario {
      */
     public function createHorario($data) {
         try {
-            // Validar datos requeridos
+
             $requiredFields = ['id_grupo', 'id_docente', 'id_materia', 'id_bloque', 'dia'];
             foreach ($requiredFields as $field) {
                 if (empty($data[$field])) {
                     throw new Exception("El campo $field es requerido");
                 }
             }
-            
-            // Verificar que no existe conflicto de horario
+
             if ($this->hasScheduleConflict($data)) {
                 throw new Exception("Ya existe una asignación para este horario");
             }
-            
-            // Verificar disponibilidad del docente
+
             if (!$this->isDocenteAvailable($data['id_docente'], $data['id_bloque'], $data['dia'])) {
                 throw new Exception("El docente no está disponible en este horario");
             }
@@ -133,17 +131,15 @@ class Horario {
      */
     public function updateHorario($id, $data) {
         try {
-            // Verificar que el horario existe
+
             if (!$this->getHorarioById($id)) {
                 throw new Exception("El horario no existe");
             }
-            
-            // Verificar conflictos (excluyendo el horario actual)
+
             if ($this->hasScheduleConflict($data, $id)) {
                 throw new Exception("Ya existe una asignación para este horario");
             }
-            
-            // Verificar disponibilidad del docente
+
             if (!empty($data['id_docente']) && !empty($data['id_bloque']) && !empty($data['dia'])) {
                 if (!$this->isDocenteAvailable($data['id_docente'], $data['id_bloque'], $data['dia'], $id)) {
                     throw new Exception("El docente no está disponible en este horario");
@@ -178,7 +174,7 @@ class Horario {
      */
     public function deleteHorario($id) {
         try {
-            // Verificar que el horario existe
+
             if (!$this->getHorarioById($id)) {
                 throw new Exception("El horario no existe");
             }
@@ -257,7 +253,7 @@ class Horario {
      */
     private function hasScheduleConflict($data, $excludeId = null) {
         try {
-            // Verificar conflicto de grupo
+
             $query = "SELECT id_horario FROM horario 
                      WHERE id_grupo = :id_grupo AND id_bloque = :id_bloque AND dia = :dia";
             if ($excludeId) {
@@ -276,8 +272,7 @@ class Horario {
             if ($stmt->fetch()) {
                 return true;
             }
-            
-            // Verificar conflicto de docente
+
             $query = "SELECT id_horario FROM horario 
                      WHERE id_docente = :id_docente AND id_bloque = :id_bloque AND dia = :dia";
             if ($excludeId) {
@@ -315,8 +310,7 @@ class Horario {
             $stmt->execute();
             
             $disponibilidad = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            // Si no hay registro de disponibilidad, asumir que está disponible
+
             if (!$disponibilidad) {
                 return true;
             }
@@ -324,7 +318,7 @@ class Horario {
             return $disponibilidad['disponible'];
         } catch (PDOException $e) {
             error_log("Error checking docente availability: " . $e->getMessage());
-            return true; // Asumir disponible en caso de error
+            return true;
         }
     }
     
@@ -355,7 +349,7 @@ class Horario {
      */
     public function updateDocenteDisponibilidad($idDocente, $idBloque, $dia, $disponible) {
         try {
-            // Verificar si ya existe el registro
+
             $query = "SELECT id_disponibilidad FROM disponibilidad 
                      WHERE id_docente = :id_docente AND id_bloque = :id_bloque AND dia = :dia";
             
@@ -366,11 +360,11 @@ class Horario {
             $stmt->execute();
             
             if ($stmt->fetch()) {
-                // Actualizar registro existente
+
                 $query = "UPDATE disponibilidad SET disponible = :disponible 
                          WHERE id_docente = :id_docente AND id_bloque = :id_bloque AND dia = :dia";
             } else {
-                // Crear nuevo registro
+
                 $query = "INSERT INTO disponibilidad (id_docente, id_bloque, dia, disponible) 
                          VALUES (:id_docente, :id_bloque, :dia, :disponible)";
             }
@@ -478,8 +472,7 @@ class Horario {
      */
     public function getUnpublishedSchedules() {
         try {
-            // For now, we'll simulate unpublished schedules based on horario table
-            // In a real implementation, you might have a separate table for schedule generations
+
             $query = "SELECT DISTINCT 
                         1 as id_horario,
                         'Horario Generado' as nombre,
@@ -495,13 +488,12 @@ class Horario {
             
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Check if there are actually unpublished schedules
             $publishedCheck = $this->db->prepare("SELECT COUNT(*) as count FROM horario_publicado WHERE activo = 1");
             $publishedCheck->execute();
             $publishedCount = $publishedCheck->fetch(PDO::FETCH_ASSOC);
             
             if ($publishedCount && $publishedCount['count'] > 0) {
-                return []; // Already published
+                return [];
             }
             
             return $result;
@@ -533,16 +525,14 @@ class Horario {
             return false;
         }
     }
-    
-    
+
     /**
      * Publica un horario
      */
     public function publishSchedule($scheduleId) {
         try {
             $this->db->beginTransaction();
-            
-            // First, check if table exists, if not create it
+
             $createTableQuery = "CREATE TABLE IF NOT EXISTS horario_publicado (
                 id_publicacion SERIAL PRIMARY KEY,
                 id_horario_referencia INTEGER,
@@ -552,12 +542,10 @@ class Horario {
                 descripcion TEXT
             )";
             $this->db->exec($createTableQuery);
-            
-            // Deactivate any existing published schedules
+
             $deactivateQuery = "UPDATE horario_publicado SET activo = FALSE WHERE activo = TRUE";
             $this->db->exec($deactivateQuery);
-            
-            // Insert new published schedule
+
             $publishQuery = "INSERT INTO horario_publicado (id_horario_referencia, descripcion, activo) 
                            VALUES (?, 'Horario oficial publicado por la dirección', TRUE)";
             

@@ -1,9 +1,4 @@
 <?php
-/**
- * Dashboard del Padre
- * Panel de control para seguimiento académico
- */
-
 require_once __DIR__ . '/../../config/session.php'; 
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -12,48 +7,37 @@ require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 
-// Initialize secure session
 initSecureSession();
 
-// Initialize components
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
 $sidebar = new Sidebar('dashboard.php');
 
-// Handle language change
 $languageSwitcher->handleLanguageChange();
 
-// Require authentication and padre role
 AuthHelper::requireRole('PADRE'); 
 
-// Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");
     exit();
 }
 
-// Load current user info
 $currentUser = AuthHelper::getCurrentUser();
 
-// Load database configuration and get data
 try {
     $dbConfig = require __DIR__ . '/../../config/database.php';
     $database = new Database($dbConfig);
     
-    // Get models
     $horarioModel = new Horario($database->getConnection());
     
-    // Get grupos (to show as students for parents)
     $grupos = $horarioModel->getAllGrupos();
     
-    // Get sample horarios for demonstration (first grupo if exists)
     $sampleHorarios = [];
     if (!empty($grupos)) {
         $firstGrupo = $grupos[0];
         $sampleHorarios = $horarioModel->getHorariosByGrupo($firstGrupo['id_grupo']);
     }
     
-    // Get bloques horarios
     $bloques = $horarioModel->getAllBloques();
     
 } catch (Exception $e) {
@@ -64,7 +48,7 @@ try {
 }
 
 function generate_class_row($horarios, $bloqueId, $dia) {
-    // Buscar horario para este bloque y día
+
     $horarioEncontrado = null;
     foreach ($horarios as $horario) {
         if ($horario['id_bloque'] == $bloqueId && $horario['dia'] == $dia) {
@@ -82,7 +66,7 @@ function generate_class_row($horarios, $bloqueId, $dia) {
 }
 
 function generate_weekly_schedule($horarios, $bloques) {
-    $dias = [1, 2, 3, 4, 5]; // Lunes a Viernes
+    $dias = [1, 2, 3, 4, 5];
     $rows = '';
     
     foreach ($bloques as $bloque) {
@@ -98,7 +82,6 @@ function generate_weekly_schedule($horarios, $bloques) {
     return $rows;
 }
 
-// Generate schedule rows
 $schedule_rows = generate_weekly_schedule($sampleHorarios, $bloques);
 ?>
 
@@ -188,7 +171,7 @@ $schedule_rows = generate_weekly_schedule($sampleHorarios, $bloques);
                                             <div class="grid grid-cols-5 gap-0 border-b border-gray-200">
                                                 <?php for ($dia = 1; $dia <= 5; $dia++): ?>
                                                     <?php
-                                                    // Buscar horario para este bloque y día
+
                                                     $horarioEncontrado = null;
                                                     foreach ($sampleHorarios as $horario) {
                                                         if ($horario['id_bloque'] == $bloque['id_bloque'] && $horario['dia'] == $dia) {
@@ -226,7 +209,7 @@ $schedule_rows = generate_weekly_schedule($sampleHorarios, $bloques);
     </div>
 
     <script>
-        // Logout functionality
+
         document.getElementById('logoutButton').addEventListener('click', function() {
             if (confirm('<?php _e('confirm_logout'); ?>')) {
                 window.location.href = '/src/controllers/LogoutController.php';

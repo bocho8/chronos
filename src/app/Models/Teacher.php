@@ -97,30 +97,25 @@ class Teacher
     public function createTeacher($teacherData)
     {
         try {
-            // Validate required fields
             if (empty($teacherData['cedula']) || empty($teacherData['nombre']) || 
                 empty($teacherData['apellido']) || empty($teacherData['contrasena'])) {
                 return false;
             }
             
-            // Validate cedula format
             if (!preg_match('/^\d{7,8}$/', $teacherData['cedula'])) {
                 return false;
             }
             
-            // Check if cedula already exists
             if ($this->cedulaExists($teacherData['cedula'])) {
                 return false;
             }
-            
-            // Hash password
+
             $passwordHash = password_hash($teacherData['contrasena'], PASSWORD_DEFAULT);
             
-            // Begin transaction
             $this->db->beginTransaction();
             
             try {
-                // Insert user first
+
                 $userQuery = "INSERT INTO usuario (cedula, nombre, apellido, email, telefono, contrasena_hash) 
                               VALUES (:cedula, :nombre, :apellido, :email, :telefono, :contrasena_hash)";
                 
@@ -134,14 +129,12 @@ class Teacher
                 
                 $userStmt->execute();
                 $userId = $this->db->lastInsertId();
-                
-                // Assign DOCENTE role
+
                 $roleQuery = "INSERT INTO usuario_rol (id_usuario, nombre_rol) VALUES (:id_usuario, 'DOCENTE')";
                 $roleStmt = $this->db->prepare($roleQuery);
                 $roleStmt->bindValue(':id_usuario', $userId, PDO::PARAM_INT);
                 $roleStmt->execute();
-                
-                // Insert teacher record
+
                 $teacherQuery = "INSERT INTO docente (id_usuario, trabaja_otro_liceo, fecha_envio_disponibilidad, 
                                                      horas_asignadas, porcentaje_margen) 
                                  VALUES (:id_usuario, :trabaja_otro_liceo, :fecha_envio_disponibilidad, 
@@ -156,14 +149,13 @@ class Teacher
                 
                 $teacherStmt->execute();
                 $teacherId = $this->db->lastInsertId();
-                
-                // Commit transaction
+
                 $this->db->commit();
                 
                 return $teacherId;
                 
             } catch (Exception $e) {
-                // Rollback transaction on error
+
                 $this->db->rollback();
                 throw $e;
             }
@@ -180,24 +172,20 @@ class Teacher
     public function updateTeacher($id, $teacherData)
     {
         try {
-            // Get current teacher data
             $currentTeacher = $this->getTeacherById($id);
             if (!$currentTeacher) {
                 return false;
             }
             
-            // Begin transaction
             $this->db->beginTransaction();
             
             try {
-                // Update user information
                 $userQuery = "UPDATE usuario SET 
                               nombre = :nombre, 
                               apellido = :apellido, 
                               email = :email, 
                               telefono = :telefono";
                 
-                // Add password update if provided
                 if (!empty($teacherData['contrasena'])) {
                     $userQuery .= ", contrasena_hash = :contrasena_hash";
                 }
@@ -217,7 +205,6 @@ class Teacher
                 
                 $userStmt->execute();
                 
-                // Update teacher specific information
                 $teacherQuery = "UPDATE docente SET 
                                 trabaja_otro_liceo = :trabaja_otro_liceo, 
                                 fecha_envio_disponibilidad = :fecha_envio_disponibilidad,
@@ -233,14 +220,13 @@ class Teacher
                 $teacherStmt->bindValue(':id_docente', $id, PDO::PARAM_INT);
                 
                 $result = $teacherStmt->execute();
-                
-                // Commit transaction
+
                 $this->db->commit();
                 
                 return $result;
                 
             } catch (Exception $e) {
-                // Rollback transaction on error
+
                 $this->db->rollback();
                 throw $e;
             }
@@ -257,30 +243,26 @@ class Teacher
     public function deleteTeacher($id)
     {
         try {
-            // Get teacher data before deletion for logging
             $teacher = $this->getTeacherById($id);
             if (!$teacher) {
                 return false;
             }
             
-            // Begin transaction
             $this->db->beginTransaction();
             
             try {
-                // Delete teacher record (this will cascade to usuario due to foreign key)
                 $query = "DELETE FROM docente WHERE id_docente = :id_docente";
                 $stmt = $this->db->prepare($query);
                 $stmt->bindValue(':id_docente', $id, PDO::PARAM_INT);
                 
                 $result = $stmt->execute();
-                
-                // Commit transaction
+
                 $this->db->commit();
                 
                 return $result;
                 
             } catch (Exception $e) {
-                // Rollback transaction on error
+
                 $this->db->rollback();
                 throw $e;
             }
