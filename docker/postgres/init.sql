@@ -212,5 +212,10 @@ INSERT INTO usuario (id_usuario, cedula, nombre, apellido, email, telefono, cont
 INSERT INTO usuario_rol (id_usuario, nombre_rol) VALUES
 (1, 'ADMIN');
 
+-- Create Zabbix database and user
+CREATE DATABASE zabbix;
+CREATE USER zabbix WITH PASSWORD 'zabbix';
+GRANT ALL PRIVILEGES ON DATABASE zabbix TO zabbix;
+
 -- Insert version information
 COMMENT ON SCHEMA public IS 'Chronos Database Schema v2.0.0 - Updated 2025';

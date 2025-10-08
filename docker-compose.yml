@@ -50,17 +50,66 @@ services:
       - pg_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
-  ngrok:
-    image: ngrok/ngrok:latest
-    container_name: chronos-ngrok
-    ports:
-      - "4040:4040"
-    env_file:
-      - ./config/environment/ngrok.env
-    command: http nginx:80 --log=stdout
-    depends_on:
-      - nginx
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:alpine-7.4-latest
+    container_name: chronos-zabbix-server
     restart: unless-stopped
+    environment:
+      DB_SERVER_HOST: postgres
+      DB_SERVER_PORT: 5432
+      POSTGRES_DB: zabbix
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix
+      ZBX_DEBUGLEVEL: 3
+      ZBX_TIMEOUT: 4
+      ZBX_JAVAGATEWAY_ENABLE: false
+    ports:
+      - "10051:10051"
+    depends_on:
+      - postgres
+    volumes:
+      - zabbix_server_data:/var/lib/zabbix
+
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.4-latest
+    container_name: chronos-zabbix-web
+    restart: unless-stopped
+    environment:
+      DB_SERVER_HOST: postgres
+      DB_SERVER_PORT: 5432
+      POSTGRES_DB: zabbix
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_SERVER_PORT: 10051
+      PHP_TZ: "America/New_York"
+      ZBX_SERVER_NAME: "Chronos Monitoring"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - zabbix-server
+      - postgres
+
+  zabbix-agent:
+    image: zabbix/zabbix-agent2:alpine-7.4-latest
+    container_name: chronos-zabbix-agent
+    restart: unless-stopped
+    environment:
+      ZBX_HOSTNAME: "Chronos-Application"
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_SERVER_PORT: 10051
+      ZBX_PASSIVE_ALLOW: true
+      ZBX_ACTIVE_ALLOW: true
+    ports:
+      - "10050:10050"
+    depends_on:
+      - zabbix-server
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /dev:/host/dev:ro
 
 volumes:
   pg_data:
+  zabbix_server_data:
