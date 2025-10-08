@@ -272,4 +272,10 @@ return [
     'group_stats' => 'Statistiche Gruppi',
     'total_groups' => 'Totale Gruppi',
     'groups_by_level' => 'Gruppi per Livello',
+    
+    // Availability translations
+    'save_availability' => 'Salva Disponibilità',
+    'save_additional_info' => 'Salva Informazioni Aggiuntive',
+    'save_all_changes' => 'Salva Tutte le Modifiche',
+    'click_to_toggle_availability' => 'Clicca sulle celle per cambiare la disponibilità',
 ];

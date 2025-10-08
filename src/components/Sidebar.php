@@ -242,14 +242,14 @@ class Sidebar {
                 'title' => 'teacher_functions',
                 'items' => [
                     [
-                        'url' => '/src/views/admin/admin-mi-horario.php',
-                        'file' => 'admin-mi-horario.php',
+                        'url' => '/teacher/my-schedule',
+                        'file' => 'mi-horario.php',
                         'text' => 'my_schedule',
                         'icon' => '📅'
                     ],
                     [
-                        'url' => '/src/views/admin/admin-mi-disponibilidad.php',
-                        'file' => 'admin-mi-disponibilidad.php',
+                        'url' => '/teacher/my-availability',
+                        'file' => 'mi-disponibilidad.php',
                         'text' => 'my_availability',
                         'icon' => '⏰'
                     ]
@@ -286,7 +286,7 @@ class Sidebar {
         return match ($this->userRole) {
             'ADMIN', 'DIRECTOR' => $currentDir === 'admin' ? 'dashboard.php' : '/src/views/admin/dashboard.php',
             'COORDINADOR' => $currentDir === 'coordinador' ? 'dashboard.php' : '/src/views/coordinador/dashboard.php',
-            'DOCENTE' => $currentDir === 'docente' ? 'dashboard.php' : '/src/views/docente/dashboard.php',
+            'DOCENTE' => $currentDir === 'docente' ? 'dashboard.php' : '/teacher/dashboard',
             'PADRE' => $currentDir === 'padre' ? 'dashboard.php' : '/src/views/padre/dashboard.php',
             default => 'dashboard.php'
         };
@@ -294,7 +294,31 @@ class Sidebar {
     
     private function isActive($file) {
         $currentFile = basename($_SERVER['PHP_SELF']);
-        return $currentFile === $file || $this->currentPage === $file;
+        $currentPath = $_SERVER['REQUEST_URI'] ?? '';
+        
+        // Verificar por nombre de archivo
+        if ($currentFile === $file || $this->currentPage === $file) {
+            return true;
+        }
+        
+        // Verificar por ruta específica para docentes
+        if ($this->userRole === 'DOCENTE') {
+            $teacherRoutes = [
+                'mi-horario.php' => '/teacher/my-schedule',
+                'mi-disponibilidad.php' => '/teacher/my-availability',
+                'dashboard.php' => '/teacher/dashboard'
+            ];
+            
+            if (isset($teacherRoutes[$file])) {
+                return strpos($currentPath, $teacherRoutes[$file]) !== false;
+            }
+        }
+        
+        return false;
+    }
+    
+    public function getDashboardUrlPublic() {
+        return $this->getDashboardUrl();
     }
     
     public static function getStyles() {
@@ -303,6 +327,9 @@ class Sidebar {
         .sidebar-link {
             position: relative;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
         }
         .sidebar-link.active {
             background-color: #e4e6eb;
@@ -331,6 +358,16 @@ class Sidebar {
         }
         .bg-darkblue {
             background-color: #1f366d;
+        }
+        aside {
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 40;
+        }
+        .sidebar-link span {
+            margin-right: 12px;
         }
         </style>
         ';
