@@ -19,7 +19,7 @@ class AssignmentController
     public function __construct($database)
     {
         $this->assignmentModel = new \App\Models\Assignment($database);
-        $this->translation = Translation::getInstance();
+        $this->translation = \Translation::getInstance();
     }
     
     /**
@@ -29,10 +29,10 @@ class AssignmentController
     {
         try {
             $assignments = $this->assignmentModel->getAllAssignments();
-            ResponseHelper::success('Assignments retrieved successfully', $assignments);
+            \ResponseHelper::success('Assignments retrieved successfully', $assignments);
         } catch (Exception $e) {
             error_log("Error in AssignmentController@index: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -45,13 +45,13 @@ class AssignmentController
             $teachers = $this->assignmentModel->getAvailableTeachers();
             $subjects = $this->assignmentModel->getAvailableSubjects();
             
-            ResponseHelper::success('Form data retrieved successfully', [
+            \ResponseHelper::success('Form data retrieved successfully', [
                 'teachers' => $teachers,
                 'subjects' => $subjects
             ]);
         } catch (Exception $e) {
             error_log("Error in AssignmentController@create: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -66,24 +66,24 @@ class AssignmentController
 
             $errors = $this->validateAssignmentData($_POST);
             if (!empty($errors)) {
-                ResponseHelper::validationError($errors);
+                \ResponseHelper::validationError($errors);
             }
             
             if ($this->assignmentModel->assignmentExists($teacherId, $subjectId)) {
-                ResponseHelper::error('This assignment already exists');
+                \ResponseHelper::error('This assignment already exists');
             }
             
             $assignmentId = $this->assignmentModel->createAssignment($teacherId, $subjectId);
             
             if ($assignmentId) {
                 $this->logActivity("Assigned teacher ID $teacherId to subject ID $subjectId");
-                ResponseHelper::success('Assignment created successfully', ['id' => $assignmentId]);
+                \ResponseHelper::success('Assignment created successfully', ['id' => $assignmentId]);
             } else {
-                ResponseHelper::error('Error creating assignment');
+                \ResponseHelper::error('Error creating assignment');
             }
         } catch (Exception $e) {
             error_log("Error in AssignmentController@store: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -96,13 +96,13 @@ class AssignmentController
             $assignment = $this->assignmentModel->getAssignmentById($id);
             
             if (!$assignment) {
-                ResponseHelper::notFound('Assignment');
+                \ResponseHelper::notFound('Assignment');
             }
             
-            ResponseHelper::success('Assignment retrieved successfully', $assignment);
+            \ResponseHelper::success('Assignment retrieved successfully', $assignment);
         } catch (Exception $e) {
             error_log("Error in AssignmentController@show: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -115,20 +115,20 @@ class AssignmentController
             $assignment = $this->assignmentModel->getAssignmentById($id);
             
             if (!$assignment) {
-                ResponseHelper::notFound('Assignment');
+                \ResponseHelper::notFound('Assignment');
             }
             
             $teachers = $this->assignmentModel->getAvailableTeachers();
             $subjects = $this->assignmentModel->getAvailableSubjects();
             
-            ResponseHelper::success('Assignment data retrieved successfully', [
+            \ResponseHelper::success('Assignment data retrieved successfully', [
                 'assignment' => $assignment,
                 'teachers' => $teachers,
                 'subjects' => $subjects
             ]);
         } catch (Exception $e) {
             error_log("Error in AssignmentController@edit: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -143,24 +143,24 @@ class AssignmentController
 
             $errors = $this->validateAssignmentData($_POST);
             if (!empty($errors)) {
-                ResponseHelper::validationError($errors);
+                \ResponseHelper::validationError($errors);
             }
             
             if (!$this->assignmentModel->getAssignmentById($id)) {
-                ResponseHelper::notFound('Assignment');
+                \ResponseHelper::notFound('Assignment');
             }
             
             $result = $this->assignmentModel->updateAssignment($id, $teacherId, $subjectId);
             
             if ($result) {
                 $this->logActivity("Updated assignment ID $id");
-                ResponseHelper::success('Assignment updated successfully');
+                \ResponseHelper::success('Assignment updated successfully');
             } else {
-                ResponseHelper::error('Error updating assignment');
+                \ResponseHelper::error('Error updating assignment');
             }
         } catch (Exception $e) {
             error_log("Error in AssignmentController@update: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -171,20 +171,20 @@ class AssignmentController
     {
         try {
             if (!$this->assignmentModel->getAssignmentById($id)) {
-                ResponseHelper::notFound('Assignment');
+                \ResponseHelper::notFound('Assignment');
             }
             
             $result = $this->assignmentModel->deleteAssignment($id);
             
             if ($result) {
                 $this->logActivity("Deleted assignment ID $id");
-                ResponseHelper::success('Assignment deleted successfully');
+                \ResponseHelper::success('Assignment deleted successfully');
             } else {
-                ResponseHelper::error('Error deleting assignment');
+                \ResponseHelper::error('Error deleting assignment');
             }
         } catch (Exception $e) {
             error_log("Error in AssignmentController@destroy: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     
@@ -206,7 +206,7 @@ class AssignmentController
             };
         } catch (Exception $e) {
             error_log("Error in AssignmentController@handleRequest: " . $e->getMessage());
-            ResponseHelper::error('Internal server error', null, 500);
+            \ResponseHelper::error('Internal server error', null, 500);
         }
     }
     

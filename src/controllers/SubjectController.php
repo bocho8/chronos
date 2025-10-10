@@ -29,31 +29,31 @@ class MateriaController {
             };
         } catch (Exception $e) {
             error_log("Error in MateriaController: " . $e->getMessage());
-            ResponseHelper::error($e->getMessage());
+            \ResponseHelper::error($e->getMessage());
         }
     }
     
     private function getMateria() {
         $id = $_POST['id'] ?? $_GET['id'] ?? null;
         if (!$id) {
-            ResponseHelper::error("ID de materia requerido");
+            \ResponseHelper::error("ID de materia requerido");
         }
         
         $materia = $this->materiaModel->getMateriaById($id);
         if (!$materia) {
-            ResponseHelper::notFound("Materia");
+            \ResponseHelper::notFound("Materia");
         }
         
-        ResponseHelper::success("Materia obtenida exitosamente", $materia);
+        \ResponseHelper::success("Materia obtenida exitosamente", $materia);
     }
     
     private function listMaterias() {
         $materias = $this->materiaModel->getAllMaterias();
         if ($materias === false) {
-            ResponseHelper::error("Error al obtener las materias");
+            \ResponseHelper::error("Error al obtener las materias");
         }
         
-        ResponseHelper::success("Materias obtenidas exitosamente", $materias);
+        \ResponseHelper::success("Materias obtenidas exitosamente", $materias);
     }
     
     private function createMateria() {
@@ -70,7 +70,7 @@ class MateriaController {
             $this->logActivity("Creó la materia: " . $data['nombre']);
             $this->db->commit();
             
-            ResponseHelper::success('Materia creada exitosamente', ['id' => $id]);
+            \ResponseHelper::success('Materia creada exitosamente', ['id' => $id]);
             
         } catch (Exception $e) {
             $this->db->rollback();
@@ -81,7 +81,7 @@ class MateriaController {
     private function updateMateria() {
         $id = $_POST['id'] ?? null;
         if (!$id) {
-            ResponseHelper::error("ID de materia requerido");
+            \ResponseHelper::error("ID de materia requerido");
         }
         
         $data = $this->validateMateriaData($_POST, false);
@@ -97,7 +97,7 @@ class MateriaController {
             $this->logActivity("Actualizó la materia ID: $id");
             $this->db->commit();
             
-            ResponseHelper::success('Materia actualizada exitosamente');
+            \ResponseHelper::success('Materia actualizada exitosamente');
             
         } catch (Exception $e) {
             $this->db->rollback();
@@ -108,7 +108,7 @@ class MateriaController {
     private function deleteMateria() {
         $id = $_POST['id'] ?? $_POST['id_materia'] ?? null;
         if (!$id) {
-            ResponseHelper::error("ID de materia requerido");
+            \ResponseHelper::error("ID de materia requerido");
         }
         
         try {
@@ -158,7 +158,7 @@ class MateriaController {
         }
         
         if (isset($data['horas_semanales'])) {
-            $error = ValidationHelper::validateNumericRange($data['horas_semanales'], 'horas_semanales', 1, 40);
+            $error = \ValidationHelper::validateNumericRange($data['horas_semanales'], 'horas_semanales', 1, 40);
             if ($error) {
                 $errors['horas_semanales'] = $error;
             }
@@ -200,7 +200,7 @@ class MateriaController {
     private function logActivity($accion) {
         try {
             require_once __DIR__ . '/../helpers/AuthHelper.php';
-            $user = AuthHelper::getCurrentUser();
+            $user = \AuthHelper::getCurrentUser();
             
             if ($user && isset($user['id_usuario'])) {
                 $stmt = $this->db->prepare("INSERT INTO log (id_usuario, accion, fecha) VALUES (?, ?, NOW())");

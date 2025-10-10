@@ -8,7 +8,7 @@ class LanguageSwitcher
     
     public function __construct()
     {
-        $this->translation = Translation::getInstance();
+        $this->translation = \Translation::getInstance();
     }
     
     public function render($currentUrl = '', $class = '')

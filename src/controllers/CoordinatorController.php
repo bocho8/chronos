@@ -11,7 +11,7 @@ class CoordinadorController {
     
     public function __construct($database) {
         $this->coordinadorModel = new Coordinador($database);
-        $this->translation = Translation::getInstance();
+        $this->translation = \Translation::getInstance();
     }
     
     public function getAllCoordinadores() {
@@ -37,11 +37,11 @@ class CoordinadorController {
     public function createCoordinador($data) {
         $errors = [];
         
-        $errors['cedula'] = ValidationHelper::validateCedula($data['cedula'] ?? '');
-        $errors['nombre'] = ValidationHelper::validateName($data['nombre'] ?? '', 'nombre');
-        $errors['apellido'] = ValidationHelper::validateName($data['apellido'] ?? '', 'apellido');
-        $errors['email'] = ValidationHelper::validateEmail($data['email'] ?? '', true);
-        $errors['contrasena'] = ValidationHelper::validatePassword($data['contrasena'] ?? '', true);
+        $errors['cedula'] = \ValidationHelper::validateCedula($data['cedula'] ?? '');
+        $errors['nombre'] = \ValidationHelper::validateName($data['nombre'] ?? '', 'nombre');
+        $errors['apellido'] = \ValidationHelper::validateName($data['apellido'] ?? '', 'apellido');
+        $errors['email'] = \ValidationHelper::validateEmail($data['email'] ?? '', true);
+        $errors['contrasena'] = \ValidationHelper::validatePassword($data['contrasena'] ?? '', true);
         
         $errors = array_filter($errors);
         if (!empty($errors)) {
@@ -59,13 +59,13 @@ class CoordinadorController {
     public function updateCoordinador($id, $data) {
         $errors = [];
         
-        $errors['cedula'] = ValidationHelper::validateCedula($data['cedula'] ?? '');
-        $errors['nombre'] = ValidationHelper::validateName($data['nombre'] ?? '', 'nombre');
-        $errors['apellido'] = ValidationHelper::validateName($data['apellido'] ?? '', 'apellido');
-        $errors['email'] = ValidationHelper::validateEmail($data['email'] ?? '', true);
+        $errors['cedula'] = \ValidationHelper::validateCedula($data['cedula'] ?? '');
+        $errors['nombre'] = \ValidationHelper::validateName($data['nombre'] ?? '', 'nombre');
+        $errors['apellido'] = \ValidationHelper::validateName($data['apellido'] ?? '', 'apellido');
+        $errors['email'] = \ValidationHelper::validateEmail($data['email'] ?? '', true);
         
         if (!empty($data['contrasena'])) {
-            $errors['contrasena'] = ValidationHelper::validatePassword($data['contrasena'], false);
+            $errors['contrasena'] = \ValidationHelper::validatePassword($data['contrasena'], false);
         }
         
         $errors = array_filter($errors);

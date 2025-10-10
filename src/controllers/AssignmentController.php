@@ -10,7 +10,7 @@ class AsignacionController {
     
     public function __construct($database) {
         $this->db = $database;
-        $this->translation = Translation::getInstance();
+        $this->translation = \Translation::getInstance();
     }
     
     public function handleRequest() {

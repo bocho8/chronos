@@ -9,9 +9,9 @@ class Sidebar {
     private $userRole;
     
     public function __construct($currentPage = '') {
-        $this->translation = Translation::getInstance();
+        $this->translation = \Translation::getInstance();
         $this->currentPage = $currentPage;
-        $this->userRole = AuthHelper::getCurrentUserRole();
+        $this->userRole = \AuthHelper::getCurrentUserRole();
     }
     
     public function render() {

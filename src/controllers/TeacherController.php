@@ -11,7 +11,7 @@ class DocenteController {
     
     public function __construct($database) {
         $this->docenteModel = new Docente($database);
-        $this->translation = Translation::getInstance();
+        $this->translation = \Translation::getInstance();
     }
     
     public function handleRequest() {
@@ -144,24 +144,24 @@ class DocenteController {
     private function validateDocenteData($data, $requirePassword = true) {
         $errors = [];
         
-        $errors['cedula'] = ValidationHelper::validateCedula($data['cedula'] ?? '');
-        $errors['nombre'] = ValidationHelper::validateName($data['nombre'] ?? '', 'nombre');
-        $errors['apellido'] = ValidationHelper::validateName($data['apellido'] ?? '', 'apellido');
-        $errors['email'] = ValidationHelper::validateEmail($data['email'] ?? '', false);
-        $errors['telefono'] = ValidationHelper::validatePhone($data['telefono'] ?? '');
+        $errors['cedula'] = \ValidationHelper::validateCedula($data['cedula'] ?? '');
+        $errors['nombre'] = \ValidationHelper::validateName($data['nombre'] ?? '', 'nombre');
+        $errors['apellido'] = \ValidationHelper::validateName($data['apellido'] ?? '', 'apellido');
+        $errors['email'] = \ValidationHelper::validateEmail($data['email'] ?? '', false);
+        $errors['telefono'] = \ValidationHelper::validatePhone($data['telefono'] ?? '');
         
         if ($requirePassword) {
-            $errors['contrasena'] = ValidationHelper::validatePassword($data['contrasena'] ?? '', true);
+            $errors['contrasena'] = \ValidationHelper::validatePassword($data['contrasena'] ?? '', true);
         } elseif (!empty($data['contrasena'])) {
-            $errors['contrasena'] = ValidationHelper::validatePassword($data['contrasena'], false);
+            $errors['contrasena'] = \ValidationHelper::validatePassword($data['contrasena'], false);
         }
         
         if (isset($data['horas_asignadas'])) {
-            $errors['horas_asignadas'] = ValidationHelper::validateNumericRange($data['horas_asignadas'], 'horas_asignadas', 0);
+            $errors['horas_asignadas'] = \ValidationHelper::validateNumericRange($data['horas_asignadas'], 'horas_asignadas', 0);
         }
         
         if (isset($data['porcentaje_margen'])) {
-            $errors['porcentaje_margen'] = ValidationHelper::validateNumericRange($data['porcentaje_margen'], 'porcentaje_margen', 0, 100);
+            $errors['porcentaje_margen'] = \ValidationHelper::validateNumericRange($data['porcentaje_margen'], 'porcentaje_margen', 0, 100);
         }
         
         return array_filter($errors);
