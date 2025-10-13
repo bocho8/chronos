@@ -22,10 +22,10 @@ class Assignment
     public function getAllAssignments()
     {
         $query = "
-            SELECT dm.*, 
-                   d.id_docente, 
+            SELECT dm.id_docente, dm.id_materia,
+                   CONCAT(dm.id_docente, '_', dm.id_materia) as id,
                    u.nombre, u.apellido, 
-                   m.id_materia, m.nombre as materia_nombre 
+                   m.nombre as materia_nombre 
             FROM docente_materia dm
             JOIN docente d ON dm.id_docente = d.id_docente
             JOIN usuario u ON d.id_usuario = u.id_usuario
@@ -105,10 +105,13 @@ class Assignment
      */
     public function deleteAssignment($id)
     {
-        $query = "DELETE FROM docente_materia WHERE id = ?";
+        // Parse the composite ID (format: "teacherId_materiaId")
+        list($teacherId, $materiaId) = explode('_', $id);
+        
+        $query = "DELETE FROM docente_materia WHERE id_docente = ? AND id_materia = ?";
         $stmt = $this->db->prepare($query);
         
-        return $stmt->execute([$id]);
+        return $stmt->execute([$teacherId, $materiaId]);
     }
     
     /**
@@ -154,7 +157,9 @@ class Assignment
     public function getAssignmentsByTeacher($teacherId)
     {
         $query = "
-            SELECT dm.*, m.nombre as materia_nombre, m.codigo
+            SELECT dm.id_docente, dm.id_materia, 
+                   m.nombre as materia_nombre,
+                   CONCAT(dm.id_docente, '_', dm.id_materia) as id
             FROM docente_materia dm
             JOIN materia m ON dm.id_materia = m.id_materia
             WHERE dm.id_docente = ?

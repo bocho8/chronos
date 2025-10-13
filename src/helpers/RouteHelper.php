@@ -38,7 +38,6 @@ class RouteHelper
         return [
             'users' => '/admin/users',
             'teachers' => '/admin/teachers',
-            'coordinators' => '/admin/coordinators',
             'subjects' => '/admin/subjects',
             'schedules' => '/admin/schedules',
             'schedule_management' => '/admin/gestion-horarios',

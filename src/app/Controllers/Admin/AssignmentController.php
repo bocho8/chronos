@@ -28,7 +28,14 @@ class AssignmentController
     public function index()
     {
         try {
-            $assignments = $this->assignmentModel->getAllAssignments();
+            $teacherId = $_GET['teacher_id'] ?? null;
+            
+            if ($teacherId) {
+                $assignments = $this->assignmentModel->getAssignmentsByTeacher($teacherId);
+            } else {
+                $assignments = $this->assignmentModel->getAllAssignments();
+            }
+            
             \ResponseHelper::success('Assignments retrieved successfully', $assignments);
         } catch (Exception $e) {
             error_log("Error in AssignmentController@index: " . $e->getMessage());
@@ -61,10 +68,16 @@ class AssignmentController
     public function store()
     {
         try {
-            $teacherId = $_POST['teacher_id'] ?? null;
-            $subjectId = $_POST['subject_id'] ?? null;
+            // Handle both JSON and form data
+            $input = json_decode(file_get_contents('php://input'), true);
+            if ($input === null) {
+                $input = $_POST;
+            }
+            
+            $teacherId = $input['teacher_id'] ?? null;
+            $subjectId = $input['subject_id'] ?? null;
 
-            $errors = $this->validateAssignmentData($_POST);
+            $errors = $this->validateAssignmentData($input);
             if (!empty($errors)) {
                 \ResponseHelper::validationError($errors);
             }
@@ -170,10 +183,6 @@ class AssignmentController
     public function destroy($id)
     {
         try {
-            if (!$this->assignmentModel->getAssignmentById($id)) {
-                \ResponseHelper::notFound('Assignment');
-            }
-            
             $result = $this->assignmentModel->deleteAssignment($id);
             
             if ($result) {

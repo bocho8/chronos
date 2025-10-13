@@ -3,6 +3,14 @@
  * Sistema unificado de notificaciones toast
  */
 
+// Prevent multiple loading - check if already exists
+if (typeof window.ToastManager !== 'undefined' && window.toastManager) {
+    console.log('Toast system already loaded, skipping reinitialization');
+} else {
+
+(function() {
+    'use strict';
+
 class ToastManager {
     constructor() {
         this.container = null;
@@ -277,6 +285,14 @@ function hideToast(toastId) {
     }
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { ToastManager, toastManager };
-}
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = { ToastManager, toastManager };
+    }
+
+    // Make ToastManager available globally
+    window.ToastManager = ToastManager;
+    window.toastManager = toastManager;
+
+})();
+
+} // End of loading check

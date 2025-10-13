@@ -28,8 +28,24 @@ $database = new Database($dbConfig);
 $docenteModel = new Docente($database->getConnection());
 $docentes = $docenteModel->getAllDocentes();
 
+// Load subjects and assignments data
+require_once __DIR__ . '/../../models/Materia.php';
+require_once __DIR__ . '/../../app/Models/Assignment.php';
+
+$materiaModel = new Materia($database->getConnection());
+$materias = $materiaModel->getAllMaterias();
+
+$assignmentModel = new \App\Models\Assignment($database->getConnection());
+$assignments = $assignmentModel->getAllAssignments();
+
 function getUserInitials($nombre, $apellido) {
     return strtoupper(substr($nombre, 0, 1) . substr($apellido, 0, 1));
+}
+
+function getTeacherAssignments($teacherId, $assignments) {
+    return array_filter($assignments, function($assignment) use ($teacherId) {
+        return $assignment['id_docente'] == $teacherId;
+    });
 }
 ?>
 
@@ -100,6 +116,30 @@ function getUserInitials($nombre, $apellido) {
       right: 20px;
       z-index: 10000;
     }
+    
+    /* Modal styles */
+    .modal-content {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
 
     #docenteModal {
       position: fixed !important;
@@ -120,21 +160,46 @@ function getUserInitials($nombre, $apellido) {
       display: none !important;
     }
     
-    #docenteModal .modal-content {
-      position: relative !important;
-      z-index: 10001 !important;
-      background: white !important;
-      border-radius: 8px !important;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-    }
     
-    #docenteModal button[type="submit"], 
-    #docenteModal button[type="button"] {
-      z-index: 10002 !important;
-      position: relative !important;
-      background-color: #1f366d !important;
-      color: white !important;
-    }
+#docenteModal .modal-content {
+  position: relative !important;
+  z-index: 10001 !important;
+  background: white !important;
+  border-radius: 12px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+
+#docenteModal button[type="submit"],
+#docenteModal button[type="button"],
+#assignmentModal button[type="submit"],
+#assignmentModal button[type="button"] {
+  z-index: 10002 !important;
+  position: relative !important;
+  background-color: #1f366d !important;
+  color: white !important;
+}
+
+/* Mejoras específicas para el modal de asignaciones */
+#assignmentModal {
+  backdrop-filter: blur(4px) !important;
+}
+
+#assignmentModal .modal-content {
+  animation: modalSlideIn 0.3s ease-out !important;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
   </style>
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">
@@ -228,6 +293,10 @@ function getUserInitials($nombre, $apellido) {
                       </div>
                     </div>
                     <div class="flex items-center space-x-2">
+                      <button onclick="manageAssignments(<?php echo $docente['id_docente']; ?>, '<?php echo htmlspecialchars($docente['nombre'] . ' ' . $docente['apellido']); ?>')" 
+                              class="text-green-600 hover:text-green-800 text-sm font-medium transition-colors">
+                        <?php _e('manage_assignments'); ?>
+                      </button>
                       <button onclick="editDocente(<?php echo $docente['id_docente']; ?>)" 
                               class="text-darkblue hover:text-navy text-sm font-medium transition-colors">
                         <?php _e('edit'); ?>
@@ -334,6 +403,51 @@ function getUserInitials($nombre, $apellido) {
                     </button>
                 </div>
             </form>
+    </div>
+  </div>
+
+  <!-- Modal para gestionar asignaciones -->
+  <div id="assignmentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #111827;"><?php _e('manage_assignments'); ?></h3>
+        <button onclick="closeAssignmentModal()" style="background: none; border: none; font-size: 24px; color: #6b7280; cursor: pointer; padding: 5px;">×</button>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h4 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 500; color: #374151;" id="teacherNameDisplay"></h4>
+        
+        <!-- Formulario para agregar nueva asignación -->
+        <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #e5e7eb;">
+          <h5 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 500; color: #374151;"><?php _e('add_new_assignment'); ?></h5>
+          <form id="assignmentForm" onsubmit="handleAssignmentSubmit(event)" style="display: flex; gap: 10px;">
+            <input type="hidden" id="assignment_teacher_id" name="teacher_id" value="">
+            
+            <select id="assignment_subject_id" name="subject_id" required
+                    style="flex: 1; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+              <option value=""><?php _e('select_subject'); ?></option>
+              <?php foreach ($materias as $materia): ?>
+                <option value="<?php echo $materia['id_materia']; ?>">
+                  <?php echo htmlspecialchars($materia['nombre']); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+            
+            <button type="submit" 
+                    style="padding: 8px 16px; background: #059669; color: white; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; white-space: nowrap;">
+              <?php _e('assign'); ?>
+            </button>
+          </form>
+        </div>
+
+        <!-- Lista de asignaciones actuales -->
+        <div>
+          <h5 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 500; color: #374151;"><?php _e('current_assignments'); ?></h5>
+          <div id="assignmentsList" style="space-y: 8px;">
+            <!-- Las asignaciones se cargarán dinámicamente -->
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -603,6 +717,133 @@ function getUserInitials($nombre, $apellido) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         });
+
+        // Assignment Management Functions
+        function manageAssignments(teacherId, teacherName) {
+            document.getElementById('assignment_teacher_id').value = teacherId;
+            document.getElementById('teacherNameDisplay').textContent = teacherName;
+            loadTeacherAssignments(teacherId);
+            
+            const modal = document.getElementById('assignmentModal');
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+        }
+
+        function closeAssignmentModal() {
+            document.getElementById('assignmentModal').style.display = 'none';
+            document.getElementById('assignmentForm').reset();
+        }
+
+        function loadTeacherAssignments(teacherId) {
+            fetch(`/admin/assignments?teacher_id=${teacherId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const assignmentsList = document.getElementById('assignmentsList');
+                    if (data.success && data.data.length > 0) {
+                        assignmentsList.innerHTML = data.data.map(assignment => `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 8px;">
+                                <div>
+                                    <span style="font-weight: 500; color: #111827;">${assignment.materia_nombre}</span>
+                                </div>
+                                <button onclick="removeAssignment('${assignment.id}', ${teacherId})" 
+                                        style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;">
+                                    <?php _e('remove'); ?>
+                                </button>
+                            </div>
+                        `).join('');
+                    } else {
+                        assignmentsList.innerHTML = '<p style="color: #6b7280; font-size: 14px; text-align: center; padding: 20px;"><?php _e('no_assignments_found'); ?></p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading assignments:', error);
+                    if (typeof showToast === 'function') {
+                        showToast('<?php _e('error_loading_assignments'); ?>', 'error');
+                    } else {
+                        alert('<?php _e('error_loading_assignments'); ?>');
+                    }
+                });
+        }
+
+        function handleAssignmentSubmit(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const teacherId = formData.get('teacher_id');
+            const subjectId = formData.get('subject_id');
+            
+            fetch('/admin/assignments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    teacher_id: teacherId,
+                    subject_id: subjectId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (typeof showToast === 'function') {
+                        showToast('<?php _e('assignment_created_successfully'); ?>', 'success');
+                    } else {
+                        alert('<?php _e('assignment_created_successfully'); ?>');
+                    }
+                    const teacherId = document.getElementById('assignment_teacher_id').value;
+                    loadTeacherAssignments(teacherId);
+                    document.getElementById('assignmentForm').reset();
+                } else {
+                    if (typeof showToast === 'function') {
+                        showToast(data.message || '<?php _e('error_creating_assignment'); ?>', 'error');
+                    } else {
+                        alert(data.message || '<?php _e('error_creating_assignment'); ?>');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error creating assignment:', error);
+                if (typeof showToast === 'function') {
+                    showToast('<?php _e('error_creating_assignment'); ?>', 'error');
+                } else {
+                    alert('<?php _e('error_creating_assignment'); ?>');
+                }
+            });
+        }
+
+        function removeAssignment(assignmentId, teacherId) {
+            if (confirm('<?php _e('confirm_remove_assignment'); ?>')) {
+                fetch(`/admin/assignments/${assignmentId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (typeof showToast === 'function') {
+                            showToast('<?php _e('assignment_removed_successfully'); ?>', 'success');
+                        } else {
+                            alert('<?php _e('assignment_removed_successfully'); ?>');
+                        }
+                        loadTeacherAssignments(teacherId);
+                    } else {
+                        if (typeof showToast === 'function') {
+                            showToast(data.message || '<?php _e('error_removing_assignment'); ?>', 'error');
+                        } else {
+                            alert(data.message || '<?php _e('error_removing_assignment'); ?>');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error removing assignment:', error);
+                    if (typeof showToast === 'function') {
+                        showToast('<?php _e('error_removing_assignment'); ?>', 'error');
+                    } else {
+                        alert('<?php _e('error_removing_assignment'); ?>');
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>
