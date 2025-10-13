@@ -11,6 +11,7 @@ require_once __DIR__ . '/../app/Controllers/Admin/SubjectController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/GroupController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/UserController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/CoordinatorController.php';
+require_once __DIR__ . '/../app/Controllers/Admin/TranslationController.php';
 
 use App\Core\Router;
 use App\Middleware\AuthMiddleware;
@@ -142,6 +143,25 @@ $router->group(['middleware' => ['auth']], function($router) {
         });
         $router->post('/api/users', 'Admin\UserController@handleRequest');
         $router->post('/api/coordinators', 'Admin\CoordinatorController@handleRequest');
+
+        // Translation Management Routes
+        $router->get('/translations', 'Admin\TranslationController@index');
+        $router->get('/translations-test', function() {
+            echo "Translation route is working!";
+        });
+        $router->get('/translations-simple', function() {
+            require_once __DIR__ . '/../app/Controllers/Admin/TranslationController.php';
+            $controller = new \App\Controllers\Admin\TranslationController();
+            $controller->index();
+        });
+        $router->get('/translations/all', 'Admin\TranslationController@getAll');
+        $router->get('/translations/missing', 'Admin\TranslationController@getMissing');
+        $router->post('/translations/update', 'Admin\TranslationController@update');
+        $router->post('/translations/bulk-update', 'Admin\TranslationController@bulkUpdate');
+        $router->get('/translations/export', 'Admin\TranslationController@export');
+        $router->get('/translations/statistics', 'Admin\TranslationController@getStatistics');
+        $router->post('/translations/fill-missing', 'Admin\TranslationController@fillMissing');
+        $router->post('/translations/validate-key', 'Admin\TranslationController@validateKey');
     });
 
     $router->group(['prefix' => '/coordinator', 'middleware' => ['coordinator']], function($router) {

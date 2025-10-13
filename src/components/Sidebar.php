@@ -151,6 +151,11 @@ class Sidebar {
                         'url' => $urls['coordinators'],
                         'text' => 'coordinators',
                         'icon' => '👨‍💼'
+                    ],
+                    [
+                        'url' => '/admin/translations',
+                        'text' => 'translations_management',
+                        'icon' => '🌐'
                     ]
                 ]
             ]
