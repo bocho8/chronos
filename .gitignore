@@ -9,3 +9,5 @@
 *.log
 docs/prompt_diagrama_nassi_shneiderman.md
 docs/prompts_algoritmos_chronos.md
+
+src/lang/backups/
