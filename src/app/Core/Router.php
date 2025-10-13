@@ -108,6 +108,16 @@ class Router
             $path = substr($path, strlen($basePath));
         }
         
+        // Handle language switching before processing other routes
+        if ($method === 'POST' && $this->handleLanguageSwitching()) {
+            return;
+        }
+        
+        // Check for missing static files
+        if ($this->handleMissingFiles($path)) {
+            return;
+        }
+        
         foreach ($this->routes as $route) {
             if ($this->matchRoute($route, $method, $path)) {
                 return $this->executeRoute($route, $path);
@@ -115,6 +125,52 @@ class Router
         }
         
         $this->handleNotFound();
+    }
+    
+    /**
+     * Handle language switching requests
+     */
+    private function handleLanguageSwitching()
+    {
+        if (isset($_POST['change_language'])) {
+            // Initialize session with the same configuration as the login page
+            if (session_status() === PHP_SESSION_NONE) {
+                require_once __DIR__ . '/../../config/session.php';
+                initSecureSession();
+            }
+            
+            require_once __DIR__ . '/../../components/LanguageSwitcher.php';
+            $languageSwitcher = new \LanguageSwitcher();
+            
+            if ($languageSwitcher->handleLanguageChange()) {
+                // Use a simple HTML redirect to avoid header conflicts
+                echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=' . $_SERVER['REQUEST_URI'] . '"></head><body>Redirecting...</body></html>';
+                exit();
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Handle missing static files
+     */
+    private function handleMissingFiles($path)
+    {
+        require_once __DIR__ . '/../../helpers/FileChecker.php';
+        
+        // Check if it's a request for a static file
+        if (\FileChecker::isStaticFile($path)) {
+            // Check if the file exists
+            if (!\FileChecker::checkFile($path)) {
+                // File doesn't exist, show file not found page
+                $errorController = new \App\Controllers\ErrorController();
+                $errorController->showFileNotFound($path);
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     /**
@@ -194,8 +250,29 @@ class Router
      */
     private function handleNotFound()
     {
-        http_response_code(404);
-        echo json_encode(['error' => 'Route not found']);
+        require_once __DIR__ . '/../Controllers/ErrorController.php';
+        $errorController = new \App\Controllers\ErrorController();
+        $errorController->show404();
+    }
+    
+    /**
+     * Handle 500 Internal Server Error
+     */
+    private function handleServerError($message = null)
+    {
+        require_once __DIR__ . '/../Controllers/ErrorController.php';
+        $errorController = new \App\Controllers\ErrorController();
+        $errorController->show500($message);
+    }
+    
+    /**
+     * Handle 403 Forbidden
+     */
+    private function handleForbidden()
+    {
+        require_once __DIR__ . '/../Controllers/ErrorController.php';
+        $errorController = new \App\Controllers\ErrorController();
+        $errorController->show403();
     }
     
     /**

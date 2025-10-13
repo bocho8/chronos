@@ -15,9 +15,9 @@ function initSecureSession() {
             'lifetime' => SESSION_TIMEOUT * 60,
             'path' => '/',
             'domain' => '',
-            'secure' => isset($_SERVER['HTTPS']),
+            'secure' => false, // Set to false for HTTP in Docker
             'httponly' => true,
-            'samesite' => 'Strict'
+            'samesite' => 'Lax' // Changed from Strict to Lax for better compatibility
         ]);
         
         session_start();

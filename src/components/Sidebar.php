@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../helpers/AuthHelper.php';
 require_once __DIR__ . '/../helpers/Translation.php';
+require_once __DIR__ . '/../helpers/RouteHelper.php';
 
 class Sidebar {
     private $translation;
@@ -42,8 +43,8 @@ class Sidebar {
     }
     
     private function renderDashboardSection() {
-        $dashboardUrl = $this->getDashboardUrl();
-        $isActive = $this->isActive('dashboard.php');
+        $dashboardUrl = \RouteHelper::getDashboardUrl($this->userRole);
+        $isActive = \RouteHelper::isActive(\RouteHelper::getCurrentPath(), $dashboardUrl);
         $activeClass = $isActive ? 'active' : '';
         $textColor = $isActive ? 'text-gray-800' : 'text-gray-600';
         
@@ -87,7 +88,7 @@ class Sidebar {
     }
     
     private function renderMenuItem($item) {
-        $isActive = $this->isActive($item['file']);
+        $isActive = \RouteHelper::isActive(\RouteHelper::getCurrentPath(), $item['url']);
         $activeClass = $isActive ? 'active' : '';
         $textColor = $isActive ? 'text-gray-800' : 'text-gray-600';
         $itemText = $this->translation->get($item['text']);
@@ -131,25 +132,23 @@ class Sidebar {
     }
     
     private function getAdministrationSections() {
+        $urls = \RouteHelper::getAdminUrls();
         return [
             [
                 'title' => 'administration',
                 'items' => [
                     [
-                        'url' => '/src/views/admin/admin-usuarios.php',
-                        'file' => 'admin-usuarios.php',
+                        'url' => $urls['users'],
                         'text' => 'users',
                         'icon' => '👥'
                     ],
                     [
-                        'url' => '/src/views/admin/admin-docentes.php',
-                        'file' => 'admin-docentes.php',
+                        'url' => $urls['teachers'],
                         'text' => 'teachers',
                         'icon' => '👨‍🏫'
                     ],
                     [
-                        'url' => '/src/views/admin/admin-coordinadores.php',
-                        'file' => 'admin-coordinadores.php',
+                        'url' => $urls['coordinators'],
                         'text' => 'coordinators',
                         'icon' => '👨‍💼'
                     ]
@@ -159,31 +158,23 @@ class Sidebar {
     }
     
     private function getAcademicSections() {
+        $urls = \RouteHelper::getAdminUrls();
         return [
             [
                 'title' => 'academic_management',
                 'items' => [
                     [
-                        'url' => '/src/views/admin/admin-materias.php',
-                        'file' => 'admin-materias.php',
+                        'url' => $urls['subjects'],
                         'text' => 'subjects',
                         'icon' => '📚'
                     ],
                     [
-                        'url' => '/src/views/admin/admin-horarios.php',
-                        'file' => 'admin-horarios.php',
-                        'text' => 'schedules',
-                        'icon' => '📅'
-                    ],
-                    [
-                        'url' => '/src/views/admin/admin-gestion-horarios.php',
-                        'file' => 'admin-gestion-horarios.php',
+                        'url' => $urls['schedule_management'],
                         'text' => 'schedule_management',
                         'icon' => '⚙️'
                     ],
                     [
-                        'url' => '/src/views/admin/admin-grupos.php',
-                        'file' => 'admin-grupos.php',
+                        'url' => $urls['groups'],
                         'text' => 'groups',
                         'icon' => '👥'
                     ]
@@ -193,13 +184,13 @@ class Sidebar {
     }
     
     private function getDirectorSections() {
+        $urls = \RouteHelper::getAdminUrls();
         return [
             [
                 'title' => 'director_functions',
                 'items' => [
                     [
-                        'url' => '/src/views/admin/admin-publicar-horarios.php',
-                        'file' => 'admin-publicar-horarios.php',
+                        'url' => $urls['publish_schedules'],
                         'text' => 'publish_schedules',
                         'icon' => '📢'
                     ]
@@ -209,25 +200,33 @@ class Sidebar {
     }
     
     private function getCoordinatorSections() {
+        $urls = \RouteHelper::getCoordinatorUrls();
         return [
             [
                 'title' => 'coordinator_functions',
                 'items' => [
                     [
-                        'url' => '/src/views/admin/admin-disponibilidad.php',
-                        'file' => 'admin-disponibilidad.php',
+                        'url' => $urls['teachers'],
+                        'text' => 'teachers',
+                        'icon' => '👨‍🏫'
+                    ],
+                    [
+                        'url' => $urls['calendar'],
+                        'text' => 'calendar',
+                        'icon' => '📅'
+                    ],
+                    [
+                        'url' => $urls['teacher_availability'],
                         'text' => 'teacher_availability',
                         'icon' => '⏰'
                     ],
                     [
-                        'url' => '/src/views/admin/admin-asignaciones.php',
-                        'file' => 'admin-asignaciones.php',
+                        'url' => $urls['subject_assignments'],
                         'text' => 'subject_assignments',
                         'icon' => '🔗'
                     ],
                     [
-                        'url' => '/src/views/admin/admin-reportes.php',
-                        'file' => 'admin-reportes.php',
+                        'url' => $urls['reports'],
                         'text' => 'reports',
                         'icon' => '📊'
                     ]
@@ -237,19 +236,18 @@ class Sidebar {
     }
     
     private function getTeacherSections() {
+        $urls = \RouteHelper::getTeacherUrls();
         return [
             [
                 'title' => 'teacher_functions',
                 'items' => [
                     [
-                        'url' => '/teacher/my-schedule',
-                        'file' => 'mi-horario.php',
+                        'url' => $urls['my_schedule'],
                         'text' => 'my_schedule',
                         'icon' => '📅'
                     ],
                     [
-                        'url' => '/teacher/my-availability',
-                        'file' => 'mi-disponibilidad.php',
+                        'url' => $urls['my_availability'],
                         'text' => 'my_availability',
                         'icon' => '⏰'
                     ]
@@ -259,19 +257,18 @@ class Sidebar {
     }
     
     private function getParentSections() {
+        $urls = \RouteHelper::getParentUrls();
         return [
             [
                 'title' => 'parent_functions',
                 'items' => [
                     [
-                        'url' => '/src/views/admin/admin-estudiantes.php',
-                        'file' => 'admin-estudiantes.php',
+                        'url' => $urls['students'],
                         'text' => 'students',
                         'icon' => '👨‍🎓'
                     ],
                     [
-                        'url' => '/src/views/admin/admin-horarios-estudiante.php',
-                        'file' => 'admin-horarios-estudiante.php',
+                        'url' => $urls['student_schedules'],
                         'text' => 'student_schedules',
                         'icon' => '📅'
                     ]
@@ -280,46 +277,6 @@ class Sidebar {
         ];
     }
     
-    private function getDashboardUrl() {
-        $currentDir = basename(dirname($_SERVER['PHP_SELF']));
-        
-        return match ($this->userRole) {
-            'ADMIN', 'DIRECTOR' => $currentDir === 'admin' ? 'dashboard.php' : '/src/views/admin/dashboard.php',
-            'COORDINADOR' => $currentDir === 'coordinador' ? 'dashboard.php' : '/src/views/coordinador/dashboard.php',
-            'DOCENTE' => $currentDir === 'docente' ? 'dashboard.php' : '/teacher/dashboard',
-            'PADRE' => $currentDir === 'padre' ? 'dashboard.php' : '/src/views/padre/dashboard.php',
-            default => 'dashboard.php'
-        };
-    }
-    
-    private function isActive($file) {
-        $currentFile = basename($_SERVER['PHP_SELF']);
-        $currentPath = $_SERVER['REQUEST_URI'] ?? '';
-        
-        // Verificar por nombre de archivo
-        if ($currentFile === $file || $this->currentPage === $file) {
-            return true;
-        }
-        
-        // Verificar por ruta específica para docentes
-        if ($this->userRole === 'DOCENTE') {
-            $teacherRoutes = [
-                'mi-horario.php' => '/teacher/my-schedule',
-                'mi-disponibilidad.php' => '/teacher/my-availability',
-                'dashboard.php' => '/teacher/dashboard'
-            ];
-            
-            if (isset($teacherRoutes[$file])) {
-                return strpos($currentPath, $teacherRoutes[$file]) !== false;
-            }
-        }
-        
-        return false;
-    }
-    
-    public function getDashboardUrlPublic() {
-        return $this->getDashboardUrl();
-    }
     
     public static function getStyles() {
         return '

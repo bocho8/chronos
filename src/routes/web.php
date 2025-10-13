@@ -1,5 +1,17 @@
 <?php
 
+require_once __DIR__ . '/../app/Core/Router.php';
+require_once __DIR__ . '/../app/Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../app/Middleware/RoleMiddleware.php';
+
+// Require Admin Controllers
+require_once __DIR__ . '/../app/Controllers/Admin/TeacherController.php';
+require_once __DIR__ . '/../app/Controllers/Admin/AssignmentController.php';
+require_once __DIR__ . '/../app/Controllers/Admin/SubjectController.php';
+require_once __DIR__ . '/../app/Controllers/Admin/GroupController.php';
+require_once __DIR__ . '/../app/Controllers/Admin/UserController.php';
+require_once __DIR__ . '/../app/Controllers/Admin/CoordinatorController.php';
+
 use App\Core\Router;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\RoleMiddleware;
@@ -21,6 +33,13 @@ $router->post('/login', function() {
 
 $router->get('/logout', function() {
     require __DIR__ . '/../controllers/LogoutController.php';
+});
+
+// File not found error route
+$router->get('/file-not-found', function() {
+    $errorController = new \App\Controllers\ErrorController();
+    $filePath = $_GET['file'] ?? null;
+    $errorController->showFileNotFound($filePath);
 });
 
 $router->group(['middleware' => ['auth']], function($router) {
@@ -65,29 +84,29 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->delete('/groups/{id}', 'Admin\GroupController@destroy');
 
         $router->get('/schedules', function() {
-            require __DIR__ . '/../views/admin/admin-gestion-horarios.php';
+            require __DIR__ . '/../views/admin/AdminGestionHorarios.php';
         });
         $router->get('/schedules/create', function() {
-            require __DIR__ . '/../views/admin/admin-gestion-horarios.php';
+            require __DIR__ . '/../views/admin/AdminGestionHorarios.php';
         });
         $router->post('/schedules', function() {
-            require __DIR__ . '/../controllers/horario_handler.php';
+            require __DIR__ . '/../controllers/HorarioHandler.php';
         });
         $router->get('/schedules/{id}', function() {
-            require __DIR__ . '/../controllers/horario_handler.php';
+            require __DIR__ . '/../controllers/HorarioHandler.php';
         });
         $router->get('/schedules/{id}/edit', function() {
-            require __DIR__ . '/../controllers/horario_handler.php';
+            require __DIR__ . '/../controllers/HorarioHandler.php';
         });
         $router->put('/schedules/{id}', function() {
-            require __DIR__ . '/../controllers/horario_handler.php';
+            require __DIR__ . '/../controllers/HorarioHandler.php';
         });
         $router->delete('/schedules/{id}', function() {
-            require __DIR__ . '/../controllers/horario_handler.php';
+            require __DIR__ . '/../controllers/HorarioHandler.php';
         });
 
         $router->get('/gestion-horarios', function() {
-            require __DIR__ . '/../views/admin/admin-gestion-horarios.php';
+            require __DIR__ . '/../views/admin/AdminGestionHorarios.php';
         });
 
         $router->get('/users', 'Admin\UserController@index');
@@ -107,11 +126,11 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->delete('/coordinators/{id}', 'Admin\CoordinatorController@destroy');
 
         $router->get('/reports', function() {
-            require __DIR__ . '/../views/admin/admin-reportes.php';
+            require __DIR__ . '/../views/admin/AdminReportes.php';
         });
 
         $router->get('/availability', function() {
-            require __DIR__ . '/../views/admin/admin-disponibilidad.php';
+            require __DIR__ . '/../views/admin/AdminDisponibilidad.php';
         });
 
         $router->post('/api/teachers', 'Admin\TeacherController@handleRequest');
@@ -119,7 +138,7 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->post('/api/subjects', 'Admin\SubjectController@handleRequest');
         $router->post('/api/groups', 'Admin\GroupController@handleRequest');
         $router->post('/api/schedules', function() {
-            require __DIR__ . '/../controllers/horario_handler.php';
+            require __DIR__ . '/../controllers/HorarioHandler.php';
         });
         $router->post('/api/users', 'Admin\UserController@handleRequest');
         $router->post('/api/coordinators', 'Admin\CoordinatorController@handleRequest');
@@ -132,11 +151,11 @@ $router->group(['middleware' => ['auth']], function($router) {
         });
         
         $router->get('/teachers', function() {
-            require __DIR__ . '/../views/coordinador/coordinador-docentes.php';
+            require __DIR__ . '/../views/coordinador/CoordinadorDocentes.php';
         });
         
         $router->get('/calendar', function() {
-            require __DIR__ . '/../views/coordinador/coordinador-calendario.php';
+            require __DIR__ . '/../views/coordinador/CoordinadorCalendario.php';
         });
     });
 
@@ -147,11 +166,11 @@ $router->group(['middleware' => ['auth']], function($router) {
         });
         
         $router->get('/my-schedule', function() {
-            require __DIR__ . '/../views/docente/mi-horario.php';
+            require __DIR__ . '/../views/docente/MiHorario.php';
         });
         
         $router->get('/my-availability', function() {
-            require __DIR__ . '/../views/docente/mi-disponibilidad.php';
+            require __DIR__ . '/../views/docente/MiDisponibilidad.php';
         });
     });
 
@@ -162,11 +181,11 @@ $router->group(['middleware' => ['auth']], function($router) {
         });
         
         $router->get('/students', function() {
-            require __DIR__ . '/../views/padre/admin-estudiantes.php';
+            require __DIR__ . '/../views/padre/AdminEstudiantes.php';
         });
         
         $router->get('/student-schedules', function() {
-            require __DIR__ . '/../views/padre/admin-horarios-estudiante.php';
+            require __DIR__ . '/../views/padre/AdminHorariosEstudiante.php';
         });
     });
 });
