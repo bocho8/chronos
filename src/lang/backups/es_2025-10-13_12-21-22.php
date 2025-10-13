@@ -366,7 +366,6 @@ return [
     'session_expired' => 'Sesión expirada',
     'settings' => 'Configuración',
     'share' => 'Compartir',
-    'spanish' => 'Español',
     'status' => 'Estado',
     'student_schedules' => 'Horarios de Estudiantes',
     'student_schedules_description' => 'Ver horarios de estudiantes por grupo',

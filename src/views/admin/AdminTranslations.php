@@ -486,6 +486,12 @@ if (!AuthHelper::checkSessionTimeout()) {
                     }
                     translations[key][language] = value;
                     
+                    // Refresh the table to show updated data
+                    renderTranslations();
+                    
+                    // Refresh statistics to show updated completion percentages
+                    updateStatistics();
+                    
                     showToast('Translation saved successfully', 'success');
                 } else {
                     showToast('Error saving translation: ' + data.message, 'error');
@@ -555,6 +561,47 @@ if (!AuthHelper::checkSessionTimeout()) {
 
         function refreshTranslations() {
             loadTranslations();
+        }
+
+        async function updateStatistics() {
+            try {
+                const response = await fetch('/admin/translations/statistics');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update the statistics display
+                    const stats = data.data;
+                    
+                    // Update Spanish stats
+                    const esCard = document.querySelector('.bg-gradient-to-r.from-blue-600');
+                    if (esCard) {
+                        const percentage = esCard.querySelector('p[style*="font-size: 1.5rem"]');
+                        const totalKeys = esCard.querySelector('p[style*="opacity: 0.9"]');
+                        if (percentage) percentage.textContent = stats.es.completion_percentage + '%';
+                        if (totalKeys) totalKeys.textContent = stats.es.total_keys + ' <?php _e('total_keys'); ?>';
+                    }
+                    
+                    // Update English stats
+                    const enCard = document.querySelector('.bg-gradient-to-r.from-red-600');
+                    if (enCard) {
+                        const percentage = enCard.querySelector('p[style*="font-size: 1.5rem"]');
+                        const totalKeys = enCard.querySelector('p[style*="opacity: 0.9"]');
+                        if (percentage) percentage.textContent = stats.en.completion_percentage + '%';
+                        if (totalKeys) totalKeys.textContent = stats.en.total_keys + ' <?php _e('total_keys'); ?>';
+                    }
+                    
+                    // Update Italian stats
+                    const itCard = document.querySelector('.bg-gradient-to-r.from-green-600');
+                    if (itCard) {
+                        const percentage = itCard.querySelector('p[style*="font-size: 1.5rem"]');
+                        const totalKeys = itCard.querySelector('p[style*="opacity: 0.9"]');
+                        if (percentage) percentage.textContent = stats.it.completion_percentage + '%';
+                        if (totalKeys) totalKeys.textContent = stats.it.total_keys + ' <?php _e('total_keys'); ?>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating statistics:', error);
+            }
         }
 
         function showLoading() {
