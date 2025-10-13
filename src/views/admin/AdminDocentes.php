@@ -443,7 +443,7 @@ function getTeacherAssignments($teacherId, $assignments) {
         <!-- Lista de asignaciones actuales -->
         <div>
           <h5 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 500; color: #374151;"><?php _e('current_assignments'); ?></h5>
-          <div id="assignmentsList" style="space-y: 8px;">
+          <div id="assignmentsList" style="display: flex; flex-direction: column; gap: 8px;">
             <!-- Las asignaciones se cargarán dinámicamente -->
           </div>
         </div>
