@@ -198,7 +198,7 @@ return [
     'groups_management_description' => 'Manage all system groups',
     'help' => 'Help',
     'home' => 'Home',
-    'hours' => 'hours',
+    'hours' => 'Hours',
     'inactive' => 'Inactive',
     'info' => 'Information',
     'invalid_action' => 'Invalid action',
