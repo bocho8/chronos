@@ -31,6 +31,7 @@ class HorarioController {
                 'get_grupos' => $this->getGrupos(),
                 'get_materias' => $this->getMaterias(),
                 'get_docentes' => $this->getDocentes(),
+                'get_teachers_by_subject' => $this->getTeachersBySubject(),
                 default => throw new Exception("Acción no válida: $action")
             };
         } catch (Exception $e) {
@@ -235,6 +236,17 @@ class HorarioController {
     private function getDocentes() {
         $docentes = $this->horarioModel->getAllDocentes();
         ResponseHelper::success("Docentes obtenidos exitosamente", $docentes);
+    }
+    
+    private function getTeachersBySubject() {
+        $subjectId = $_GET['id_materia'] ?? null;
+        
+        if (!$subjectId) {
+            ResponseHelper::error('ID de materia requerido');
+        }
+        
+        $teachers = $this->horarioModel->getTeachersBySubject($subjectId);
+        ResponseHelper::success("Docentes obtenidos exitosamente", $teachers);
     }
     
     private function validateHorarioData($data, $required = true) {

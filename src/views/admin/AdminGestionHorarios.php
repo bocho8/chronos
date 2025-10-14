@@ -29,7 +29,7 @@ try {
     $horarioModel = new Horario($database->getConnection());
     $horarios = $horarioModel->getAllHorarios();
     $bloques = $horarioModel->getAllBloques();
-    $materias = $horarioModel->getAllMaterias();
+    $materias = $horarioModel->getSubjectsWithTeacherCounts();
     $docentes = $horarioModel->getAllDocentes();
     
     require_once __DIR__ . '/../../models/Grupo.php';
@@ -238,11 +238,8 @@ try {
                         <div class="p-4 border-b border-gray-200 bg-gray-50">
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="font-medium text-darktext"><?php _e('schedules'); ?></h3>
-                                <div class="flex gap-2">
-                                    <button onclick="openHorarioModal()" class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
-                                        <span class="mr-1 text-sm">+</span>
-                                        <?php _e('add_schedule'); ?>
-                                    </button>
+                                <div class="text-sm text-gray-600">
+                                    <?php _e('click_available_slot'); ?>
                                 </div>
                             </div>
                             
@@ -319,9 +316,13 @@ try {
                                 <?php foreach ($dias as $dia): ?>
                                                 <td class="horario-cell text-center font-medium p-2 border border-gray-300 cursor-pointer hover:bg-gray-50" 
                                          data-bloque="<?php echo $bloque['id_bloque']; ?>" 
-                                                    data-dia="<?php echo $dia; ?>">
+                                                    data-dia="<?php echo $dia; ?>"
+                                                    <?php 
+                                                    $assignment = $scheduleGrid[$dia][(int)$bloque['id_bloque']] ?? null;
+                                                    if (!$assignment): ?>
+                                                    onclick="openScheduleModal(<?php echo $bloque['id_bloque']; ?>, '<?php echo $dia; ?>')"
+                                                    <?php endif; ?>>
                                         <?php 
-                                        $assignment = $scheduleGrid[$dia][(int)$bloque['id_bloque']] ?? null;
                                         if ($assignment): ?>
                                                         <div class="bg-blue-100 text-blue-800 p-1 rounded text-xs" 
                                                              data-grupo-id="<?php echo $assignment['id_grupo']; ?>"
@@ -342,7 +343,7 @@ try {
                                                             </div>
                                             </div>
                                         <?php else: ?>
-                                                            <div class="text-gray-400 text-xs cursor-pointer hover:text-gray-600 transition-colors" onclick="openScheduleModal(<?php echo $bloque['id_bloque']; ?>, '<?php echo $dia; ?>')">
+                                                            <div class="text-gray-400 text-xs hover:text-gray-600 transition-colors">
                                                 <?php _e('available'); ?>
                                             </div>
                                         <?php endif; ?>
@@ -361,19 +362,36 @@ try {
 
     <script src="/js/toast.js"></script>
     <script>
+        // Ensure showToast is available globally
+        if (typeof showToast === 'undefined') {
+            function showToast(message, type = 'info', options = {}) {
+                if (typeof window.toastManager !== 'undefined') {
+                    return window.toastManager.show(message, type, options);
+                } else {
+                    console.error('Toast system not available:', message);
+                    alert(message); // Fallback to alert
+                }
+            }
+        }
+    </script>
+    <script>
         let isEditMode = false;
         let currentBloque = null;
         let currentDia = null;
 
         function openHorarioModal() {
             isEditMode = false;
-            document.getElementById('horarioModalTitle').textContent = '<?php _e('add_schedule'); ?>';
+            document.getElementById('horarioModalTitle').textContent = '<?php _e('add_class_to_slot'); ?>';
             document.getElementById('horarioForm').reset();
             document.getElementById('horario_id').value = '';
             
             document.getElementById('grupo_search').value = '';
             document.getElementById('materia_search').value = '';
             document.getElementById('docente_search').value = '';
+            
+            // Hide teacher selection and info message
+            document.getElementById('teacher_selection_container').style.display = 'none';
+            document.getElementById('teacher_info_message').classList.add('hidden');
             
             resetSelectOptions('id_grupo');
             resetSelectOptions('id_materia');
@@ -404,6 +422,87 @@ try {
             openHorarioModal();
         }
 
+        function handleSubjectChange() {
+            const subjectId = document.getElementById('id_materia').value;
+            const teacherContainer = document.getElementById('teacher_selection_container');
+            const teacherSelect = document.getElementById('id_docente');
+            const teacherInfoMessage = document.getElementById('teacher_info_message');
+            const teacherInfoText = document.getElementById('teacher_info_text');
+            
+            if (!subjectId) {
+                teacherContainer.style.display = 'none';
+                teacherInfoMessage.classList.add('hidden');
+                return;
+            }
+            
+            // Check if subject has teachers assigned
+            const selectedOption = document.querySelector(`#id_materia option[value="${subjectId}"]`);
+            const teacherCount = parseInt(selectedOption.getAttribute('data-teacher-count')) || 0;
+            
+            if (teacherCount === 0) {
+                teacherContainer.style.display = 'none';
+                teacherInfoMessage.classList.remove('hidden');
+                teacherInfoText.textContent = 'Esta materia no tiene docentes asignados. Debe asignar docentes a la materia primero.';
+                teacherInfoMessage.className = 'bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-800';
+                return;
+            }
+            
+            // Fetch teachers for this subject
+            fetch(`/src/controllers/HorarioHandler.php?action=get_teachers_by_subject&id_materia=${subjectId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data.length > 0) {
+                        // Auto-select first teacher alphabetically
+                        teacherSelect.value = data.data[0].id_docente;
+                        
+                        if (data.data.length > 1) {
+                            // Show selector for manual choice
+                            populateTeacherSelect(data.data);
+                            teacherContainer.style.display = 'block';
+                            teacherInfoMessage.classList.add('hidden');
+                        } else {
+                            // Hide selector, single teacher auto-assigned
+                            teacherContainer.style.display = 'none';
+                            teacherInfoMessage.classList.remove('hidden');
+                            teacherInfoText.textContent = `Docente seleccionado automáticamente: ${data.data[0].nombre} ${data.data[0].apellido}`;
+                            teacherInfoMessage.className = 'bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800';
+                        }
+                    } else {
+                        // No teachers assigned - show error
+                        teacherContainer.style.display = 'none';
+                        teacherInfoMessage.classList.remove('hidden');
+                        teacherInfoText.textContent = 'No hay docentes asignados a esta materia';
+                        teacherInfoMessage.className = 'bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-800';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error cargando docentes de la materia', 'error');
+                });
+        }
+
+        function populateTeacherSelect(teachers) {
+            const teacherSelect = document.getElementById('id_docente');
+            const docenteSearch = document.getElementById('docente_search');
+            
+            // Clear existing options except the first one
+            while (teacherSelect.children.length > 1) {
+                teacherSelect.removeChild(teacherSelect.lastChild);
+            }
+            
+            // Add teacher options
+            teachers.forEach(teacher => {
+                const option = document.createElement('option');
+                option.value = teacher.id_docente;
+                option.textContent = `${teacher.nombre} ${teacher.apellido}`;
+                option.setAttribute('data-search', `${teacher.nombre.toLowerCase()} ${teacher.apellido.toLowerCase()}`);
+                teacherSelect.appendChild(option);
+            });
+            
+            // Reset search
+            docenteSearch.value = '';
+        }
+
         function closeHorarioModal() {
             document.getElementById('horarioModal').classList.add('hidden');
             clearErrors();
@@ -418,7 +517,7 @@ try {
             formData.append('action', 'get');
             formData.append('id', id);
             
-            fetch('/src/controllers/horario_handler.php', {
+            fetch('/src/controllers/HorarioHandler.php', {
                 method: 'POST',
                 body: formData
             })
@@ -437,6 +536,13 @@ try {
                     scheduleInfo.innerHTML = `
                         <strong><?php _e('schedule_time'); ?>:</strong> ${schedule.dia} ${schedule.hora_inicio.substring(0,5)} - ${schedule.hora_fin.substring(0,5)}
                     `;
+                    
+                    // Show teacher selection container for editing
+                    document.getElementById('teacher_selection_container').style.display = 'block';
+                    document.getElementById('teacher_info_message').classList.add('hidden');
+                    
+                    // Trigger subject change to populate teachers
+                    handleSubjectChange();
                     
                     clearErrors();
                     document.getElementById('horarioModal').classList.remove('hidden');
@@ -461,7 +567,7 @@ try {
                 formData.append('action', 'delete');
                 formData.append('id', id);
                 
-                fetch('/src/controllers/horario_handler.php', {
+                fetch('/src/controllers/HorarioHandler.php', {
                     method: 'POST',
                     body: formData
                 })
@@ -489,26 +595,16 @@ try {
                     return;
                 }
                 
-            const url = isEditMode 
-                ? `/admin/schedules/${document.getElementById('horario_id').value}`
-                : '/admin/schedules';
-            const method = isEditMode ? 'PUT' : 'POST';
+            const url = '/src/controllers/HorarioHandler.php';
+            const method = 'POST';
             
             let requestBody;
             let contentType;
             
-            if (isEditMode) {
-                const formData = new FormData(e.target);
-                const urlEncodedData = new URLSearchParams();
-                for (let [key, value] of formData.entries()) {
-                    urlEncodedData.append(key, value);
-                }
-                requestBody = urlEncodedData.toString();
-                contentType = 'application/x-www-form-urlencoded';
-                } else {
-                requestBody = new FormData(e.target);
-                contentType = null;
-            }
+            const formData = new FormData(e.target);
+            formData.append('action', isEditMode ? 'update' : 'create');
+            requestBody = formData;
+            contentType = null;
             
             const fetchOptions = {
                 method: method,
@@ -521,9 +617,23 @@ try {
                 };
             }
             
+            // Debug: Log what we're sending
+            console.log('Sending request to:', url);
+            console.log('Method:', method);
+            console.log('Body:', requestBody);
+            console.log('Content-Type:', contentType);
+            
             fetch(url, fetchOptions)
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Response data:', data);
                 if (data.success) {
                     showToast(data.message, 'success');
                     closeHorarioModal();
@@ -570,6 +680,15 @@ try {
             if (!materia) {
                 showFieldError('id_materia', '<?php _e('subject_required'); ?>');
                 isValid = false;
+            } else {
+                // Check if subject has teachers assigned
+                const selectedOption = document.querySelector(`#id_materia option[value="${materia}"]`);
+                const teacherCount = parseInt(selectedOption.getAttribute('data-teacher-count')) || 0;
+                
+                if (teacherCount === 0) {
+                    showFieldError('id_materia', 'Esta materia no tiene docentes asignados. Debe asignar docentes a la materia primero.');
+                    isValid = false;
+                }
             }
             
             const docente = document.getElementById('id_docente').value;
@@ -876,6 +995,12 @@ try {
             setupSearchFunctionality();
             
             setupFilterFunctionality();
+            
+            // Add event listener for subject change
+            const materiaSelect = document.getElementById('id_materia');
+            if (materiaSelect) {
+                materiaSelect.addEventListener('change', handleSubjectChange);
+            }
 
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
 
@@ -977,8 +1102,15 @@ try {
                                 aria-describedby="id_materiaError">
                             <option value=""><?php _e('select_subject'); ?></option>
                             <?php foreach ($materias as $materia): ?>
-                                <option value="<?php echo $materia['id_materia']; ?>" data-search="<?php echo strtolower(htmlspecialchars($materia['nombre'])); ?>">
+                                <option value="<?php echo $materia['id_materia']; ?>" 
+                                        data-search="<?php echo strtolower(htmlspecialchars($materia['nombre'])); ?>"
+                                        data-teacher-count="<?php echo $materia['teacher_count']; ?>">
                                     <?php echo htmlspecialchars($materia['nombre']); ?>
+                                    <?php if ($materia['teacher_count'] == 0): ?>
+                                        [Sin docentes]
+                                    <?php else: ?>
+                                        [<?php echo $materia['teacher_count']; ?> docente<?php echo $materia['teacher_count'] > 1 ? 's' : ''; ?>]
+                                    <?php endif; ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -986,7 +1118,7 @@ try {
                     <p id="id_materiaError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
-                <div>
+                <div id="teacher_selection_container" style="display: none;">
                     <label for="id_docente" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('teacher'); ?> <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <input type="text" id="docente_search" placeholder="Buscar docente..." 
@@ -1003,6 +1135,13 @@ try {
                         </select>
                     </div>
                     <p id="id_docenteError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
+                </div>
+                
+                <div id="teacher_info_message" class="hidden bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
+                    <div class="flex items-center">
+                        <span class="mr-2">ℹ️</span>
+                        <span id="teacher_info_text">Docente seleccionado automáticamente</span>
+                    </div>
                 </div>
                 
                 <div id="scheduleInfo" class="bg-gray-50 p-3 rounded text-sm text-gray-600"></div>

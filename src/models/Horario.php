@@ -527,6 +527,50 @@ class Horario {
     }
 
     /**
+     * Obtiene docentes asignados a una materia específica
+     */
+    public function getTeachersBySubject($subjectId) {
+        try {
+            $query = "SELECT d.id_docente, u.nombre, u.apellido 
+                     FROM docente_materia dm
+                     JOIN docente d ON dm.id_docente = d.id_docente
+                     JOIN usuario u ON d.id_usuario = u.id_usuario
+                     WHERE dm.id_materia = :id_materia
+                     ORDER BY u.apellido, u.nombre";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_materia', $subjectId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting teachers by subject: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Obtiene todas las materias con conteo de docentes asignados
+     */
+    public function getSubjectsWithTeacherCounts() {
+        try {
+            $query = "SELECT m.*, COUNT(dm.id_docente) as teacher_count
+                     FROM materia m
+                     LEFT JOIN docente_materia dm ON m.id_materia = dm.id_materia
+                     GROUP BY m.id_materia, m.nombre, m.horas_semanales, m.id_pauta_anep, m.en_conjunto, m.id_grupo_compartido, m.es_programa_italiano
+                     ORDER BY m.nombre";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting subjects with teacher counts: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Publica un horario
      */
     public function publishSchedule($scheduleId) {
