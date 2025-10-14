@@ -10,6 +10,7 @@ require_once __DIR__ . '/../app/Controllers/Admin/AssignmentController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/SubjectController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/GroupController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/UserController.php';
+require_once __DIR__ . '/../app/Controllers/Admin/CoordinatorController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/TranslationController.php';
 
 use App\Core\Router;
@@ -119,6 +120,15 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->put('/users/{id}', 'Admin\UserController@update');
         $router->delete('/users/{id}', 'Admin\UserController@destroy');
 
+        // Coordinator Management Routes
+        $router->get('/coordinators', 'Admin\CoordinatorController@index');
+        $router->get('/coordinators/create', 'Admin\CoordinatorController@create');
+        $router->post('/coordinators', 'Admin\CoordinatorController@store');
+        $router->get('/coordinators/{id}', 'Admin\CoordinatorController@show');
+        $router->get('/coordinators/{id}/edit', 'Admin\CoordinatorController@edit');
+        $router->put('/coordinators/{id}', 'Admin\CoordinatorController@update');
+        $router->delete('/coordinators/{id}', 'Admin\CoordinatorController@destroy');
+
 
         $router->get('/reports', function() {
             require __DIR__ . '/../views/admin/AdminReportes.php';
@@ -136,6 +146,7 @@ $router->group(['middleware' => ['auth']], function($router) {
             require __DIR__ . '/../controllers/HorarioHandler.php';
         });
         $router->post('/api/users', 'Admin\UserController@handleRequest');
+        $router->post('/api/coordinators', 'Admin\CoordinatorController@handleRequest');
 
         // Translation Management Routes
         $router->get('/translations', 'Admin\TranslationController@index');

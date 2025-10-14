@@ -165,7 +165,7 @@ try {
                         <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
                             <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('quick_actions'); ?></h3>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <a href="admin-docentes.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <a href="/admin/teachers" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                     <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                                         <span class="text-blue-600 text-xs font-bold leading-none">👨‍🏫</span>
                                     </div>
@@ -175,7 +175,7 @@ try {
                                     </div>
                                 </a>
 
-                                <a href="admin-coordinadores.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <a href="/admin/coordinators" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                     <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
                                         <span class="text-purple-600 text-xs font-bold leading-none">👨‍💼</span>
                                     </div>
@@ -185,7 +185,7 @@ try {
                                     </div>
                                 </a>
 
-                                <a href="admin-materias.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <a href="/admin/subjects" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                     <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
                                         <span class="text-indigo-600 text-xs font-bold leading-none">📚</span>
                                     </div>
@@ -195,7 +195,7 @@ try {
                                     </div>
                                 </a>
 
-                                <a href="admin-grupos.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <a href="/admin/groups" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                     <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
                                         <span class="text-yellow-600 text-xs font-bold leading-none">👥</span>
                                     </div>
@@ -205,7 +205,7 @@ try {
                                     </div>
                                 </a>
 
-                                <a href="admin-horarios.php" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <a href="/admin/schedules" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                     <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
                                         <span class="text-orange-600 text-xs font-bold leading-none">📅</span>
                                     </div>

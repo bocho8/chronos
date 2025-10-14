@@ -55,7 +55,7 @@ class Coordinador {
     /**
      * Crear nuevo coordinador
      */
-    public function createCoordinador($coordinadorData) {
+    public function createCoordinator($coordinadorData) {
         try {
             $this->db->beginTransaction();
 
@@ -106,7 +106,7 @@ class Coordinador {
     /**
      * Actualizar coordinador
      */
-    public function updateCoordinador($id, $coordinadorData) {
+    public function updateCoordinator($id, $coordinadorData) {
         try {
             $this->db->beginTransaction();
 
@@ -165,7 +165,7 @@ class Coordinador {
     /**
      * Eliminar coordinador
      */
-    public function deleteCoordinador($id) {
+    public function deleteCoordinator($id) {
         try {
             $this->db->beginTransaction();
 
