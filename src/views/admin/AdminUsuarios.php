@@ -301,7 +301,16 @@ function getUserInitials($nombre, $apellido) {
                 <h3 class="font-medium text-darktext ml-4"><?php _e('users'); ?></h3>
               </div>
               <div class="flex gap-2">
-                <button onclick="openUsuarioModal()" class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
+                <div class="relative">
+                  <input type="text" id="searchInput" placeholder="<?php _e('search_users'); ?>" 
+                         class="py-2 px-4 pr-10 border border-gray-300 rounded text-sm focus:ring-darkblue focus:border-darkblue"
+                         onkeyup="searchUsuarios(this.value)">
+                  <span class="text-gray-400 text-2xl">•</span>
+                </div>
+                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50">
+                  <?php _e('export'); ?>
+                </button>
+                <button onclick="openUsuarioModal()" class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
                   <span class="mr-1 text-sm">+</span>
                   <?php _e('add_user'); ?>
                 </button>
@@ -328,10 +337,14 @@ function getUserInitials($nombre, $apellido) {
             </div>
 
             <!-- Lista de usuarios -->
-            <div class="divide-y divide-gray-200">
+            <div id="usuariosList" class="divide-y divide-gray-200">
               <?php if (!empty($usuarios)): ?>
                 <?php foreach ($usuarios as $usuario): ?>
-                  <article class="item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                  <article class="usuario-item item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                           data-nombre="<?php echo htmlspecialchars(strtolower($usuario['nombre'] . ' ' . $usuario['apellido'])); ?>"
+                           data-apellido="<?php echo htmlspecialchars(strtolower($usuario['apellido'])); ?>"
+                           data-email="<?php echo htmlspecialchars(strtolower($usuario['email'])); ?>"
+                           data-cedula="<?php echo htmlspecialchars($usuario['cedula']); ?>"
                            data-item-id="<?php echo $usuario['id_usuario']; ?>"
                            data-original-text=""
                            data-available-labels="<?php 
@@ -917,6 +930,51 @@ function getUserInitials($nombre, $apellido) {
         entityType: 'usuarios'
       });
     });
+
+    function searchUsuarios(searchTerm) {
+      const usuarios = document.querySelectorAll('.usuario-item');
+      const searchLower = searchTerm.toLowerCase().trim();
+      
+      if (searchLower === '') {
+        usuarios.forEach(usuario => {
+          usuario.style.display = 'flex';
+        });
+        return;
+      }
+
+      usuarios.forEach(usuario => {
+        const nombre = usuario.dataset.nombre || '';
+        const apellido = usuario.dataset.apellido || '';
+        const email = usuario.dataset.email || '';
+        const cedula = usuario.dataset.cedula || '';
+        
+        if (nombre.includes(searchLower) || apellido.includes(searchLower) || 
+            email.includes(searchLower) || cedula.includes(searchLower)) {
+          usuario.style.display = 'flex';
+        } else {
+          usuario.style.display = 'none';
+        }
+      });
+
+      const visibleUsuarios = Array.from(usuarios).filter(usuario => usuario.style.display !== 'none');
+      const noResultsMessage = document.getElementById('noResultsMessage');
+      
+      if (visibleUsuarios.length === 0 && searchLower !== '') {
+        if (!noResultsMessage) {
+          const usuariosList = document.getElementById('usuariosList');
+          const messageDiv = document.createElement('div');
+          messageDiv.id = 'noResultsMessage';
+          messageDiv.className = 'p-8 text-center';
+          messageDiv.innerHTML = `
+            <div class="text-gray-500 text-lg mb-2">No se encontraron usuarios que coincidan con "${searchTerm}"</div>
+            <div class="text-gray-400 text-sm">Intente con un término de búsqueda diferente</div>
+          `;
+          usuariosList.appendChild(messageDiv);
+        }
+      } else if (noResultsMessage) {
+        noResultsMessage.remove();
+      }
+    }
   </script>
 </body>
 </html>

@@ -57,6 +57,8 @@ function getTeacherAssignments($teacherId, $assignments) {
     <title><?php _e('app_name'); ?> — <?php _e('teachers_management'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
     <?php echo Sidebar::getStyles(); ?>
+    <script src="/js/multiple-selection.js"></script>
+    <script src="/js/status-labels.js"></script>
   <style type="text/css">
     body {
       overflow-x: hidden;
@@ -261,24 +263,101 @@ function getTeacherAssignments($teacherId, $assignments) {
             <p class="text-muted mb-6 text-base"><?php _e('teachers_management_description'); ?></p>
           </div>
 
-          <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
+          <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8" data-default-labels='["Estados", "Disponibilidad"]'>
             <!-- Header de la tabla -->
             <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-medium text-darktext"><?php _e('teachers'); ?></h3>
+              <div class="flex items-center">
+                <div class="select-all-container">
+                  <input type="checkbox" id="selectAll" class="item-checkbox">
+                  <label for="selectAll"><?php _e('select_all'); ?></label>
+                </div>
+                <h3 class="font-medium text-darktext ml-4"><?php _e('teachers'); ?></h3>
+              </div>
               <div class="flex gap-2">
-                <button onclick="showAddDocenteModal()" class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
+                <div class="relative">
+                  <input type="text" id="searchInput" placeholder="<?php _e('search_teachers'); ?>" 
+                         class="py-2 px-4 pr-10 border border-gray-300 rounded text-sm focus:ring-darkblue focus:border-darkblue"
+                         onkeyup="searchDocentes(this.value)">
+                  <span class="text-gray-400 text-2xl">•</span>
+                </div>
+                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50">
+                  <?php _e('export'); ?>
+                </button>
+                <button onclick="showAddDocenteModal()" class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
                   <span class="mr-1 text-sm">+</span>
                   <?php _e('add_teacher'); ?>
                 </button>
               </div>
             </div>
 
+            <!-- Bulk Actions Bar -->
+            <div id="bulkActions" class="bulk-actions hidden">
+              <div class="flex items-center justify-between">
+                <div class="selection-info">
+                  <span data-selection-count>0</span> <?php _e('selected_items'); ?>
+                </div>
+                <div class="action-buttons">
+                  <button data-bulk-action="export" class="btn-export">
+                    <?php _e('bulk_export'); ?>
+                  </button>
+                  <button data-bulk-action="delete" class="btn-delete">
+                    <?php _e('bulk_delete'); ?>
+                  </button>
+                </div>
+              </div>
+              <!-- Statistics Container -->
+              <div id="statisticsContainer"></div>
+            </div>
+
             <!-- Lista de docentes -->
-            <div class="divide-y divide-gray-200">
+            <div id="docentesList" class="divide-y divide-gray-200">
               <?php if (!empty($docentes)): ?>
                 <?php foreach ($docentes as $docente): ?>
-                  <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
+                  <?php 
+                    $teacherAssignments = getTeacherAssignments($docente['id_docente'], $assignments);
+                    $hasAssignments = count($teacherAssignments) > 0;
+                    $assignmentCount = count($teacherAssignments);
+                  ?>
+                  <article class="docente-item item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                           data-nombre="<?php echo htmlspecialchars(strtolower($docente['nombre'] . ' ' . $docente['apellido'])); ?>"
+                           data-apellido="<?php echo htmlspecialchars(strtolower($docente['apellido'])); ?>"
+                           data-email="<?php echo htmlspecialchars(strtolower($docente['email'])); ?>"
+                           data-cedula="<?php echo htmlspecialchars($docente['cedula']); ?>"
+                           data-item-id="<?php echo $docente['id_docente']; ?>"
+                           data-original-text=""
+                           data-available-labels="<?php 
+                               $labels = [];
+                               $labels[] = 'Email: ' . htmlspecialchars($docente['email']);
+                               $labels[] = 'CI: ' . htmlspecialchars($docente['cedula']);
+                               if ($hasAssignments) {
+                                   $labels[] = 'Materias: ' . $assignmentCount . ' asignadas';
+                                   $labels[] = 'Estado: Con asignaciones';
+                               } else {
+                                   $labels[] = 'Estado: Sin asignaciones';
+                               }
+                               if ($docente['porcentaje_margen'] !== null) {
+                                   $labels[] = 'Margen: ' . number_format($docente['porcentaje_margen'], 1) . '%';
+                               }
+                               $labels[] = 'Horas: ' . ($docente['horas_asignadas'] ?? 0) . 'h asignadas';
+                               echo implode('|', $labels);
+                           ?>"
+                           data-label-mapping="<?php 
+                               $mapping = [];
+                               $mapping['Estados'] = $hasAssignments ? 'Estado: Con asignaciones' : 'Estado: Sin asignaciones';
+                               $mapping['Información'] = 'Email: ' . htmlspecialchars($docente['email']) . ' • CI: ' . htmlspecialchars($docente['cedula']);
+                               if ($hasAssignments) {
+                                   $mapping['Materias'] = 'Materias: ' . $assignmentCount . ' asignadas';
+                               }
+                               if ($docente['porcentaje_margen'] !== null) {
+                                   $mapping['Disponibilidad'] = 'Margen: ' . number_format($docente['porcentaje_margen'], 1) . '%';
+                               }
+                               $mapping['Carga'] = 'Horas: ' . ($docente['horas_asignadas'] ?? 0) . 'h asignadas';
+                               echo htmlspecialchars(json_encode($mapping));
+                           ?>">
                     <div class="flex items-center">
+                      <div class="checkbox-container">
+                        <input type="checkbox" class="item-checkbox" data-item-id="<?php echo $docente['id_docente']; ?>">
+                      </div>
                       <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
                         <?php echo getUserInitials($docente['nombre'], $docente['apellido']); ?>
                       </div>
@@ -844,6 +923,76 @@ function getTeacherAssignments($teacherId, $assignments) {
                 });
             }
         }
+
+        function searchDocentes(searchTerm) {
+            const docentes = document.querySelectorAll('.docente-item');
+            const searchLower = searchTerm.toLowerCase().trim();
+            
+            if (searchLower === '') {
+                docentes.forEach(docente => {
+                    docente.style.display = 'flex';
+                });
+                return;
+            }
+
+            docentes.forEach(docente => {
+                const nombre = docente.dataset.nombre || '';
+                const apellido = docente.dataset.apellido || '';
+                const email = docente.dataset.email || '';
+                const cedula = docente.dataset.cedula || '';
+                
+                if (nombre.includes(searchLower) || apellido.includes(searchLower) || 
+                    email.includes(searchLower) || cedula.includes(searchLower)) {
+                    docente.style.display = 'flex';
+                } else {
+                    docente.style.display = 'none';
+                }
+            });
+
+            const visibleDocentes = Array.from(docentes).filter(docente => docente.style.display !== 'none');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            
+            if (visibleDocentes.length === 0 && searchLower !== '') {
+                if (!noResultsMessage) {
+                    const docentesList = document.getElementById('docentesList');
+                    const messageDiv = document.createElement('div');
+                    messageDiv.id = 'noResultsMessage';
+                    messageDiv.className = 'p-8 text-center';
+                    messageDiv.innerHTML = `
+                        <div class="text-gray-500 text-lg mb-2">No se encontraron docentes que coincidan con "${searchTerm}"</div>
+                        <div class="text-gray-400 text-sm">Intente con un término de búsqueda diferente</div>
+                    `;
+                    docentesList.appendChild(messageDiv);
+                }
+            } else if (noResultsMessage) {
+                noResultsMessage.remove();
+            }
+        }
+
+        // Initialize multiple selection and status labels
+        document.addEventListener('DOMContentLoaded', function() {
+            const multipleSelection = new MultipleSelection({
+                container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
+                itemSelector: '.item-row',
+                checkboxSelector: '.item-checkbox',
+                selectAllSelector: '#selectAll',
+                bulkActionsSelector: '#bulkActions',
+                entityType: 'docentes',
+                onSelectionChange: function(selectedItems) {
+                    // Handle selection change
+                },
+                onBulkAction: function(action, selectedIds) {
+                    // Handle bulk actions
+                }
+            });
+
+            const statusLabels = new StatusLabels({
+                container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
+                itemSelector: '.item-row',
+                metaSelector: '.meta .text-muted',
+                entityType: 'docentes'
+            });
+        });
     </script>
 </body>
 </html>
