@@ -138,6 +138,19 @@ function getUserInitials($nombre, $apellido) {
       padding: 1rem !important;
     }
     
+    #usuarioModal {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: rgba(0, 0, 0, 0.5) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      z-index: 10000 !important;
+    }
+    
     #usuarioModal.hidden {
       display: none !important;
     }
@@ -531,7 +544,7 @@ function getUserInitials($nombre, $apellido) {
       formData.append('action', 'get');
       formData.append('id', id);
       
-      fetch('/src/controllers/user_handler.php', {
+      fetch('../src/controllers/UserHandler.php', {
         method: 'POST',
         body: formData
       })
@@ -582,7 +595,7 @@ function getUserInitials($nombre, $apellido) {
         formData.append('action', 'delete');
         formData.append('id', id);
         
-        fetch('/src/controllers/user_handler.php', {
+        fetch('../src/controllers/UserHandler.php', {
           method: 'POST',
           body: formData
         })
@@ -779,7 +792,7 @@ function getUserInitials($nombre, $apellido) {
       const formData = new FormData(this);
       formData.append('action', isEditMode ? 'update' : 'create');
       
-      fetch('/src/controllers/user_handler.php', {
+      fetch('../src/controllers/UserHandler.php', {
         method: 'POST',
         body: formData
       })

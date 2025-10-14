@@ -47,10 +47,7 @@ class UserController {
             $id = $_POST['id'] ?? '';
             
             if (empty($id)) {
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'ID de usuario requerido'
-                ]);
+                ResponseHelper::error('ID de usuario requerido');
                 return;
             }
             
@@ -60,19 +57,17 @@ class UserController {
                 return;
             }
             
-            $this->usuarioModel->updateUsuario($id, $usuarioData);
+            $result = $this->usuarioModel->updateUsuario($id, $usuarioData);
             
-            echo json_encode([
-                'success' => true,
-                'message' => 'Usuario actualizado exitosamente'
-            ]);
+            if ($result) {
+                ResponseHelper::success('Usuario actualizado exitosamente');
+            } else {
+                ResponseHelper::error('Error actualizando usuario');
+            }
             
         } catch (Exception $e) {
             error_log("Error actualizando usuario: " . $e->getMessage());
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error actualizando usuario: ' . $e->getMessage()
-            ]);
+            ResponseHelper::error('Error actualizando usuario: ' . $e->getMessage());
         }
     }
     
@@ -84,26 +79,17 @@ class UserController {
             $id = $_POST['id'] ?? '';
             
             if (empty($id)) {
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'ID de usuario requerido'
-                ]);
+                ResponseHelper::error('ID de usuario requerido');
                 return;
             }
             
             $this->usuarioModel->deleteUsuario($id);
             
-            echo json_encode([
-                'success' => true,
-                'message' => 'Usuario eliminado exitosamente'
-            ]);
+            ResponseHelper::success('Usuario eliminado exitosamente');
             
         } catch (Exception $e) {
             error_log("Error eliminando usuario: " . $e->getMessage());
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error eliminando usuario: ' . $e->getMessage()
-            ]);
+            ResponseHelper::error('Error eliminando usuario: ' . $e->getMessage());
         }
     }
     
@@ -115,37 +101,25 @@ class UserController {
             $id = $_GET['id'] ?? $_POST['id'] ?? '';
             
             if (empty($id)) {
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'ID de usuario requerido'
-                ]);
+                ResponseHelper::error('ID de usuario requerido');
                 return;
             }
             
             $usuario = $this->usuarioModel->getUsuarioById($id);
             
             if (!$usuario) {
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Usuario no encontrado'
-                ]);
+                ResponseHelper::notFound('Usuario');
                 return;
             }
 
             $usuario['roles'] = !empty($usuario['roles']) ? explode(', ', $usuario['roles']) : [];
             $usuario['role_names'] = !empty($usuario['role_names']) ? explode(', ', $usuario['role_names']) : [];
             
-            echo json_encode([
-                'success' => true,
-                'data' => $usuario
-            ]);
+            ResponseHelper::success('Usuario obtenido exitosamente', $usuario);
             
         } catch (Exception $e) {
             error_log("Error obteniendo usuario: " . $e->getMessage());
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error obteniendo usuario: ' . $e->getMessage()
-            ]);
+            ResponseHelper::error('Error obteniendo usuario: ' . $e->getMessage());
         }
     }
     
@@ -157,26 +131,17 @@ class UserController {
             $searchTerm = $_GET['search'] ?? $_POST['search'] ?? '';
             
             if (empty($searchTerm)) {
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Término de búsqueda requerido'
-                ]);
+                ResponseHelper::error('Término de búsqueda requerido');
                 return;
             }
             
             $usuarios = $this->usuarioModel->searchUsuarios($searchTerm);
             
-            echo json_encode([
-                'success' => true,
-                'data' => $usuarios ?: []
-            ]);
+            ResponseHelper::success('Búsqueda completada', $usuarios ?: []);
             
         } catch (Exception $e) {
             error_log("Error buscando usuarios: " . $e->getMessage());
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error buscando usuarios: ' . $e->getMessage()
-            ]);
+            ResponseHelper::error('Error buscando usuarios: ' . $e->getMessage());
         }
     }
     
@@ -187,17 +152,11 @@ class UserController {
         try {
             $usuarios = $this->usuarioModel->getAllUsuarios();
             
-            echo json_encode([
-                'success' => true,
-                'data' => $usuarios ?: []
-            ]);
+            ResponseHelper::success('Usuarios obtenidos exitosamente', $usuarios ?: []);
             
         } catch (Exception $e) {
             error_log("Error listando usuarios: " . $e->getMessage());
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error listando usuarios: ' . $e->getMessage()
-            ]);
+            ResponseHelper::error('Error listando usuarios: ' . $e->getMessage());
         }
     }
     
@@ -234,11 +193,7 @@ class UserController {
         }
 
         if (!empty($errors)) {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Datos inválidos',
-                'data' => $errors
-            ]);
+            ResponseHelper::validationError($errors);
             return false;
         }
 

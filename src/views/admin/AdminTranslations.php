@@ -92,17 +92,6 @@ if (!AuthHelper::checkSessionTimeout()) {
             background-color: #fef3c7;
             color: #d97706;
         }
-        .progress-bar {
-            height: 0.5rem;
-            background-color: #e5e7eb;
-            border-radius: 0.25rem;
-            overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%;
-            background-color: #3b82f6;
-            transition: width 0.3s ease;
-        }
         .search-container {
             position: sticky;
             top: 0;
@@ -289,13 +278,6 @@ if (!AuthHelper::checkSessionTimeout()) {
         </main>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
-            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span><?php _e('loading'); ?>...</span>
-        </div>
-    </div>
 
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
@@ -324,7 +306,6 @@ if (!AuthHelper::checkSessionTimeout()) {
         }
 
         async function loadTranslations() {
-            showLoading();
             try {
                 const response = await fetch('/admin/translations/all');
                 const data = await response.json();
@@ -339,8 +320,6 @@ if (!AuthHelper::checkSessionTimeout()) {
             } catch (error) {
                 console.error('Error loading translations:', error); // Debug log
                 showToast('Error loading translations: ' + error.message, 'error');
-            } finally {
-                hideLoading();
             }
         }
 
@@ -512,7 +491,6 @@ if (!AuthHelper::checkSessionTimeout()) {
                 return;
             }
 
-            showLoading();
             try {
                 // Fill English
                 const enResponse = await fetch('/admin/translations/fill-missing', {
@@ -549,8 +527,6 @@ if (!AuthHelper::checkSessionTimeout()) {
                 }
             } catch (error) {
                 showToast('Error filling missing translations: ' + error.message, 'error');
-            } finally {
-                hideLoading();
             }
         }
 
@@ -604,13 +580,6 @@ if (!AuthHelper::checkSessionTimeout()) {
             }
         }
 
-        function showLoading() {
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').classList.add('hidden');
-        }
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');

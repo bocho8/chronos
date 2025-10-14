@@ -117,29 +117,7 @@ function getTeacherAssignments($teacherId, $assignments) {
       z-index: 10000;
     }
     
-    /* Modal styles */
-    .modal-content {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-      z-index: 1000;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    
-    .modal-backdrop {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-    }
+    /* Modal styles - removed conflicting general styles */
 
     #docenteModal {
       position: fixed !important;
@@ -154,6 +132,9 @@ function getTeacherAssignments($teacherId, $assignments) {
       background-color: rgba(0, 0, 0, 0.2) !important;
       backdrop-filter: blur(8px) !important;
       -webkit-backdrop-filter: blur(8px) !important;
+      padding: 1rem !important;
+      width: 100vw !important;
+      height: 100vh !important;
     }
     
     #docenteModal.hidden {
@@ -168,7 +149,14 @@ function getTeacherAssignments($teacherId, $assignments) {
   border-radius: 12px !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
   max-height: 90vh !important;
+  max-width: 500px !important;
+  width: 100% !important;
   overflow-y: auto !important;
+  margin: 0 auto !important;
+  animation: modalSlideIn 0.3s ease-out !important;
+  transform: none !important;
+  top: auto !important;
+  left: auto !important;
 }
 
 #docenteModal button[type="submit"],
@@ -198,6 +186,18 @@ function getTeacherAssignments($teacherId, $assignments) {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive modal behavior */
+@media (max-width: 640px) {
+  #docenteModal {
+    padding: 0.5rem !important;
+  }
+  
+  #docenteModal .modal-content {
+    max-height: 95vh !important;
+    border-radius: 8px !important;
   }
 }
   </style>
@@ -322,7 +322,7 @@ function getTeacherAssignments($teacherId, $assignments) {
 
   <!-- Modal para agregar/editar docente -->
   <div id="docenteModal" class="hidden">
-    <div class="modal-content p-8 w-full max-w-md mx-auto">
+    <div class="modal-content p-8">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_teacher'); ?></h3>
                 <button onclick="closeDocenteModal()" class="text-gray-400 hover:text-gray-600">
