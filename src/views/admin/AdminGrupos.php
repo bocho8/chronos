@@ -400,7 +400,7 @@ function getGroupInitials($nombre) {
             isEditMode = true;
             document.getElementById('modalTitle').textContent = '<?php _e('edit_group'); ?>';
             
-            fetch(`/src/controllers/grupo_handler.php?action=get&id=${id}`)
+            fetch(`/src/controllers/GrupoHandler.php?action=get&id=${id}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -431,7 +431,7 @@ function getGroupInitials($nombre) {
                 formData.append('action', 'delete');
                 formData.append('id', id);
                 
-                fetch('/src/controllers/grupo_handler.php', {
+                fetch('/src/controllers/GrupoHandler.php', {
                     method: 'POST',
                     body: formData
                 })
@@ -496,7 +496,7 @@ function getGroupInitials($nombre) {
                 return;
             }
             
-            fetch('/src/controllers/grupo_handler.php', {
+            fetch('/src/controllers/GrupoHandler.php', {
                 method: 'POST',
                 body: formData
             })

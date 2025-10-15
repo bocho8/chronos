@@ -100,6 +100,27 @@ CREATE TABLE materia (
     es_programa_italiano BOOLEAN DEFAULT FALSE
 );
 
+-- Table to link parents to their children's groups
+CREATE TABLE padre_grupo (
+    id_padre INTEGER NOT NULL REFERENCES padre(id_padre) ON DELETE CASCADE,
+    id_grupo INTEGER NOT NULL REFERENCES grupo(id_grupo) ON DELETE CASCADE,
+    fecha_asignacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_padre, id_grupo)
+);
+
+COMMENT ON TABLE padre_grupo IS 'Asignación de padres a grupos (clase de su hijo/a)';
+
+-- Table to define which subjects belong to which groups (curriculum)
+CREATE TABLE grupo_materia (
+    id_grupo INTEGER NOT NULL REFERENCES grupo(id_grupo) ON DELETE CASCADE,
+    id_materia INTEGER NOT NULL REFERENCES materia(id_materia) ON DELETE CASCADE,
+    horas_semanales INTEGER NOT NULL DEFAULT 1 CHECK (horas_semanales > 0),
+    fecha_asignacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_grupo, id_materia)
+);
+
+COMMENT ON TABLE grupo_materia IS 'Materias asignadas a cada grupo (currícula)';
+
 CREATE TABLE docente_materia (
     id_docente INTEGER NOT NULL REFERENCES docente(id_docente) ON DELETE CASCADE,
     id_materia INTEGER NOT NULL REFERENCES materia(id_materia) ON DELETE CASCADE,
@@ -147,6 +168,10 @@ CREATE INDEX idx_padre_usuario ON padre(id_usuario);
 CREATE INDEX idx_disponibilidad_docente ON disponibilidad(id_docente);
 CREATE INDEX idx_disponibilidad_bloque ON disponibilidad(id_bloque);
 CREATE INDEX idx_disponibilidad_dia ON disponibilidad(dia);
+CREATE INDEX idx_padre_grupo_padre ON padre_grupo(id_padre);
+CREATE INDEX idx_padre_grupo_grupo ON padre_grupo(id_grupo);
+CREATE INDEX idx_grupo_materia_grupo ON grupo_materia(id_grupo);
+CREATE INDEX idx_grupo_materia_materia ON grupo_materia(id_materia);
 CREATE INDEX idx_materia_pauta ON materia(id_pauta_anep);
 CREATE INDEX idx_docente_materia_docente ON docente_materia(id_docente);
 CREATE INDEX idx_docente_materia_materia ON docente_materia(id_materia);

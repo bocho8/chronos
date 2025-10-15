@@ -120,7 +120,7 @@ try {
             z-index: 10000;
         }
 
-        #materiaModal {
+        #materiaModal, #pautaModal {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
@@ -136,11 +136,11 @@ try {
             padding: 1rem !important;
         }
         
-        #materiaModal.hidden {
+        #materiaModal.hidden, #pautaModal.hidden {
             display: none !important;
         }
         
-        #materiaModal .modal-content {
+        #materiaModal .modal-content, #pautaModal .modal-content {
             position: relative !important;
             z-index: 10001 !important;
             background: white !important;
@@ -165,7 +165,9 @@ try {
         }
         
         #materiaModal button[type="submit"], 
-        #materiaModal button[type="button"] {
+        #materiaModal button[type="button"],
+        #pautaModal button[type="submit"], 
+        #pautaModal button[type="button"] {
             z-index: 10002 !important;
             position: relative !important;
             background-color: #1f366d !important;
@@ -174,7 +176,9 @@ try {
         }
         
         #materiaModal button[type="submit"]:hover, 
-        #materiaModal button[type="button"]:hover {
+        #materiaModal button[type="button"]:hover,
+        #pautaModal button[type="submit"]:hover, 
+        #pautaModal button[type="button"]:hover {
             background-color: #1a2d5a !important;
             transform: translateY(-1px) !important;
         }
@@ -182,7 +186,11 @@ try {
         #materiaModal input:focus,
         #materiaModal select:focus,
         #materiaModal textarea:focus,
-        #materiaModal button:focus {
+        #materiaModal button:focus,
+        #pautaModal input:focus,
+        #pautaModal select:focus,
+        #pautaModal textarea:focus,
+        #pautaModal button:focus {
             outline: 2px solid #1f366d !important;
             outline-offset: 2px !important;
         }
@@ -205,14 +213,79 @@ try {
         }
 
         @media (max-width: 640px) {
-            #materiaModal {
+            #materiaModal, #pautaModal {
                 padding: 0.5rem !important;
             }
             
-            #materiaModal .modal-content {
+            #materiaModal .modal-content, #pautaModal .modal-content {
                 max-height: 95vh !important;
                 border-radius: 8px !important;
             }
+        }
+
+        .tab-button {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .tab-button:hover {
+            background-color: #f9fafb;
+        }
+        .tab-button.active {
+            background-color: transparent;
+        }
+
+        /* Bulk Actions Styles for Guidelines */
+        #bulkActionsGuidelines {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            margin: 0;
+            transition: all 0.3s ease;
+        }
+
+        #bulkActionsGuidelines .selection-info {
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        #bulkActionsGuidelines .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        #bulkActionsGuidelines .btn-export {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #bulkActionsGuidelines .btn-export:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px);
+        }
+
+        #bulkActionsGuidelines .btn-delete {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #bulkActionsGuidelines .btn-delete:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -274,8 +347,22 @@ try {
                         <p class="text-muted mb-6 text-base"><?php _e('subjects_management_description'); ?></p>
                     </div>
 
-                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8" data-default-labels='["Horas semanales"]'>
-                        <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
+                    <!-- Tab Navigation -->
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder mb-6">
+                        <div class="flex border-b border-lightborder">
+                            <button onclick="switchTab('subjects')" id="tabSubjects" class="tab-button active px-6 py-3 font-medium text-sm border-b-2 border-darkblue text-darkblue">
+                                <?php _e('subjects'); ?>
+                            </button>
+                            <button onclick="switchTab('guidelines')" id="tabGuidelines" class="tab-button px-6 py-3 font-medium text-sm border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+                                <?php _e('anep_guidelines'); ?>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Subjects Tab Content -->
+                    <div id="contentSubjects" class="tab-content">
+                        <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8" data-default-labels='["Horas semanales", "Pautas", "Programas", "Estados"]'>
+                        <div class="flex justify-between items-center p-4 border-b border-lightborder bg-gray-50">
                             <div class="flex items-center">
                                 <div class="select-all-container">
                                     <input type="checkbox" id="selectAll" class="item-checkbox">
@@ -387,6 +474,118 @@ try {
                             <?php endif; ?>
                         </div>
                     </div>
+                    </div>
+
+                    <!-- ANEP Guidelines Tab Content -->
+                    <div id="contentGuidelines" class="tab-content hidden">
+                        <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p class="text-sm text-blue-800">
+                                <?php _e('anep_guidelines_help_text'); ?>
+                            </p>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8" data-default-labels='["Días mínimos", "Días máximos", "Condiciones"]'>
+                            <div class="p-4 border-b border-lightborder bg-gray-50">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center">
+                                        <div class="select-all-container">
+                                            <input type="checkbox" id="selectAllGuidelines" class="item-checkbox">
+                                            <label for="selectAllGuidelines"><?php _e('select_all'); ?></label>
+                                        </div>
+                                        <h3 class="font-medium text-darktext ml-4"><?php _e('anep_guidelines'); ?></h3>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button onclick="openPautaModal()" class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
+                                            <span class="mr-1 text-sm">+</span>
+                                            <?php _e('add_guideline'); ?>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bulk Actions Bar for Guidelines -->
+                            <div id="bulkActionsGuidelines" class="bulk-actions hidden">
+                                <div class="flex items-center justify-between">
+                                    <div class="selection-info">
+                                        <span data-selection-count>0</span> <?php _e('selected_items'); ?>
+                                    </div>
+                                    <div class="action-buttons">
+                                        <button data-bulk-action="export" class="btn-export">
+                                            <?php _e('bulk_export'); ?>
+                                        </button>
+                                        <button data-bulk-action="delete" class="btn-delete">
+                                            <?php _e('bulk_delete'); ?>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Statistics Container -->
+                                <div id="statisticsContainerGuidelines"></div>
+                            </div>
+                            <div class="divide-y divide-gray-200">
+                                <?php if (!empty($pautasAnep)): ?>
+                                    <?php foreach ($pautasAnep as $pauta): ?>
+                                        <article class="item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                                                 data-item-id="<?php echo $pauta['id_pauta_anep']; ?>"
+                                                 data-original-text=""
+                                                 data-available-labels="<?php 
+                                                     $labels = [];
+                                                     $labels[] = $pauta['dias_minimos'] . ' días mínimos';
+                                                     $labels[] = $pauta['dias_maximos'] . ' días máximos';
+                                                     if ($pauta['condiciones_especiales']) {
+                                                         $labels[] = 'Condiciones especiales';
+                                                     }
+                                                     echo implode('|', $labels);
+                                                 ?>"
+                                                 data-label-mapping="<?php 
+                                                     $mapping = [];
+                                                     $mapping['Días mínimos'] = $pauta['dias_minimos'] . ' días mínimos';
+                                                     $mapping['Días máximos'] = $pauta['dias_maximos'] . ' días máximos';
+                                                     if ($pauta['condiciones_especiales']) {
+                                                         $mapping['Condiciones'] = 'Condiciones especiales';
+                                                     }
+                                                     echo htmlspecialchars(json_encode($mapping));
+                                                 ?>">
+                                            <div class="flex items-center">
+                                                <div class="checkbox-container">
+                                                    <input type="checkbox" class="item-checkbox" data-item-id="<?php echo $pauta['id_pauta_anep']; ?>">
+                                                </div>
+                                                <div class="w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
+                                                    <?php echo strtoupper(substr($pauta['nombre'], 0, 1)); ?>
+                                                </div>
+                                                <div class="meta">
+                                                    <div class="font-semibold text-darktext mb-1">
+                                                        <?php echo htmlspecialchars($pauta['nombre']); ?>
+                                                    </div>
+                                                    <div class="text-muted text-sm">
+                                                        <?php _e('min_days'); ?>: <?php echo $pauta['dias_minimos']; ?> | 
+                                                        <?php _e('max_days'); ?>: <?php echo $pauta['dias_maximos']; ?>
+                                                        <?php if ($pauta['condiciones_especiales']): ?>
+                                                            • <?php echo htmlspecialchars($pauta['condiciones_especiales']); ?>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <button onclick="editPauta(<?php echo $pauta['id_pauta_anep']; ?>, '<?php echo htmlspecialchars($pauta['nombre']); ?>', <?php echo $pauta['dias_minimos']; ?>, <?php echo $pauta['dias_maximos']; ?>, '<?php echo htmlspecialchars($pauta['condiciones_especiales'] ?? ''); ?>')" 
+                                                        class="text-darkblue hover:text-navy text-sm font-medium transition-colors">
+                                                    <?php _e('edit'); ?>
+                                                </button>
+                                                <button onclick="deletePauta(<?php echo $pauta['id_pauta_anep']; ?>, '<?php echo htmlspecialchars($pauta['nombre']); ?>')" 
+                                                        class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors">
+                                                    <?php _e('delete'); ?>
+                                                </button>
+                                            </div>
+                                        </article>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="p-8 text-center">
+                                        <div class="text-gray-500 text-lg mb-2"><?php _e('no_guidelines_found'); ?></div>
+                                        <div class="text-gray-400 text-sm"><?php _e('add_first_guideline'); ?></div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
@@ -425,11 +624,12 @@ try {
             formData.append('action', 'get');
             formData.append('id', id);
             
-            fetch('/src/controllers/materia_handler.php', {
+            fetch('/src/controllers/MateriaHandler.php', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'same-origin'
             })
-            .then(response => response.json())
+            .then(handleJsonResponse)
             .then(data => {
                 if (data.success) {
                     document.getElementById('materiaId').value = data.data.id_materia;
@@ -469,11 +669,12 @@ try {
                 formData.append('action', 'delete');
                 formData.append('id', id);
                 
-                fetch('/src/controllers/materia_handler.php', {
+                fetch('/src/controllers/MateriaHandler.php', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    credentials: 'same-origin'
                 })
-                .then(response => response.json())
+                .then(handleJsonResponse)
                 .then(data => {
                     if (data.success) {
                         showToast('Materia eliminada exitosamente', 'success');
@@ -484,7 +685,7 @@ try {
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showToast('Error eliminando materia', 'error');
+                    showToast(error.message || 'Error eliminando materia', 'error');
                 });
             }
         }
@@ -500,11 +701,12 @@ try {
             const formData = new FormData(e.target);
             formData.append('action', isEditMode ? 'update' : 'create');
             
-            fetch('/src/controllers/materia_handler.php', {
+            fetch('/src/controllers/MateriaHandler.php', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'same-origin'
             })
-            .then(response => response.json())
+            .then(handleJsonResponse)
             .then(data => {
                 if (data.success) {
                     showToast(data.message, 'success');
@@ -603,6 +805,58 @@ try {
             }
         }
 
+        // Toast function
+        function showToast(message, type = 'info', options = {}) {
+            if (typeof window.toastManager !== 'undefined') {
+                return window.toastManager.show(message, type, options);
+            } else {
+                console.error('Toast system not available:', message);
+                alert(message); // Fallback to alert
+            }
+        }
+
+        // Helper function to handle JSON responses safely
+        function handleJsonResponse(response) {
+            // First check if response is ok
+            if (!response.ok) {
+                if (response.status === 302) {
+                    throw new Error('Authentication required. Please refresh the page and login again.');
+                }
+                
+                // For non-ok responses, try to extract the actual error message
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    // Parse the JSON response to get the actual error message
+                    return response.json().then(data => {
+                        if (data && data.message) {
+                            throw new Error(data.message);
+                        } else {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                    }).catch((parseError) => {
+                        // If this is our own error with the message, re-throw it
+                        if (parseError.message && parseError.message !== `HTTP error! status: ${response.status}`) {
+                            throw parseError;
+                        }
+                        // If JSON parsing fails, fall back to generic error
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    });
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+            }
+            
+            // For ok responses, check content type
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                if (contentType && contentType.includes('text/html')) {
+                    throw new Error('Server returned HTML instead of JSON. This usually means authentication failed or there was a server error. Please refresh the page and try again.');
+                }
+                throw new Error('Response is not JSON. Content-Type: ' + contentType);
+            }
+            return response.json();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
 
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
@@ -659,28 +913,250 @@ try {
                 });
             }
 
-            const multipleSelection = new MultipleSelection({
-                container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
-                itemSelector: '.item-row',
-                checkboxSelector: '.item-checkbox',
-                selectAllSelector: '#selectAll',
-                bulkActionsSelector: '#bulkActions',
-                entityType: 'materias',
-                onSelectionChange: function(selectedItems) {
-
-                },
-                onBulkAction: function(action, selectedIds) {
-
-                }
-            });
-
-            const statusLabels = new StatusLabels({
-                container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
-                itemSelector: '.item-row',
-                metaSelector: '.meta .text-muted',
-                entityType: 'materias'
-            });
+            // Initialize subjects selection (default tab)
+            initializeSubjectsSelection();
+            
+            // Initialize guidelines selection
+            initializeGuidelinesSelection();
         });
+
+        // ANEP Guidelines Management Functions
+        let isPautaEditMode = false;
+
+        function openPautaModal() {
+            isPautaEditMode = false;
+            document.getElementById('pautaModalTitle').textContent = '<?php _e('add_guideline'); ?>';
+            document.getElementById('pautaForm').reset();
+            document.getElementById('pautaId').value = '';
+            document.getElementById('diasMinimos').value = '1';
+            document.getElementById('diasMaximos').value = '5';
+            
+            clearPautaErrors();
+            document.getElementById('pautaModal').classList.remove('hidden');
+            
+            setTimeout(() => {
+                document.getElementById('pautaNombre').focus();
+            }, 100);
+        }
+
+        function closePautaModal() {
+            document.getElementById('pautaModal').classList.add('hidden');
+            clearPautaErrors();
+        }
+
+        function editPauta(id, nombre, diasMinimos, diasMaximos, condicionesEspeciales) {
+            isPautaEditMode = true;
+            document.getElementById('pautaModalTitle').textContent = '<?php _e('edit_guideline'); ?>';
+            document.getElementById('pautaId').value = id;
+            document.getElementById('pautaNombre').value = nombre;
+            document.getElementById('diasMinimos').value = diasMinimos;
+            document.getElementById('diasMaximos').value = diasMaximos;
+            document.getElementById('condicionesEspeciales').value = condicionesEspeciales || '';
+            
+            clearPautaErrors();
+            document.getElementById('pautaModal').classList.remove('hidden');
+            
+            setTimeout(() => {
+                document.getElementById('pautaNombre').focus();
+            }, 100);
+        }
+
+        function deletePauta(id, nombre) {
+            if (confirm('<?php _e('confirm_delete_guideline'); ?>: ' + nombre + '?')) {
+                const formData = new FormData();
+                formData.append('action', 'delete_pauta');
+                formData.append('id', id);
+                
+                fetch('/src/controllers/MateriaHandler.php', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                })
+                .then(handleJsonResponse)
+                .then(data => {
+                    if (data.success) {
+                        showToast('<?php _e('guideline_deleted_successfully'); ?>', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast('Error: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast(error.message || '<?php _e('error_processing_request'); ?>', 'error');
+                });
+            }
+        }
+
+        function handlePautaFormSubmit(event) {
+            event.preventDefault();
+            
+            if (!validatePautaForm()) {
+                showToast('<?php _e('please_correct_errors'); ?>', 'error');
+                return;
+            }
+            
+            const formData = new FormData(event.target);
+            formData.append('action', isPautaEditMode ? 'update_pauta' : 'create_pauta');
+            
+            fetch('/src/controllers/SubjectController.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+            .then(handleJsonResponse)
+            .then(data => {
+                if (data.success) {
+                    showToast(isPautaEditMode ? '<?php _e('guideline_updated_successfully'); ?>' : '<?php _e('guideline_created_successfully'); ?>', 'success');
+                    closePautaModal();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    if (data.data && typeof data.data === 'object') {
+                        Object.keys(data.data).forEach(field => {
+                            showPautaFieldError(field, data.data[field]);
+                        });
+                    } else {
+                        showToast('Error: ' + data.message, 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('<?php _e('error_processing_request'); ?>', 'error');
+            });
+        }
+
+        function validatePautaForm() {
+            let isValid = true;
+            clearPautaErrors();
+            
+            const nombre = document.getElementById('pautaNombre').value.trim();
+            const diasMinimos = parseInt(document.getElementById('diasMinimos').value);
+            const diasMaximos = parseInt(document.getElementById('diasMaximos').value);
+            
+            if (!nombre) {
+                showPautaFieldError('nombre', '<?php _e('guideline_name_required'); ?>');
+                isValid = false;
+            }
+            
+            if (diasMinimos < 1 || diasMinimos > 7) {
+                showPautaFieldError('dias_minimos', '<?php _e('min_days_range'); ?>');
+                isValid = false;
+            }
+            
+            if (diasMaximos < 1 || diasMaximos > 7) {
+                showPautaFieldError('dias_maximos', '<?php _e('max_days_range'); ?>');
+                isValid = false;
+            }
+            
+            if (diasMaximos < diasMinimos) {
+                showPautaFieldError('dias_maximos', '<?php _e('max_days_less_than_min'); ?>');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        function showPautaFieldError(field, message) {
+            const errorElement = document.getElementById(field + 'Error');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        function clearPautaErrors() {
+            const errorElements = document.querySelectorAll('#pautaModal [id$="Error"]');
+            errorElements.forEach(element => {
+                element.textContent = '';
+                element.style.display = 'none';
+            });
+        }
+
+        // Tab switching functionality
+        function switchTab(tab) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active state from all tabs
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active', 'border-darkblue', 'text-darkblue');
+                button.classList.add('border-transparent', 'text-gray-600');
+            });
+            
+            // Show selected tab content
+            document.getElementById('content' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden');
+            
+            // Activate selected tab button
+            const activeButton = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            activeButton.classList.add('active', 'border-darkblue', 'text-darkblue');
+            activeButton.classList.remove('border-transparent', 'text-gray-600');
+            
+            // Note: Selection systems are already initialized and don't need reinitialization
+            // Each tab has its own container and the systems work independently
+        }
+
+        // Initialize multiple selection for subjects tab
+        function initializeSubjectsSelection() {
+            const subjectsContainer = document.querySelector('#contentSubjects .bg-white.rounded-lg.shadow-sm');
+            if (subjectsContainer && !subjectsContainer.querySelector('.status-labels-dropdown-container')) {
+                const multipleSelection = new MultipleSelection({
+                    container: subjectsContainer,
+                    itemSelector: '.item-row',
+                    checkboxSelector: '.item-checkbox',
+                    selectAllSelector: '#selectAll',
+                    bulkActionsSelector: '#bulkActions',
+                    entityType: 'materias',
+                    onSelectionChange: function(selectedItems) {
+                        // Handle selection change for subjects
+                    },
+                    onBulkAction: function(action, selectedIds) {
+                        // Handle bulk actions for subjects
+                        console.log('Bulk action:', action, 'Selected IDs:', selectedIds);
+                    }
+                });
+
+                // Initialize status labels for subjects
+                const statusLabels = new StatusLabels({
+                    container: subjectsContainer,
+                    itemSelector: '.item-row',
+                    metaSelector: '.meta .text-muted',
+                    entityType: 'materias'
+                });
+            }
+        }
+
+        // Initialize multiple selection for guidelines tab
+        function initializeGuidelinesSelection() {
+            const guidelinesContainer = document.querySelector('#contentGuidelines .bg-white.rounded-lg.shadow-sm');
+            if (guidelinesContainer && !guidelinesContainer.querySelector('.status-labels-dropdown-container')) {
+                const multipleSelection = new MultipleSelection({
+                    container: guidelinesContainer,
+                    itemSelector: '.item-row',
+                    checkboxSelector: '.item-checkbox',
+                    selectAllSelector: '#selectAllGuidelines',
+                    bulkActionsSelector: '#bulkActionsGuidelines',
+                    entityType: 'guidelines',
+                    onSelectionChange: function(selectedItems) {
+                        // Handle selection change for guidelines
+                    },
+                    onBulkAction: function(action, selectedIds) {
+                        // Handle bulk actions for guidelines
+                        console.log('Bulk action:', action, 'Selected IDs:', selectedIds);
+                    }
+                });
+
+                // Initialize status labels for guidelines
+                const statusLabels = new StatusLabels({
+                    container: guidelinesContainer,
+                    itemSelector: '.item-row',
+                    metaSelector: '.meta .text-muted',
+                    entityType: 'guidelines'
+                });
+            }
+        }
     </script>
 
     <!-- Modal para agregar/editar materia -->
@@ -762,6 +1238,68 @@ try {
 
                 <div class="flex justify-end space-x-3 pt-4">
                     <button type="button" onclick="closeMateriaModal()" 
+                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
+                        <?php _e('cancel'); ?>
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkblue hover:bg-navy focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
+                        <?php _e('save'); ?>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar pauta ANEP -->
+    <div id="pautaModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="pautaModalTitle" aria-describedby="pautaModalDescription">
+        <div class="modal-content p-8 w-full max-w-md mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="pautaModalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_guideline'); ?></h3>
+                <button onclick="closePautaModal()" class="text-gray-400 hover:text-gray-600" aria-label="<?php _e('close_modal'); ?>">
+                    <span class="text-sm" aria-hidden="true">×</span>
+                </button>
+            </div>
+            <p id="pautaModalDescription" class="text-sm text-gray-600 mb-6 sr-only"><?php _e('pauta_modal_description'); ?></p>
+            
+            <form id="pautaForm" onsubmit="handlePautaFormSubmit(event)" class="space-y-4">
+                <input type="hidden" id="pautaId" name="id">
+                
+                <div>
+                    <label for="pautaNombre" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('guideline_name'); ?> <span class="text-red-500">*</span></label>
+                    <input type="text" id="pautaNombre" name="nombre" required maxlength="200"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                           placeholder="<?php _e('guideline_name_placeholder'); ?>" aria-describedby="pautaNombreError" autocomplete="off">
+                    <p id="pautaNombreError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="diasMinimos" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('min_days'); ?> <span class="text-red-500">*</span></label>
+                        <input type="number" id="diasMinimos" name="dias_minimos" min="1" max="7" value="1" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                               aria-describedby="diasMinimosError" autocomplete="off">
+                        <p id="diasMinimosError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
+                    </div>
+                    
+                    <div>
+                        <label for="diasMaximos" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('max_days'); ?> <span class="text-red-500">*</span></label>
+                        <input type="number" id="diasMaximos" name="dias_maximos" min="1" max="7" value="5" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                               aria-describedby="diasMaximosError" autocomplete="off">
+                        <p id="diasMaximosError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="condicionesEspeciales" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('special_conditions'); ?></label>
+                    <textarea id="condicionesEspeciales" name="condiciones_especiales" rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                              placeholder="<?php _e('special_conditions_placeholder'); ?>" aria-describedby="condicionesEspecialesError"></textarea>
+                    <p id="condicionesEspecialesError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closePautaModal()" 
                             class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
                         <?php _e('cancel'); ?>
                     </button>

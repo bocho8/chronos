@@ -12,10 +12,17 @@ require_once __DIR__ . '/../helpers/ResponseHelper.php';
 initSecureSession();
 $translation = Translation::getInstance();
 
-AuthHelper::requireRole('ADMIN');
+// Check authentication for AJAX requests
+if (!AuthHelper::isLoggedIn()) {
+    ResponseHelper::error('No autenticado. Por favor, inicie sesión primero.', null, 401);
+}
+
+if (!AuthHelper::hasRole('ADMIN')) {
+    ResponseHelper::error('Acceso denegado. Se requiere rol de administrador.', null, 403);
+}
 
 if (!AuthHelper::checkSessionTimeout()) {
-    ResponseHelper::error('Sesión expirada', null, 401);
+    ResponseHelper::error('Sesión expirada. Por favor, inicie sesión nuevamente.', null, 401);
 }
 
 try {

@@ -177,6 +177,16 @@ class Sidebar {
                         'url' => $urls['groups'],
                         'text' => 'groups',
                         'icon' => '👥'
+                    ],
+                    [
+                        'url' => '/src/views/admin/AdminAsignacionPadres.php',
+                        'text' => 'parent_group_assignment',
+                        'icon' => '👨‍👩‍👧‍👦'
+                    ],
+                    [
+                        'url' => '/src/views/admin/AdminAsignacionMaterias.php',
+                        'text' => 'group_subject_assignment',
+                        'icon' => '📖'
                     ]
                 ]
             ]

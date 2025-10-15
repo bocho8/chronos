@@ -557,7 +557,7 @@ function getUserInitials($nombre, $apellido) {
       formData.append('action', 'get');
       formData.append('id', id);
       
-      fetch('../src/controllers/UserHandler.php', {
+      fetch('/src/controllers/UserHandler.php', {
         method: 'POST',
         body: formData
       })
@@ -608,7 +608,7 @@ function getUserInitials($nombre, $apellido) {
         formData.append('action', 'delete');
         formData.append('id', id);
         
-        fetch('../src/controllers/UserHandler.php', {
+        fetch('/src/controllers/UserHandler.php', {
           method: 'POST',
           body: formData
         })
@@ -805,7 +805,7 @@ function getUserInitials($nombre, $apellido) {
       const formData = new FormData(this);
       formData.append('action', isEditMode ? 'update' : 'create');
       
-      fetch('../src/controllers/UserHandler.php', {
+      fetch('/src/controllers/UserHandler.php', {
         method: 'POST',
         body: formData
       })
