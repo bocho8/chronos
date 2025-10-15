@@ -277,7 +277,7 @@ try {
             </header>
 
             <!-- Contenido principal - Centrado -->
-            <section class="flex-1 px-6 py-8">
+            <section class="flex-1 px-4 py-6 md:px-8 md:py-8 lg:px-12">
                 <div class="max-w-7xl mx-auto">
                     <!-- Header de la página -->
                     <div class="mb-8">
@@ -308,7 +308,7 @@ try {
                     <!-- Panel de Horarios -->
                     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
                         <!-- Header del panel -->
-                        <div class="p-4 border-b border-lightborder bg-gray-50">
+                        <div class="p-4 md:p-6 border-b border-lightborder bg-gray-50">
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="font-medium text-darktext"><?php _e('schedules'); ?></h3>
                                 <div class="text-sm text-muted">
@@ -365,29 +365,31 @@ try {
                         </div>
                         
                         <!-- Tabla de horarios -->
-                        <div class="overflow-x-auto">
-                            <table class="w-full border-collapse table-fixed">
+                        <div class="overflow-x-auto p-4 md:p-6">
+                            <table class="w-full border-collapse table-fixed rounded-lg overflow-hidden">
                                 <thead>
                                     <tr>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300 w-32"><?php _e('time'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300 w-32 rounded-tl-lg"><?php _e('time'); ?></th>
                                         <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('monday'); ?></th>
                                         <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('tuesday'); ?></th>
                                         <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('wednesday'); ?></th>
                                         <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('thursday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('friday'); ?></th>
+                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300 rounded-tr-lg"><?php _e('friday'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php 
                                     $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+                                    $totalBloques = count($bloques);
                                     foreach ($bloques as $index => $bloque): 
+                                        $isLastRow = ($index === $totalBloques - 1);
                                     ?>
                                         <tr>
-                                            <td class="bg-[#34495e] text-white p-2 text-center font-semibold border border-gray-300 w-32">
+                                            <td class="bg-[#34495e] text-white p-2 text-center font-semibold border border-gray-300 w-32 <?php echo $isLastRow ? 'rounded-bl-lg' : ''; ?>">
                                                 <?php echo date('H:i', strtotime($bloque['hora_inicio'])) . ' – ' . date('H:i', strtotime($bloque['hora_fin'])); ?>
                                             </td>
-                                <?php foreach ($dias as $dia): ?>
-                                            <td class="horario-cell text-center font-medium p-2 border border-gray-300 cursor-pointer hover:bg-gray-50 min-h-[60px]" 
+                                <?php foreach ($dias as $diaIndex => $dia): ?>
+                                            <td class="horario-cell text-center font-medium p-2 border border-gray-300 cursor-pointer hover:bg-gray-50 min-h-[60px] <?php echo ($isLastRow && $diaIndex === count($dias) - 1) ? 'rounded-br-lg' : ''; ?>" 
                                                 data-bloque="<?php echo $bloque['id_bloque']; ?>" 
                                                 data-dia="<?php echo $dia; ?>"
                                                 onclick="openScheduleModal(<?php echo $bloque['id_bloque']; ?>, '<?php echo $dia; ?>')">
@@ -1649,8 +1651,8 @@ try {
     </script>
 
     <!-- Modal para agregar/editar horario -->
-    <div id="horarioModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md mx-auto">
+    <div id="horarioModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+        <div class="bg-white rounded-lg shadow-lg p-6 md:p-8 w-full max-w-md">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="horarioModalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_schedule'); ?></h3>
                 <button onclick="closeHorarioModal()" class="text-gray-400 hover:text-gray-600">
