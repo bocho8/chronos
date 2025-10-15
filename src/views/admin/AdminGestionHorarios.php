@@ -27,7 +27,6 @@ try {
     $database = new Database($dbConfig);
     
     $horarioModel = new Horario($database->getConnection());
-    $horarios = $horarioModel->getAllHorarios();
     $bloques = $horarioModel->getAllBloques();
     $materias = $horarioModel->getSubjectsWithTeacherCounts();
     $docentes = $horarioModel->getAllDocentes();
@@ -36,10 +35,7 @@ try {
     $grupoModel = new Grupo($database->getConnection());
     $grupos = $grupoModel->getAllGrupos();
 
-    if ($horarios === false) {
-        $horarios = [];
-    }
-    
+    // Initialize empty schedule grid - schedules will be loaded via AJAX
     $scheduleGrid = [];
     $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
     
@@ -51,16 +47,8 @@ try {
         }
     }
     
-    foreach ($horarios as $horario) {
-        $dia = $horario['dia'];
-        $id_bloque = (int)$horario['id_bloque'];
-        
-        $scheduleGrid[$dia][$id_bloque] = $horario;
-    }
-    
     
 } catch (Exception $e) {
-    $horarios = [];
     $bloques = [];
     $grupos = [];
     $materias = [];
@@ -194,6 +182,16 @@ try {
         .conflict-warning .bg-blue-100 {
             background-color: #fecaca !important;
             color: #dc2626 !important;
+            border: 1px solid #fca5a5 !important;
+        }
+        
+        .conflict-indicator {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
         
         /* Group-centric schedule management styles */
@@ -390,39 +388,13 @@ try {
                                             </td>
                                 <?php foreach ($dias as $dia): ?>
                                             <td class="horario-cell text-center font-medium p-2 border border-gray-300 cursor-pointer hover:bg-gray-50 min-h-[60px]" 
-                                         data-bloque="<?php echo $bloque['id_bloque']; ?>" 
-                                                    data-dia="<?php echo $dia; ?>"
-                                                    <?php 
-                                                    $assignment = $scheduleGrid[$dia][(int)$bloque['id_bloque']] ?? null;
-                                                    if (!$assignment): ?>
-                                                onclick="openScheduleModal(<?php echo $bloque['id_bloque']; ?>, '<?php echo $dia; ?>')"
-                                                    <?php endif; ?>>
-                                        <?php 
-                                        if ($assignment): ?>
-                                                        <div class="bg-blue-100 text-blue-800 p-1 rounded text-xs" 
-                                                             data-grupo-id="<?php echo $assignment['id_grupo']; ?>"
-                                                             data-materia-id="<?php echo $assignment['id_materia']; ?>"
-                                                             data-docente-id="<?php echo $assignment['id_docente']; ?>">
-                                                            <div class="font-semibold"><?php echo htmlspecialchars($assignment['grupo_nombre']); ?></div>
-                                                            <div><?php echo htmlspecialchars($assignment['materia_nombre']); ?></div>
-                                                            <div class="text-xs"><?php echo htmlspecialchars($assignment['docente_nombre'] . ' ' . $assignment['docente_apellido']); ?></div>
-                                                            <div class="mt-1">
-                                                                <button onclick="event.stopPropagation(); editHorario(<?php echo $assignment['id_horario']; ?>)" 
-                                                                        class="text-blue-600 hover:text-blue-800 text-xs mr-1">
-                                                                    <?php _e('edit'); ?>
-                                                </button>
-                                                                <button onclick="event.stopPropagation(); deleteHorario(<?php echo $assignment['id_horario']; ?>)" 
-                                                                        class="text-red-600 hover:text-red-800 text-xs">
-                                                                    <?php _e('delete'); ?>
-                                                </button>
-                                                            </div>
-                                            </div>
-                                        <?php else: ?>
-                                            <div class="text-gray-400 text-xs hover:text-gray-600 transition-colors">
-                                                <?php _e('available'); ?>
-                                            </div>
-                                        <?php endif; ?>
-                                                </td>
+                                                data-bloque="<?php echo $bloque['id_bloque']; ?>" 
+                                                data-dia="<?php echo $dia; ?>"
+                                                onclick="openScheduleModal(<?php echo $bloque['id_bloque']; ?>, '<?php echo $dia; ?>')">
+                                                <div class="text-gray-400 text-xs hover:text-gray-600 transition-colors">
+                                                    <?php _e('available'); ?>
+                                                </div>
+                                            </td>
                                 <?php endforeach; ?>
                                         </tr>
                             <?php endforeach; ?>
@@ -505,7 +477,7 @@ try {
         let currentDia = null;
         let currentViewMode = 'normal'; // 'normal', 'conflicts', 'comparison'
         let selectedGroupId = null;
-        let allSchedules = <?php echo json_encode($horarios); ?>;
+        let allSchedules = []; // Will be populated when schedules are loaded
 
         function openHorarioModal() {
             isEditMode = false;
@@ -904,11 +876,108 @@ try {
         }
 
         function detectConflicts() {
-
             clearConflictWarnings();
             
+            // Fetch all schedules for comprehensive conflict detection
+            fetchAllSchedulesForConflicts();
+        }
+        
+        function fetchAllSchedulesForConflicts() {
+            fetch('/src/controllers/HorarioHandler.php?action=list')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        detectConflictsWithAllSchedules(data.data);
+                    } else {
+                        console.error('Error fetching all schedules for conflict detection:', data.message);
+                        // Fallback to current group only
+                        detectConflictsCurrentGroup();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching all schedules:', error);
+                    // Fallback to current group only
+                    detectConflictsCurrentGroup();
+                });
+        }
+        
+        function detectConflictsWithAllSchedules(allSchedules) {
+            const cells = document.querySelectorAll('.horario-cell');
+            const currentGroupAssignments = [];
+            let totalConflicts = 0;
+
+            // Get current group assignments from DOM
+            cells.forEach(cell => {
+                const assignment = cell.querySelector('.bg-blue-100');
+                if (assignment) {
+                    const grupoId = assignment.getAttribute('data-grupo-id');
+                    const materiaId = assignment.getAttribute('data-materia-id');
+                    const docenteId = assignment.getAttribute('data-docente-id');
+                    const bloqueId = cell.getAttribute('data-bloque');
+                    const dia = cell.getAttribute('data-dia');
+                    
+                    currentGroupAssignments.push({
+                        element: cell,
+                        assignment: assignment,
+                        grupoId: grupoId,
+                        materiaId: materiaId,
+                        docenteId: docenteId,
+                        bloqueId: bloqueId,
+                        dia: dia
+                    });
+                }
+            });
+            
+            // Check each current group assignment against all schedules
+            currentGroupAssignments.forEach(assignment => {
+                const conflicts = findConflictsWithAllSchedules(assignment, allSchedules);
+                if (conflicts.length > 0) {
+                    markAsConflict(assignment, conflicts);
+                    totalConflicts += conflicts.length;
+                }
+            });
+            
+            // Show conflict summary
+            showConflictSummary(totalConflicts);
+        }
+        
+        function showConflictSummary(conflictCount) {
+            let summaryElement = document.getElementById('conflictSummary');
+            
+            if (conflictCount > 0) {
+                if (!summaryElement) {
+                    // Create conflict summary element
+                    summaryElement = document.createElement('div');
+                    summaryElement.id = 'conflictSummary';
+                    summaryElement.className = 'bg-red-50 border border-red-200 rounded-md p-3 mb-4 text-red-800';
+                    
+                    // Insert after the view controls
+                    const viewControls = document.querySelector('.flex.gap-2.mb-4');
+                    if (viewControls) {
+                        viewControls.parentNode.insertBefore(summaryElement, viewControls.nextSibling);
+                    }
+                }
+                
+                summaryElement.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="mr-2 text-lg">⚠️</span>
+                        <div>
+                            <div class="font-semibold">Se detectaron ${conflictCount} conflicto${conflictCount > 1 ? 's' : ''}</div>
+                            <div class="text-sm">Revisa las asignaciones marcadas en rojo para resolver los conflictos</div>
+                        </div>
+                    </div>
+                `;
+                summaryElement.style.display = 'block';
+            } else if (summaryElement) {
+                summaryElement.style.display = 'none';
+            }
+        }
+        
+        function detectConflictsCurrentGroup() {
+            // Fallback: only check conflicts within current group
             const cells = document.querySelectorAll('.horario-cell');
             const assignments = [];
+            let totalConflicts = 0;
 
             cells.forEach(cell => {
                 const assignment = cell.querySelector('.bg-blue-100');
@@ -934,9 +1003,49 @@ try {
             assignments.forEach(assignment => {
                 const conflicts = findConflicts(assignment, assignments);
                 if (conflicts.length > 0) {
-                    markAsConflict(assignment, conflicts); 
+                    markAsConflict(assignment, conflicts);
+                    totalConflicts += conflicts.length;
                 }
             });
+            
+            // Show conflict summary
+            showConflictSummary(totalConflicts);
+        }
+        
+        function findConflictsWithAllSchedules(currentAssignment, allSchedules) {
+            const conflicts = [];
+            const currentHorarioId = currentAssignment.assignment.getAttribute('data-horario-id');
+            
+            allSchedules.forEach(schedule => {
+                // Skip the same assignment
+                if (schedule.id_horario == currentHorarioId) {
+                    return;
+                }
+                
+                // Check for teacher conflicts (same teacher, same time slot)
+                if (currentAssignment.docenteId == schedule.id_docente && 
+                    currentAssignment.bloqueId == schedule.id_bloque && 
+                    currentAssignment.dia === schedule.dia) {
+                    conflicts.push({
+                        type: 'docente',
+                        message: `El docente ${schedule.docente_nombre} ${schedule.docente_apellido} ya tiene una clase en este horario (${schedule.grupo_nombre})`,
+                        conflictingSchedule: schedule
+                    });
+                }
+                
+                // Check for group conflicts (same group, same time slot)
+                if (currentAssignment.grupoId == schedule.id_grupo && 
+                    currentAssignment.bloqueId == schedule.id_bloque && 
+                    currentAssignment.dia === schedule.dia) {
+                    conflicts.push({
+                        type: 'grupo',
+                        message: `El grupo ${schedule.grupo_nombre} ya tiene una clase en este horario (${schedule.materia_nombre})`,
+                        conflictingSchedule: schedule
+                    });
+                }
+            });
+            
+            return conflicts;
         }
         
         function findConflicts(currentAssignment, allAssignments) {
@@ -971,9 +1080,14 @@ try {
         
         function markAsConflict(assignment, conflicts) {
             assignment.element.classList.add('conflict-warning');
+            assignment.assignment.classList.add('conflict-warning');
+            
+            // Remove any existing conflict indicators
+            const existingIndicators = assignment.assignment.querySelectorAll('.conflict-indicator');
+            existingIndicators.forEach(indicator => indicator.remove());
             
             const conflictIndicator = document.createElement('div');
-            conflictIndicator.className = 'text-red-600 text-xs font-bold mt-1';
+            conflictIndicator.className = 'conflict-indicator text-red-600 text-xs font-bold mt-1 bg-red-50 p-1 rounded border border-red-200';
             conflictIndicator.innerHTML = `⚠️ ${conflicts.map(c => c.message).join(' | ')}`;
             
             assignment.assignment.appendChild(conflictIndicator);
@@ -984,7 +1098,18 @@ try {
             conflictCells.forEach(cell => {
                 cell.classList.remove('conflict-warning');
                 
-                const conflictIndicators = cell.querySelectorAll('.text-red-600.text-xs.font-bold');
+                // Clear conflict indicators
+                const conflictIndicators = cell.querySelectorAll('.conflict-indicator');
+                conflictIndicators.forEach(indicator => {
+                    indicator.remove();
+                });
+            });
+            
+            // Also clear conflict warnings from assignment divs
+            const conflictAssignments = document.querySelectorAll('.bg-blue-100.conflict-warning');
+            conflictAssignments.forEach(assignment => {
+                assignment.classList.remove('conflict-warning');
+                const conflictIndicators = assignment.querySelectorAll('.conflict-indicator');
                 conflictIndicators.forEach(indicator => {
                     indicator.remove();
                 });
@@ -1100,11 +1225,8 @@ try {
                     }
                 });
                 
-                if (selectedGrupo || selectedMateria || selectedDocente) {
-                    filterResults.textContent = `Mostrando ${visibleCount} de ${totalCount} asignaciones`;
-                } else {
-                    filterResults.textContent = '';
-                }
+                // Update filter results using the new function
+                updateFilterResults();
             }
             
             if (filterGrupo) filterGrupo.addEventListener('change', applyFilters);
@@ -1116,11 +1238,13 @@ try {
             // Don't clear the group filter as it's required
             document.getElementById('filter_materia').value = '';
             document.getElementById('filter_docente').value = '';
-            document.getElementById('filterResults').textContent = '';
             
             // Re-apply the current group filter
             if (selectedGroupId) {
                 filterScheduleGrid(selectedGroupId);
+            } else {
+                // Update filter results even if no group is selected
+                updateFilterResults();
             }
         }
 
@@ -1189,92 +1313,173 @@ try {
                 hiddenGroupField.value = groupId;
             }
             
+            // Fetch schedules for the selected group from server
+            fetchSchedulesForGroup(groupId);
+        }
+        
+        function fetchSchedulesForGroup(groupId) {
+            // Show loading state
+            showLoadingState();
+            
+            // Fetch schedules for the specific group
+            fetch(`/src/controllers/HorarioHandler.php?action=list_by_grupo&id_grupo=${groupId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update the schedule grid with fresh data
+                        updateScheduleGrid(data.data, groupId);
+                    } else {
+                        showToast('Error cargando horarios: ' + data.message, 'error');
+                        // Fallback to empty grid
+                        updateScheduleGrid([], groupId);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching schedules:', error);
+                    showToast('Error cargando horarios del grupo', 'error');
+                    // Fallback to empty grid
+                    updateScheduleGrid([], groupId);
+                });
+        }
+        
+        function showLoadingState() {
+            const cells = document.querySelectorAll('.horario-cell');
+            cells.forEach(cell => {
+                cell.innerHTML = '<div class="text-gray-400 text-xs">Cargando...</div>';
+                cell.onclick = null;
+            });
+        }
+        
+        function updateScheduleGrid(schedules, groupId) {
+            // Update the global allSchedules array for conflict detection
+            allSchedules = schedules;
+            
+            // Create a map of schedules by day and block for quick lookup
+            const scheduleMap = {};
+            schedules.forEach(schedule => {
+                const key = `${schedule.dia}_${schedule.id_bloque}`;
+                scheduleMap[key] = schedule;
+            });
+            
             // Get all schedule cells
             const cells = document.querySelectorAll('.horario-cell');
             
             cells.forEach((cell, index) => {
+                const dia = cell.getAttribute('data-dia');
+                const bloque = cell.getAttribute('data-bloque');
+                const key = `${dia}_${bloque}`;
+                
                 // Reset cell display
                 cell.style.display = 'table-cell';
                 cell.style.opacity = '1';
                 
-                const isAssignment = cell.querySelector('.bg-blue-100');
-                const dia = cell.getAttribute('data-dia');
-                const bloque = cell.getAttribute('data-bloque');
+                const schedule = scheduleMap[key];
                 
-                
-                if (isAssignment) {
-                    // This is an assignment cell - get group ID from the inner div
-                    const cellGroupId = isAssignment.getAttribute('data-grupo-id');
-                    const cellKey = `${cell.getAttribute('data-dia')}_${cell.getAttribute('data-bloque')}`;
-                    
-                    // Store original content if not already stored
-                    if (!originalAssignmentContent.has(cellKey)) {
-                        originalAssignmentContent.set(cellKey, {
-                            content: cell.innerHTML,
-                            grupoId: cellGroupId,
-                            materiaId: isAssignment.getAttribute('data-materia-id'),
-                            docenteId: isAssignment.getAttribute('data-docente-id')
-                        });
-                    }
-                    
-                    if (cellGroupId != groupId) {
-                        // Show as available instead of hiding
-                        cell.style.display = 'table-cell';
-                        cell.style.opacity = '1';
-                        
-                        // Replace assignment content with "Available"
-                        cell.innerHTML = '<div class="text-gray-400 text-xs hover:text-gray-600 transition-colors"><?php _e("available"); ?></div>';
-                        
-                        // Add click handler for available slot
-                        cell.onclick = function() {
-                            openScheduleModal(cell.getAttribute('data-bloque'), cell.getAttribute('data-dia'));
-                        };
-                        
-                        } else {
-                        cell.style.display = 'table-cell';
-                        cell.style.opacity = '1';
-                        
-                        // Restore original assignment content
-                        const original = originalAssignmentContent.get(cellKey);
-                        if (original) {
-                            cell.innerHTML = original.content;
-                        }
-                    }
-                }
-                // Empty slots are always shown
-            });
-            
-            // Update click handlers for empty slots
-            updateClickHandlers(groupId);
-        }
-        
-        function updateClickHandlers(groupId) {
-            const cells = document.querySelectorAll('.horario-cell');
-            
-            cells.forEach((cell, index) => {
-                const isAssignment = cell.querySelector('.bg-blue-100');
-                const bloque = cell.getAttribute('data-bloque');
-                const dia = cell.getAttribute('data-dia');
-                
-                
-                if (!isAssignment) {
-                    // Remove existing click handlers
-                    cell.onclick = null;
-                    
-                    // Add new click handler for this group
+                if (schedule) {
+                    // This cell has a schedule for the selected group
+                    cell.innerHTML = `
+                        <div class="bg-blue-100 text-blue-800 p-1 rounded text-xs" 
+                             data-grupo-id="${schedule.id_grupo}"
+                             data-materia-id="${schedule.id_materia}"
+                             data-docente-id="${schedule.id_docente}"
+                             data-horario-id="${schedule.id_horario}">
+                            <div class="font-semibold">${schedule.grupo_nombre}</div>
+                            <div>${schedule.materia_nombre}</div>
+                            <div class="text-xs">${schedule.docente_nombre} ${schedule.docente_apellido}</div>
+                            <div class="mt-1">
+                                <button onclick="event.stopPropagation(); editHorario(${schedule.id_horario})" 
+                                        class="text-blue-600 hover:text-blue-800 text-xs mr-1">
+                                    <?php _e('edit'); ?>
+                                </button>
+                                <button onclick="event.stopPropagation(); deleteHorario(${schedule.id_horario})" 
+                                        class="text-red-600 hover:text-red-800 text-xs">
+                                    <?php _e('delete'); ?>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    cell.onclick = null; // Remove click handler for assigned slots
+                } else {
+                    // This cell is available for the selected group
+                    cell.innerHTML = '<div class="text-gray-400 text-xs hover:text-gray-600 transition-colors"><?php _e("available"); ?></div>';
                     cell.onclick = function() {
                         openScheduleModal(bloque, dia);
                     };
                 }
             });
+            
+            // Update filter results counter
+            updateFilterResults();
+            
+            // Apply view mode after grid is updated
+            if (currentViewMode === 'conflicts') {
+                detectConflicts();
+            } else if (currentViewMode === 'comparison') {
+                renderComparisonView();
+            }
         }
+        
+        function updateFilterResults() {
+            const filterResults = document.getElementById('filterResults');
+            const filterMateria = document.getElementById('filter_materia');
+            const filterDocente = document.getElementById('filter_docente');
+            
+            if (!filterResults) return;
+            
+            const selectedMateria = filterMateria ? filterMateria.value : '';
+            const selectedDocente = filterDocente ? filterDocente.value : '';
+            
+            let visibleCount = 0;
+            let totalCount = 0;
+            
+            const cells = document.querySelectorAll('.horario-cell');
+            
+            cells.forEach((cell, index) => {
+                const assignment = cell.querySelector('.bg-blue-100');
+                let assignmentShouldShow = true;
+
+                if (assignment) {
+                    totalCount++;
+                    
+                    const materiaId = assignment.getAttribute('data-materia-id');
+                    const docenteId = assignment.getAttribute('data-docente-id');
+                    
+                    if (selectedMateria && materiaId !== selectedMateria) {
+                        assignmentShouldShow = false;
+                    }
+                    
+                    if (selectedDocente && docenteId !== selectedDocente) {
+                        assignmentShouldShow = false;
+                    }
+                    
+                    if (assignmentShouldShow) {
+                        visibleCount++;
+                    }
+                }
+            });
+            
+            if (selectedMateria || selectedDocente) {
+                filterResults.textContent = `Mostrando ${visibleCount} de ${totalCount} asignaciones`;
+            } else {
+                filterResults.textContent = totalCount > 0 ? `Total: ${totalCount} asignaciones` : '';
+            }
+        }
+        
         
         // View mode functions
         function showNormalView() {
             currentViewMode = 'normal';
             updateViewButtons();
+            
+            // Clear conflict warnings and summary
+            clearConflictWarnings();
+            const summaryElement = document.getElementById('conflictSummary');
+            if (summaryElement) {
+                summaryElement.style.display = 'none';
+            }
+            
             if (selectedGroupId) {
-                filterScheduleGrid(selectedGroupId);
+                fetchSchedulesForGroup(selectedGroupId);
             }
         }
         
@@ -1282,8 +1487,7 @@ try {
             currentViewMode = 'conflicts';
             updateViewButtons();
             if (selectedGroupId) {
-                filterScheduleGrid(selectedGroupId);
-                detectConflicts();
+                fetchSchedulesForGroup(selectedGroupId);
             }
         }
         
@@ -1291,8 +1495,7 @@ try {
             currentViewMode = 'comparison';
             updateViewButtons();
             if (selectedGroupId) {
-                filterScheduleGrid(selectedGroupId);
-                renderComparisonView();
+                fetchSchedulesForGroup(selectedGroupId);
             }
         }
         
@@ -1306,13 +1509,13 @@ try {
                 btn.className = 'px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50';
             });
             
-            // Highlight active button
+            // Highlight active button - all use the same blue styling
             if (currentViewMode === 'normal') {
                 normalBtn.className = 'px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800';
             } else if (currentViewMode === 'conflicts') {
-                conflictsBtn.className = 'px-3 py-1 text-sm bg-amber-600 text-white rounded hover:bg-amber-700';
+                conflictsBtn.className = 'px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800';
             } else if (currentViewMode === 'comparison') {
-                comparisonBtn.className = 'px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700';
+                comparisonBtn.className = 'px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800';
             }
         }
         
