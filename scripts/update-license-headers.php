@@ -1,10 +1,9 @@
 <?php
 /**
- * Script to add BSL 1.1 license headers to source files
+ * Script to update existing BSL 1.1 license headers to the improved format
  * 
- * This script scans the Chronos project and adds appropriate license headers
- * to all source files (PHP, JS, CSS) while skipping generated files and
- * files that already have license headers.
+ * This script replaces the existing simple license headers with the more
+ * comprehensive format that includes Change Date and Change License information.
  */
 
 // Configuration
@@ -34,8 +33,8 @@ $config = [
     ]
 ];
 
-// License header templates
-$headers = [
+// New improved license header templates
+$newHeaders = [
     'php' => "<?php
 /**
  * Copyright (C) {$config['current_year']} {$config['licensor']}
@@ -67,44 +66,42 @@ $headers = [
 ];
 
 /**
- * Check if a file already has a license header
+ * Check if a file has the old simple license header
  */
-function hasLicenseHeader($filePath, $fileType) {
+function hasOldLicenseHeader($filePath, $fileType) {
     $content = file_get_contents($filePath);
     if ($content === false) {
         return false;
     }
     
-    // Check for copyright notice in the first 20 lines
+    // Check for the old simple format
     $lines = explode("\n", $content);
-    $firstLines = array_slice($lines, 0, 20);
+    $firstLines = array_slice($lines, 0, 10);
     $firstContent = implode("\n", $firstLines);
     
-    return (strpos($firstContent, 'Copyright (c)') !== false || strpos($firstContent, 'Copyright (C)') !== false) && 
-           strpos($firstContent, 'Business Source License') !== false;
+    return strpos($firstContent, 'Copyright (c)') !== false && 
+           strpos($firstContent, 'Business Source License') !== false &&
+           strpos($firstContent, 'Change Date') === false; // Old format doesn't have Change Date
 }
 
 /**
- * Add license header to a file
+ * Update license header in a file
  */
-function addLicenseHeader($filePath, $fileType, $header) {
+function updateLicenseHeader($filePath, $fileType, $newHeader) {
     $content = file_get_contents($filePath);
     if ($content === false) {
         return false;
     }
     
-    // For PHP files, add after opening tag
+    // For PHP files, replace the old header
     if ($fileType === 'php') {
-        if (strpos($content, '<?php') === 0) {
-            // Replace the opening tag and add header
-            $content = preg_replace('/^<\?php\s*/', $header, $content, 1);
-        } else {
-            // Add header at the beginning
-            $content = $header . $content;
-        }
+        // Pattern to match old header: <?php followed by /** ... */ followed by blank lines
+        $pattern = '/^<\?php\s*\/\*\*.*?\*\/\s*\n\s*\n/ms';
+        $content = preg_replace($pattern, $newHeader, $content, 1);
     } else {
-        // For JS/CSS files, add at the beginning
-        $content = $header . $content;
+        // For JS/CSS files, replace the old header
+        $pattern = '/^\/\*\*.*?\*\/\s*\n\s*\n/ms';
+        $content = preg_replace($pattern, $newHeader, $content, 1);
     }
     
     return file_put_contents($filePath, $content) !== false;
@@ -141,7 +138,7 @@ function shouldExcludeFile($fileName, $excludeFiles) {
 /**
  * Process a single file
  */
-function processFile($filePath, $config, $headers) {
+function processFile($filePath, $config, $newHeaders) {
     $extension = getFileExtension($filePath);
     
     // Check if file type is supported
@@ -151,14 +148,14 @@ function processFile($filePath, $config, $headers) {
     
     $fileType = $config['file_extensions'][$extension];
     
-    // Check if file already has license header
-    if (hasLicenseHeader($filePath, $fileType)) {
-        return ['status' => 'skipped', 'reason' => 'already has license header'];
+    // Check if file has old license header
+    if (!hasOldLicenseHeader($filePath, $fileType)) {
+        return ['status' => 'skipped', 'reason' => 'no old header to update'];
     }
     
-    // Add license header
-    if (addLicenseHeader($filePath, $fileType, $headers[$fileType])) {
-        return ['status' => 'success', 'reason' => 'license header added'];
+    // Update license header
+    if (updateLicenseHeader($filePath, $fileType, $newHeaders[$fileType])) {
+        return ['status' => 'success', 'reason' => 'license header updated'];
     } else {
         return ['status' => 'error', 'reason' => 'failed to write file'];
     }
@@ -167,7 +164,7 @@ function processFile($filePath, $config, $headers) {
 /**
  * Recursively scan directory for files
  */
-function scanDirectory($dir, $config, $headers, &$results) {
+function scanDirectory($dir, $config, $newHeaders, &$results) {
     if (!is_dir($dir)) {
         return;
     }
@@ -186,7 +183,7 @@ function scanDirectory($dir, $config, $headers, &$results) {
         $filePath = $dir . DIRECTORY_SEPARATOR . $file;
         
         if (is_dir($filePath)) {
-            scanDirectory($filePath, $config, $headers, $results);
+            scanDirectory($filePath, $config, $newHeaders, $results);
         } elseif (is_file($filePath)) {
             // Check if file should be excluded
             if (shouldExcludeFile($file, $config['exclude_files'])) {
@@ -198,7 +195,7 @@ function scanDirectory($dir, $config, $headers, &$results) {
                 continue;
             }
             
-            $result = processFile($filePath, $config, $headers);
+            $result = processFile($filePath, $config, $newHeaders);
             $result['file'] = $filePath;
             $results[] = $result;
         }
@@ -206,7 +203,7 @@ function scanDirectory($dir, $config, $headers, &$results) {
 }
 
 // Main execution
-echo "Adding BSL 1.1 license headers to Chronos project files...\n";
+echo "Updating BSL 1.1 license headers to improved format...\n";
 echo "Project root: {$config['project_root']}\n";
 echo "Licensor: {$config['licensor']}\n";
 echo "Year: {$config['current_year']}\n\n";
@@ -224,14 +221,14 @@ $sourceDirs = [
 foreach ($sourceDirs as $dir) {
     if (is_dir($dir)) {
         echo "Scanning: $dir\n";
-        scanDirectory($dir, $config, $headers, $results);
+        scanDirectory($dir, $config, $newHeaders, $results);
     }
 }
 
 // Process root PHP files
 $rootFiles = glob($config['project_root'] . '/*.php');
 foreach ($rootFiles as $file) {
-    $result = processFile($file, $config, $headers);
+    $result = processFile($file, $config, $newHeaders);
     $result['file'] = $file;
     $results[] = $result;
 }
@@ -251,7 +248,7 @@ echo "\n" . str_repeat("=", 60) . "\n";
 echo "SUMMARY\n";
 echo str_repeat("=", 60) . "\n";
 echo "Files processed: " . count($results) . "\n";
-echo "Successfully added headers: {$summary['success']}\n";
+echo "Successfully updated headers: {$summary['success']}\n";
 echo "Skipped: {$summary['skipped']}\n";
 echo "Errors: {$summary['error']}\n\n";
 
@@ -287,5 +284,5 @@ if ($summary['skipped'] > 0) {
     }
 }
 
-echo "\nLicense headers added successfully!\n";
-echo "You can re-run this script safely - it will skip files that already have headers.\n";
+echo "\nLicense headers updated successfully!\n";
+
