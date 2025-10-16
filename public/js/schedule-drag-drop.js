@@ -335,10 +335,6 @@ class ScheduleDragDropManager {
         document.querySelectorAll('.drop-zone').forEach(zone => {
             zone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move');
         });
-        
-        // Clear dragged data only after processing
-        // this.draggedData = null;
-        // this.currentDragData = null;
     }
 
     handleDragOver(e) {
@@ -353,7 +349,8 @@ class ScheduleDragDropManager {
 
         const isValid = await this.validateDrop(dropZone);
         if (isValid) {
-            if (this.draggedData.assignmentId) {
+            // Check if this is an existing assignment being moved (has assignmentId without underscore)
+            if (this.draggedData && this.draggedData.assignmentId && !this.draggedData.assignmentId.includes('_')) {
                 dropZone.classList.add('drag-over-move');
             } else {
                 dropZone.classList.add('drag-over');
@@ -518,6 +515,7 @@ class ScheduleDragDropManager {
                 if (typeof filterScheduleGrid === 'function') {
                     filterScheduleGrid(this.currentGroupId);
                 }
+                
         } else {
             console.error('Assignment creation failed:', data);
             console.error('Response status:', response.status);
@@ -591,6 +589,7 @@ class ScheduleDragDropManager {
                 if (typeof filterScheduleGrid === 'function') {
                     filterScheduleGrid(this.currentGroupId);
                 }
+                
             } else {
                 this.showToast('Error: ' + data.message, 'error');
             }
@@ -606,6 +605,7 @@ class ScheduleDragDropManager {
         
         // Use currentDragData as fallback if draggedData is null
         const draggedData = this.draggedData || this.currentDragData;
+        
         
         if (!draggedData) {
             this.showToast('Error: No se encontraron datos de asignación', 'error');
@@ -635,6 +635,7 @@ class ScheduleDragDropManager {
                 if (typeof filterScheduleGrid === 'function') {
                     filterScheduleGrid(this.currentGroupId);
                 }
+                
             } else {
                 this.showToast('Error: ' + data.message, 'error');
             }

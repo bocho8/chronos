@@ -266,6 +266,16 @@ try {
             transform: rotate(5deg);
         }
         
+        .draggable-existing-assignment.dragging {
+            opacity: 0.7;
+            transform: scale(1.05) rotate(2deg);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            border: 2px solid #3b82f6;
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
+            z-index: 1000;
+            position: relative;
+        }
+        
         .assignment-availability {
             position: absolute;
             top: 8px;
