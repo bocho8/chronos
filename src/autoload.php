@@ -1,8 +1,11 @@
 <?php
 /**
- * Copyright (c) 2025 Agustín Roizen.
- * Distributed under the Business Source License 1.1
- * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ * Copyright (C) 2025 Agustín Roizen
+ * Use of this software is governed by the Business Source License included in the LICENSE.TXT file and at www.mariadb.com/bsl11.
+ * 
+ * Change Date: Three years from the date of the first publicly available distribution of each version
+ * 
+ * On the date above, in accordance with the Business Source License, use of this software will be governed by the open source license specified in the LICENSE.TXT file.
  */
 
 /**
