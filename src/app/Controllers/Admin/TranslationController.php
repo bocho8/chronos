@@ -247,4 +247,42 @@ class TranslationController
             \ResponseHelper::error('Error validating key: ' . $e->getMessage(), null, 500);
         }
     }
+
+    /**
+     * Detect Spanish text in non-Spanish fields (AJAX)
+     */
+    public function detectSpanishErrors()
+    {
+        try {
+            $spanishErrors = $this->translationService->detectSpanishInNonSpanishFields();
+            
+            \ResponseHelper::success('Spanish errors detected successfully', [
+                'errors' => $spanishErrors,
+                'count' => count($spanishErrors)
+            ]);
+        } catch (\Exception $e) {
+            \ResponseHelper::error('Error detecting Spanish errors: ' . $e->getMessage(), null, 500);
+        }
+    }
+
+    /**
+     * Clear all Spanish errors in bulk (AJAX)
+     */
+    public function clearAllSpanish()
+    {
+        try {
+            $result = $this->translationService->clearAllSpanishErrors();
+            
+            if ($result['success']) {
+                \ResponseHelper::success($result['message'], [
+                    'count' => $result['count'],
+                    'cleared' => $result['cleared']
+                ]);
+            } else {
+                \ResponseHelper::error($result['message'], null, 500);
+            }
+        } catch (\Exception $e) {
+            \ResponseHelper::error('Error clearing Spanish errors: ' . $e->getMessage(), null, 500);
+        }
+    }
 }

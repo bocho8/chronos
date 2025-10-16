@@ -98,6 +98,18 @@ if (!AuthHelper::checkSessionTimeout()) {
             background-color: #fef3c7;
             color: #d97706;
         }
+        .status-spanish-error {
+            background-color: #fed7aa;
+            color: #c2410c;
+        }
+        .spanish-error {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+        .spanish-error-cell {
+            background-color: #fef3c7;
+            border: 2px solid #f59e0b;
+        }
         .search-container {
             position: sticky;
             top: 0;
@@ -235,9 +247,16 @@ if (!AuthHelper::checkSessionTimeout()) {
                                         <option value="complete"><?php _e('complete'); ?></option>
                                         <option value="missing"><?php _e('missing'); ?></option>
                                         <option value="partial"><?php _e('partial'); ?></option>
+                                        <option value="spanish-error">Spanish Errors</option>
                                     </select>
                                     <button onclick="fillMissingTranslations()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
                                         <?php _e('fill_missing'); ?>
+                                    </button>
+                                    <button onclick="detectSpanishErrors()" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
+                                        Detect Spanish Errors
+                                    </button>
+                                    <button onclick="clearAllSpanishErrors()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                                        Clear All Spanish
                                     </button>
                                     <button onclick="refreshTranslations()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
                                         <?php _e('refresh'); ?>
@@ -292,6 +311,7 @@ if (!AuthHelper::checkSessionTimeout()) {
         let translations = {};
         let filteredTranslations = {};
         let editingKey = null;
+        let spanishErrors = {};
 
         // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
@@ -347,7 +367,17 @@ if (!AuthHelper::checkSessionTimeout()) {
             row.className = 'hover:bg-gray-50';
             
             const status = getTranslationStatus(translation);
+            const spanishErrors = getSpanishErrorStatus(translation);
             const statusClass = getStatusClass(status);
+
+            // Check if this row has Spanish errors
+            const hasSpanishErrors = spanishErrors && spanishErrors.length > 0;
+            const finalStatus = hasSpanishErrors ? 'Spanish Error' : status;
+            const finalStatusClass = hasSpanishErrors ? 'status-spanish-error' : statusClass;
+
+            // Determine which cells have Spanish errors
+            const enHasSpanish = spanishErrors && spanishErrors.includes('en');
+            const itHasSpanish = spanishErrors && spanishErrors.includes('it');
 
             row.innerHTML = `
                 <td class="px-4 py-3 font-mono text-sm text-gray-900">
@@ -362,7 +392,7 @@ if (!AuthHelper::checkSessionTimeout()) {
                            onblur="saveTranslation('${key}', 'es', this.value)"
                            onkeypress="handleKeyPress(event, '${key}', 'es', this.value)">
                 </td>
-                <td class="px-4 py-3 translation-cell">
+                <td class="px-4 py-3 translation-cell ${enHasSpanish ? 'spanish-error-cell' : ''}">
                     <input type="text" 
                            class="translation-input" 
                            value="${escapeHtml(translation.en || '')}" 
@@ -370,8 +400,9 @@ if (!AuthHelper::checkSessionTimeout()) {
                            data-lang="en"
                            onblur="saveTranslation('${key}', 'en', this.value)"
                            onkeypress="handleKeyPress(event, '${key}', 'en', this.value)">
+                    ${enHasSpanish ? '<span class="text-orange-600 text-xs font-semibold">⚠️ Spanish</span>' : ''}
                 </td>
-                <td class="px-4 py-3 translation-cell">
+                <td class="px-4 py-3 translation-cell ${itHasSpanish ? 'spanish-error-cell' : ''}">
                     <input type="text" 
                            class="translation-input" 
                            value="${escapeHtml(translation.it || '')}" 
@@ -379,11 +410,18 @@ if (!AuthHelper::checkSessionTimeout()) {
                            data-lang="it"
                            onblur="saveTranslation('${key}', 'it', this.value)"
                            onkeypress="handleKeyPress(event, '${key}', 'it', this.value)">
+                    ${itHasSpanish ? '<span class="text-orange-600 text-xs font-semibold">⚠️ Spanish</span>' : ''}
                 </td>
                 <td class="px-4 py-3">
-                    <span class="status-badge ${statusClass}">${status}</span>
+                    <span class="status-badge ${finalStatusClass}">${finalStatus}</span>
                 </td>
                 <td class="px-4 py-3">
+                    ${hasSpanishErrors ? 
+                        `<button onclick="clearSpanishFromRow('${key}')" 
+                                class="text-orange-600 hover:text-orange-800 text-sm mr-2">
+                            Clear Spanish
+                        </button>` : ''
+                    }
                     <button onclick="deleteTranslation('${key}')" 
                             class="text-red-600 hover:text-red-800 text-sm">
                         <?php _e('delete'); ?>
@@ -394,6 +432,11 @@ if (!AuthHelper::checkSessionTimeout()) {
             // Add missing translation highlighting
             if (status === 'Missing' || status === 'Partial') {
                 row.classList.add('missing-translation');
+            }
+
+            // Add Spanish error highlighting
+            if (hasSpanishErrors) {
+                row.classList.add('spanish-error');
             }
 
             return row;
@@ -409,11 +452,27 @@ if (!AuthHelper::checkSessionTimeout()) {
             return 'Partial';
         }
 
+        function getSpanishErrorStatus(translation) {
+            const esValue = translation.es || '';
+            const enValue = translation.en || '';
+            const itValue = translation.it || '';
+
+            if (!esValue || esValue.trim() === '') return false;
+
+            const errors = [];
+            // Check if field matches Spanish exactly
+            if (enValue === esValue) errors.push('en');
+            if (itValue === esValue) errors.push('it');
+
+            return errors.length > 0 ? errors : false;
+        }
+
         function getStatusClass(status) {
             switch (status) {
                 case 'Complete': return 'status-complete';
                 case 'Missing': return 'status-missing';
                 case 'Partial': return 'status-partial';
+                case 'Spanish Error': return 'status-spanish-error';
                 default: return '';
             }
         }
@@ -435,10 +494,15 @@ if (!AuthHelper::checkSessionTimeout()) {
                                     (translation.it && translation.it.toLowerCase().includes(searchTerm));
 
                 // Check status filter
+                const spanishErrors = getSpanishErrorStatus(translation);
+                const hasSpanishErrors = spanishErrors && spanishErrors.length > 0;
+                const finalStatus = hasSpanishErrors ? 'Spanish Error' : status;
+                
                 const matchesStatus = !statusFilter || 
-                                    (statusFilter === 'complete' && status === 'Complete') ||
-                                    (statusFilter === 'missing' && status === 'Missing') ||
-                                    (statusFilter === 'partial' && status === 'Partial');
+                                    (statusFilter === 'complete' && finalStatus === 'Complete') ||
+                                    (statusFilter === 'missing' && finalStatus === 'Missing') ||
+                                    (statusFilter === 'partial' && finalStatus === 'Partial') ||
+                                    (statusFilter === 'spanish-error' && finalStatus === 'Spanish Error');
 
                 if (matchesSearch && matchesStatus) {
                     filteredTranslations[key] = translation;
@@ -608,6 +672,90 @@ if (!AuthHelper::checkSessionTimeout()) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        async function detectSpanishErrors() {
+            try {
+                const response = await fetch('/admin/translations/detect-spanish');
+                const data = await response.json();
+                
+                if (data.success) {
+                    spanishErrors = data.data.errors;
+                    showToast(`Detected ${data.data.count} Spanish errors`, 'info');
+                    renderTranslations(); // Re-render to show highlighted errors
+                } else {
+                    showToast('Error detecting Spanish errors: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showToast('Error detecting Spanish errors: ' + error.message, 'error');
+            }
+        }
+
+        async function clearSpanishFromRow(key) {
+            if (!confirm('Are you sure you want to clear Spanish text from this row?')) {
+                return;
+            }
+
+            try {
+                const translation = translations[key];
+                const esValue = translation.es || '';
+                const updates = {};
+
+                // Clear EN field if it matches Spanish
+                if (translation.en === esValue) {
+                    updates.en = '';
+                }
+
+                // Clear IT field if it matches Spanish
+                if (translation.it === esValue) {
+                    updates.it = '';
+                }
+
+                // Update each field that needs clearing
+                for (const [lang, value] of Object.entries(updates)) {
+                    await saveTranslation(key, lang, value);
+                }
+
+                showToast('Spanish text cleared successfully', 'success');
+                renderTranslations(); // Re-render to update display
+            } catch (error) {
+                showToast('Error clearing Spanish text: ' + error.message, 'error');
+            }
+        }
+
+        async function clearAllSpanishErrors() {
+            try {
+                // Show loading indicator
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Clearing...';
+                button.disabled = true;
+
+                // Call the bulk clear endpoint
+                const response = await fetch('/admin/translations/clear-all-spanish', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    // Reload translations to get updated data
+                    await loadTranslations();
+                } else {
+                    showToast('Error clearing Spanish text: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showToast('Error clearing Spanish text: ' + error.message, 'error');
+            } finally {
+                // Restore button state
+                const button = event.target;
+                button.textContent = 'Clear All Spanish';
+                button.disabled = false;
+            }
         }
     </script>
 </body>

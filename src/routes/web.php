@@ -171,6 +171,8 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->get('/translations/statistics', 'Admin\TranslationController@getStatistics');
         $router->post('/translations/fill-missing', 'Admin\TranslationController@fillMissing');
         $router->post('/translations/validate-key', 'Admin\TranslationController@validateKey');
+        $router->get('/translations/detect-spanish', 'Admin\TranslationController@detectSpanishErrors');
+        $router->post('/translations/clear-all-spanish', 'Admin\TranslationController@clearAllSpanish');
     });
 
     $router->group(['prefix' => '/coordinator', 'middleware' => ['coordinator']], function($router) {
