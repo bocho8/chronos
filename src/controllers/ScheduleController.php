@@ -529,6 +529,9 @@ class HorarioController {
             
             // Update the assignment
             $success = $this->horarioModel->updateHorario($idHorario, [
+                'id_grupo' => $current['id_grupo'],
+                'id_materia' => $current['id_materia'],
+                'id_docente' => $current['id_docente'],
                 'id_bloque' => $newBloque,
                 'dia' => $newDia
             ]);

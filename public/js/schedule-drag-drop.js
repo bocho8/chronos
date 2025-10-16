@@ -95,17 +95,14 @@ class ScheduleDragDropManager {
             return;
         }
 
-        console.log('Loading assignments for group:', this.currentGroupId);
 
         try {
             const response = await fetch(`/src/controllers/HorarioHandler.php?action=get_available_assignments&grupo_id=${this.currentGroupId}`);
             const data = await response.json();
             
-            console.log('Assignments response:', data);
             
             if (data.success) {
                 this.assignments = data.data || [];
-                console.log('Assignments loaded:', this.assignments);
                 this.renderAssignments();
             } else {
                 console.error('Error loading assignments:', data.message);
@@ -124,7 +121,6 @@ class ScheduleDragDropManager {
             return;
         }
 
-        console.log('Rendering assignments:', this.assignments);
 
         if (this.assignments.length === 0) {
             container.innerHTML = '<div class="text-center text-gray-500 text-sm py-8">No hay materias asignadas a este grupo<br><small>Configure las materias del grupo primero</small></div>';
@@ -174,10 +170,6 @@ class ScheduleDragDropManager {
         const dropZones = document.querySelectorAll('.drop-zone');
         const existingAssignments = document.querySelectorAll('.draggable-existing-assignment');
 
-        console.log('Setting up drag events:');
-        console.log('- Sidebar assignments:', draggableElements.length);
-        console.log('- Existing assignments:', existingAssignments.length);
-        console.log('- Drop zones:', dropZones.length);
 
         // Setup draggable elements from sidebar
         draggableElements.forEach(element => {
@@ -187,7 +179,6 @@ class ScheduleDragDropManager {
 
         // Setup existing schedule assignments as draggable
         existingAssignments.forEach(element => {
-            console.log('Setting up existing assignment:', element);
             element.addEventListener('dragstart', this.handleExistingDragStart.bind(this));
             element.addEventListener('dragend', this.handleDragEnd.bind(this));
             element.draggable = true;
@@ -206,14 +197,12 @@ class ScheduleDragDropManager {
 
         // Setup drop zones
         dropZones.forEach((zone, index) => {
-            console.log(`Setting up drop zone ${index}:`, zone);
             zone.addEventListener('dragover', this.handleDragOver.bind(this));
             zone.addEventListener('dragenter', this.handleDragEnter.bind(this));
             zone.addEventListener('dragleave', this.handleDragLeave.bind(this));
             
             // Use addEventListener with capture: true to intercept before onclick
             zone.addEventListener('drop', (e) => {
-                console.log('addEventListener drop called!');
                 e.preventDefault();
                 e.stopPropagation();
                 this.handleDrop(e);
@@ -234,33 +223,19 @@ class ScheduleDragDropManager {
                 }
             });
             
-            console.log(`Drop events added to zone ${index}`);
         });
     }
 
     // Method to refresh drag events after schedule grid updates
     refreshDragEvents() {
-        console.log('Refreshing drag events...');
         this.setupDragEvents();
     }
 
     // Debug method to check existing assignments
     debugExistingAssignments() {
         const existingAssignments = document.querySelectorAll('.draggable-existing-assignment');
-        console.log('Found existing assignments:', existingAssignments.length);
         existingAssignments.forEach((assignment, index) => {
-            console.log(`Assignment ${index}:`, {
-                element: assignment,
-                draggable: assignment.draggable,
-                classes: assignment.className,
-                data: {
-                    assignmentId: assignment.dataset.assignmentId,
-                    subjectId: assignment.dataset.subjectId,
-                    teacherId: assignment.dataset.teacherId,
-                    subjectName: assignment.dataset.subjectName,
-                    teacherName: assignment.dataset.teacherName
-                }
-            });
+            // Debug info for existing assignments
         });
     }
 
@@ -287,7 +262,6 @@ class ScheduleDragDropManager {
         e.dataTransfer.effectAllowed = 'copy';
         e.dataTransfer.setData('text/plain', JSON.stringify(this.draggedData));
         
-        console.log('Drag started with data:', this.draggedData);
         
         // Store data in a more persistent way
         this.currentDragData = this.draggedData;
@@ -309,6 +283,7 @@ class ScheduleDragDropManager {
             assignmentId: e.target.dataset.assignmentId
         };
         
+        
         this.isDragging = true;
         e.target.classList.add('dragging');
         
@@ -322,15 +297,30 @@ class ScheduleDragDropManager {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', JSON.stringify(this.draggedData));
         
-        console.log('Existing assignment drag started:', this.draggedData);
     }
 
     handleDragEnd(e) {
         e.target.classList.remove('dragging');
         this.isDragging = false;
         this.draggedElement = null;
-        // Don't clear draggedData here - it's needed in handleDrop
-        // this.draggedData = null;
+        
+        // Check if this is an existing assignment being dragged (has assignmentId without underscore)
+        if (this.draggedData && this.draggedData.assignmentId && !this.draggedData.assignmentId.includes('_')) {
+            // This is an existing assignment being moved within the table
+            // Use elementFromPoint to detect where it was dropped
+            const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+            const dropZone = dropTarget?.closest('.drop-zone');
+            
+            if (dropZone) {
+                // Ensure currentDragData is set for moveAssignment
+                this.currentDragData = this.draggedData;
+                this.handleDrop({
+                    target: dropZone,
+                    preventDefault: () => {},
+                    stopPropagation: () => {}
+                });
+            }
+        }
         
         // Restore onclick on all drop zones after drag
         document.querySelectorAll('.drop-zone').forEach(zone => {
@@ -339,20 +329,21 @@ class ScheduleDragDropManager {
                 zone.setAttribute('onclick', originalOnclick);
                 zone.removeAttribute('data-original-onclick');
             }
-            // Restore pointer events
-            zone.style.pointerEvents = '';
         });
         
         // Clear all drag states
         document.querySelectorAll('.drop-zone').forEach(zone => {
             zone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move');
         });
+        
+        // Clear dragged data only after processing
+        // this.draggedData = null;
+        // this.currentDragData = null;
     }
 
     handleDragOver(e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
-        console.log('handleDragOver called');
     }
 
     async handleDragEnter(e) {
@@ -383,29 +374,22 @@ class ScheduleDragDropManager {
     }
 
     async handleDrop(e) {
-        console.log('handleDrop called!');
         e.preventDefault();
         const dropZone = e.target.closest('.drop-zone');
         if (!dropZone) {
-            console.log('No drop zone found in handleDrop');
             return;
         }
-        console.log('Drop zone found in handleDrop:', dropZone);
 
         dropZone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move');
 
         // Try to get dragged data from instance, currentDragData, or dataTransfer
-        console.log('handleDrop - this.draggedData:', this.draggedData);
-        console.log('handleDrop - this.currentDragData:', this.currentDragData);
         
         let draggedData = this.draggedData || this.currentDragData;
         if (!draggedData) {
             try {
                 const dataString = e.dataTransfer.getData('text/plain');
-                console.log('handleDrop - dataTransfer data:', dataString);
                 if (dataString) {
                     draggedData = JSON.parse(dataString);
-                    console.log('Recovered data from dataTransfer:', draggedData);
                 }
             } catch (error) {
                 console.error('Error parsing dragged data:', error);
@@ -434,11 +418,6 @@ class ScheduleDragDropManager {
         // For existing schedule entries, assignmentId would be a simple number
         const isMovingExisting = draggedData.assignmentId && draggedData.assignmentId !== '' && !draggedData.assignmentId.includes('_');
         
-        console.log('Drop logic:', {
-            isOccupied,
-            isMovingExisting,
-            assignmentId: draggedData.assignmentId
-        });
         
         if (isMovingExisting) {
             // Moving existing assignment
@@ -504,14 +483,6 @@ class ScheduleDragDropManager {
             return;
         }
 
-        console.log('Creating assignment:', {
-            subject: draggedData.subjectName,
-            teacher: draggedData.teacherName,
-            bloque: bloque,
-            dia: dia,
-            subjectId: draggedData.subjectId,
-            teacherId: draggedData.teacherId
-        });
 
         // Make AJAX call first
         try {
@@ -556,10 +527,6 @@ class ScheduleDragDropManager {
             if (data.message && data.message.includes('Conflicto detectado')) {
                 const cleanMessage = data.message.replace('Conflicto detectado: ', '');
                 
-                console.log('Showing conflict modal for message:', cleanMessage);
-                console.log('confirmConflict function available:', typeof confirmConflict);
-                console.log('Window confirmConflict available:', typeof window.confirmConflict);
-                console.log('ToastManager available:', typeof window.toastManager);
                 
                 if (typeof confirmConflict === 'function') {
                     const confirmed = await confirmConflict(cleanMessage, {
@@ -568,7 +535,6 @@ class ScheduleDragDropManager {
                         cancelText: 'Cancelar'
                     });
                     
-                    console.log('User confirmed:', confirmed);
                     
                     if (confirmed) {
                         await this.forceCreateAssignment(dropZone, draggedData);
@@ -789,16 +755,13 @@ class ScheduleDragDropManager {
         if (typeof showToast === 'function') {
             showToast(message, type);
         } else {
-            console.log(`${type.toUpperCase()}: ${message}`);
         }
     }
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initializing ScheduleDragDropManager...');
     window.scheduleDragDropManager = new ScheduleDragDropManager();
-    console.log('ScheduleDragDropManager initialized');
     
     // Make debug method available globally
     window.debugExistingAssignments = () => {
