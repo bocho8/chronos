@@ -230,6 +230,178 @@ try {
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
         }
         
+        /* Drag & Drop Sidebar Styles */
+        .sidebar-collapsed #sidebarContent {
+            display: none;
+        }
+        
+        /* Ensure sidebar is visible by default */
+        #sidebarContent {
+            display: block;
+        }
+        
+        .draggable-assignment {
+            cursor: grab;
+            transition: all 0.2s ease;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 8px 12px;
+            background: white;
+            position: relative;
+        }
+        
+        .draggable-assignment:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-color: #3b82f6;
+        }
+        
+        .draggable-assignment:active {
+            cursor: grabbing;
+            transform: scale(0.98);
+        }
+        
+        .draggable-assignment.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+        
+        .assignment-availability {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .availability-available {
+            background-color: #10b981;
+        }
+        
+        .availability-partial {
+            background-color: #f59e0b;
+        }
+        
+        .availability-unavailable {
+            background-color: #ef4444;
+        }
+        
+        .assignment-subject {
+            font-weight: 600;
+            color: #111827;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        
+        .assignment-teacher {
+            color: #6b7280;
+            font-size: 12px;
+        }
+        
+        .assignment-hours {
+            color: #9ca3af;
+            font-size: 11px;
+            margin-top: 2px;
+        }
+        
+        /* Drop Zone Styles */
+        .drop-zone {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .drop-zone.drag-over {
+            background-color: #dbeafe !important;
+            border-color: #3b82f6 !important;
+            transform: scale(1.02);
+        }
+        
+        .drop-zone.drag-over-invalid {
+            background-color: #fef2f2 !important;
+            border-color: #ef4444 !important;
+            transform: scale(1.02);
+        }
+        
+        .drop-zone.drag-over-move {
+            background-color: #f0f9ff !important;
+            border-color: #0ea5e9 !important;
+            transform: scale(1.02);
+        }
+        
+        .drop-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px dashed #3b82f6;
+            border-radius: 4px;
+            background: rgba(59, 130, 246, 0.1);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: #3b82f6;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .drop-zone.drag-over .drop-indicator {
+            display: flex;
+        }
+        
+        .drop-zone.drag-over-invalid .drop-indicator {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        
+        .drop-zone.drag-over-move .drop-indicator {
+            border-color: #0ea5e9;
+            background: rgba(14, 165, 233, 0.1);
+            color: #0ea5e9;
+        }
+        
+        /* Loading States */
+        .assignment-loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .assignment-loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            margin: -8px 0 0 -8px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .draggable-assignment {
+                padding: 6px 8px;
+            }
+            
+            .assignment-subject {
+                font-size: 13px;
+            }
+            
+            .assignment-teacher {
+                font-size: 11px;
+            }
+        }
+        
     </style>
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">
@@ -308,6 +480,45 @@ try {
                                     <option value="">No hay grupos disponibles</option>
                                 <?php endif; ?>
                             </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Drag & Drop Sidebar -->
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder mb-6">
+                        <div class="flex items-center justify-between p-4 border-b border-lightborder">
+                            <h3 class="font-medium text-darktext"><?php _e('assignments'); ?></h3>
+                            <button id="sidebarToggle" class="p-2 rounded-md hover:bg-gray-100 transition-colors" title="Toggle Sidebar">
+                                <span class="text-lg">≡</span>
+                            </button>
+                        </div>
+                        
+                        <div id="sidebarContent" class="p-4">
+                            <!-- Search and Filters -->
+                            <div class="mb-4">
+                                <div class="relative mb-3">
+                                    <input type="text" id="sidebarSearch" placeholder="Buscar materia o docente..." 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-darkblue focus:border-darkblue">
+                                </div>
+                                
+                                <div class="flex gap-2 mb-3">
+                                    <button id="filterAll" class="px-3 py-1 text-xs bg-darkblue text-white rounded hover:bg-blue-800">
+                                        Todos
+                                    </button>
+                                    <button id="filterAvailable" class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50">
+                                        Disponibles
+                                    </button>
+                                    <button id="filterBySubject" class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50">
+                                        Por Materia
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Assignments List -->
+                            <div id="assignmentsList" class="space-y-2 max-h-96 overflow-y-auto">
+                                <div class="text-center text-gray-500 text-sm py-8">
+                                    Seleccione un grupo para ver las asignaciones disponibles
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -395,10 +606,14 @@ try {
                                                 <?php echo date('H:i', strtotime($bloque['hora_inicio'])) . ' – ' . date('H:i', strtotime($bloque['hora_fin'])); ?>
                                             </td>
                                 <?php foreach ($dias as $diaIndex => $dia): ?>
-                                            <td class="horario-cell text-center font-medium p-2 border border-gray-300 cursor-pointer hover:bg-gray-50 min-h-[60px] <?php echo ($isLastRow && $diaIndex === count($dias) - 1) ? 'rounded-br-lg' : ''; ?>" 
+                                            <td class="horario-cell drop-zone text-center font-medium p-2 border border-gray-300 cursor-pointer hover:bg-gray-50 min-h-[60px] <?php echo ($isLastRow && $diaIndex === count($dias) - 1) ? 'rounded-br-lg' : ''; ?>" 
                                                 data-bloque="<?php echo $bloque['id_bloque']; ?>" 
                                                 data-dia="<?php echo $dia; ?>"
+                                                data-occupied="false"
                                                 onclick="openScheduleModal(<?php echo $bloque['id_bloque']; ?>, '<?php echo $dia; ?>')">
+                                                <div class="drop-indicator">
+                                                    <span>Drop here</span>
+                                                </div>
                                                 <div class="text-gray-400 text-xs hover:text-gray-600 transition-colors">
                                                     <?php _e('available'); ?>
                                                 </div>
@@ -417,6 +632,7 @@ try {
 
 
     <script src="/js/toast.js?v=<?php echo time(); ?>"></script>
+    <script src="/js/schedule-drag-drop.js?v=<?php echo time(); ?>"></script>
     <script>
         // Cache bust: <?php echo time(); ?> - Random: <?php echo rand(1000, 9999); ?>
         
@@ -1386,11 +1602,17 @@ try {
                 if (schedule) {
                     // This cell has a schedule for the selected group
                     cell.innerHTML = `
-                        <div class="bg-blue-100 text-blue-800 p-1 rounded text-xs" 
+                        <div class="bg-blue-100 text-blue-800 p-1 rounded text-xs draggable-existing-assignment cursor-move" 
+                             draggable="true"
                              data-grupo-id="${schedule.id_grupo}"
                              data-materia-id="${schedule.id_materia}"
                              data-docente-id="${schedule.id_docente}"
-                             data-horario-id="${schedule.id_horario}">
+                             data-horario-id="${schedule.id_horario}"
+                             data-assignment-id="${schedule.id_horario}"
+                             data-subject-id="${schedule.id_materia}"
+                             data-teacher-id="${schedule.id_docente}"
+                             data-subject-name="${schedule.materia_nombre}"
+                             data-teacher-name="${schedule.docente_nombre} ${schedule.docente_apellido}">
                             <div class="font-semibold">${schedule.grupo_nombre}</div>
                             <div>${schedule.materia_nombre}</div>
                             <div class="text-xs">${schedule.docente_nombre} ${schedule.docente_apellido}</div>
@@ -1424,6 +1646,11 @@ try {
                 detectConflicts();
             } else if (currentViewMode === 'comparison') {
                 renderComparisonView();
+            }
+            
+            // Refresh drag and drop events for new schedule entries
+            if (window.scheduleDragDropManager) {
+                window.scheduleDragDropManager.refreshDragEvents();
             }
         }
         

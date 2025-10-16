@@ -21,6 +21,13 @@ if (!AuthHelper::checkSessionTimeout()) {
 }
 
 try {
+    error_log("HorarioHandler - Method: " . $_SERVER['REQUEST_METHOD']);
+    error_log("HorarioHandler - POST data: " . json_encode($_POST));
+    error_log("HorarioHandler - GET data: " . json_encode($_GET));
+    
+    $rawInput = file_get_contents('php://input');
+    error_log("HorarioHandler - Raw input: " . $rawInput);
+    
     $dbConfig = require __DIR__ . '/../config/database.php';
     $database = new Database($dbConfig);
     
@@ -31,9 +38,19 @@ try {
     require_once __DIR__ . '/ScheduleController.php';
     $controller = new HorarioController($database->getConnection());
     
+    // Parse JSON input if it exists
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($rawInput)) {
+        $jsonData = json_decode($rawInput, true);
+        if ($jsonData) {
+            // Merge JSON data into POST array
+            $_POST = array_merge($_POST, $jsonData);
+        }
+    }
+    
     $controller->handleRequest();
     
 } catch (Exception $e) {
     error_log("Error en horario_handler: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
     ResponseHelper::error('Error interno del servidor: ' . $e->getMessage(), null, 500);
 }
