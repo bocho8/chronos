@@ -603,6 +603,14 @@ class ScheduleDragDropManager {
     async moveAssignment(dropZone) {
         const bloque = dropZone.dataset.bloque;
         const dia = dropZone.dataset.dia;
+        
+        // Use currentDragData as fallback if draggedData is null
+        const draggedData = this.draggedData || this.currentDragData;
+        
+        if (!draggedData) {
+            this.showToast('Error: No se encontraron datos de asignación', 'error');
+            return;
+        }
 
         try {
             const response = await fetch('/src/controllers/HorarioHandler.php', {
@@ -612,7 +620,7 @@ class ScheduleDragDropManager {
                 },
                 body: JSON.stringify({
                     action: 'quick_move',
-                    id_horario: this.draggedData.assignmentId,
+                    id_horario: draggedData.assignmentId,
                     new_bloque: bloque,
                     new_dia: dia
                 })
@@ -621,7 +629,7 @@ class ScheduleDragDropManager {
             const data = await response.json();
             
             if (data.success) {
-                this.showToast(`Asignación movida: ${this.draggedData.subjectName} - ${this.draggedData.teacherName}`, 'success');
+                this.showToast(`Asignación movida: ${draggedData.subjectName} - ${draggedData.teacherName}`, 'success');
                 
                 // Refresh the entire schedule grid to show the moved assignment
                 if (typeof filterScheduleGrid === 'function') {
