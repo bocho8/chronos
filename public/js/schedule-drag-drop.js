@@ -18,6 +18,12 @@ class ScheduleDragDropManager {
         this.isDragging = false;
         this.dropZones = [];
         
+        // Auto-scroll properties
+        this.scrollInterval = null;
+        this.scrollZoneHeight = 50; // pixels
+        this.maxScrollSpeed = 10; // pixels per frame
+        this.assignmentsContainer = null;
+        
         this.init();
     }
 
@@ -252,6 +258,9 @@ class ScheduleDragDropManager {
         this.isDragging = true;
         e.target.classList.add('dragging');
         
+        // Start scroll support for auto-scroll and wheel scrolling
+        this.startScrollSupport();
+        
         // Disable onclick on all drop zones during drag
         document.querySelectorAll('.drop-zone').forEach(zone => {
             zone.setAttribute('data-original-onclick', zone.getAttribute('onclick') || '');
@@ -287,6 +296,9 @@ class ScheduleDragDropManager {
         this.isDragging = true;
         e.target.classList.add('dragging');
         
+        // Start scroll support for auto-scroll and wheel scrolling
+        this.startScrollSupport();
+        
         // Disable onclick on all drop zones during drag
         document.querySelectorAll('.drop-zone').forEach(zone => {
             zone.setAttribute('data-original-onclick', zone.getAttribute('onclick') || '');
@@ -303,6 +315,9 @@ class ScheduleDragDropManager {
         e.target.classList.remove('dragging');
         this.isDragging = false;
         this.draggedElement = null;
+        
+        // Stop scroll support
+        this.stopScrollSupport();
         
         // Check if this is an existing assignment being dragged (has assignmentId without underscore)
         if (this.draggedData && this.draggedData.assignmentId && !this.draggedData.assignmentId.includes('_')) {
@@ -765,6 +780,103 @@ class ScheduleDragDropManager {
             showToast(message, type);
         } else {
         }
+    }
+
+    // Auto-scroll methods
+    setupScrollWhileDragging() {
+        // Add wheel event listener for manual scrolling while dragging on the main page
+        document.addEventListener('wheel', this.handleWheelWhileDragging.bind(this), { passive: true });
+        
+        // Add dragover event to detect cursor position for auto-scroll on the main page
+        document.addEventListener('dragover', this.handleDragOverForScroll.bind(this));
+    }
+
+    handleWheelWhileDragging(e) {
+        if (!this.isDragging) return;
+        
+        // Allow normal wheel scrolling during drag on the main page
+        window.scrollBy(0, e.deltaY);
+    }
+
+    handleDragOverForScroll(e) {
+        if (!this.isDragging) return;
+        
+        const viewportHeight = window.innerHeight;
+        const cursorY = e.clientY;
+        
+        // Check if cursor is in scroll zones (top/bottom of viewport)
+        if (cursorY <= this.scrollZoneHeight) {
+            // Near top of viewport - scroll up
+            this.startAutoScroll('up', cursorY);
+        } else if (cursorY >= viewportHeight - this.scrollZoneHeight) {
+            // Near bottom of viewport - scroll down
+            this.startAutoScroll('down', viewportHeight - cursorY);
+        } else {
+            // In middle - stop auto-scroll
+            this.stopAutoScroll();
+        }
+    }
+
+    startAutoScroll(direction, distanceFromEdge) {
+        // Stop any existing auto-scroll
+        this.stopAutoScroll();
+        
+        const scrollSpeed = this.calculateScrollSpeed(distanceFromEdge);
+        
+        this.scrollInterval = requestAnimationFrame(() => {
+            this.performAutoScroll(direction, scrollSpeed);
+        });
+    }
+
+    performAutoScroll(direction, speed) {
+        if (!this.isDragging) {
+            this.stopAutoScroll();
+            return;
+        }
+        
+        const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        
+        let newScroll = currentScroll;
+        
+        if (direction === 'up') {
+            newScroll = Math.max(0, currentScroll - speed);
+        } else if (direction === 'down') {
+            newScroll = Math.min(maxScroll, currentScroll + speed);
+        }
+        
+        window.scrollTo(0, newScroll);
+        
+        // Continue scrolling if we haven't reached the limit
+        if ((direction === 'up' && newScroll > 0) || (direction === 'down' && newScroll < maxScroll)) {
+            this.scrollInterval = requestAnimationFrame(() => {
+                this.performAutoScroll(direction, speed);
+            });
+        }
+    }
+
+    stopAutoScroll() {
+        if (this.scrollInterval) {
+            cancelAnimationFrame(this.scrollInterval);
+            this.scrollInterval = null;
+        }
+    }
+
+    calculateScrollSpeed(distanceFromEdge) {
+        // Closer to edge = faster scroll (inverse relationship)
+        const normalizedDistance = Math.max(0, Math.min(1, distanceFromEdge / this.scrollZoneHeight));
+        const speedMultiplier = 1 - normalizedDistance; // 1 at edge, 0 at zone boundary
+        return Math.max(1, this.maxScrollSpeed * speedMultiplier);
+    }
+
+    startScrollSupport() {
+        this.setupScrollWhileDragging();
+    }
+
+    stopScrollSupport() {
+        this.stopAutoScroll();
+        document.removeEventListener('wheel', this.handleWheelWhileDragging.bind(this));
+        document.removeEventListener('dragover', this.handleDragOverForScroll.bind(this));
     }
 }
 
