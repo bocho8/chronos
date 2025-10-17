@@ -459,7 +459,13 @@ class ScheduleDragDropManager {
         
         if (isMovingExisting) {
             // Moving existing assignment
-            await this.moveAssignment(dropZone);
+            if (isOccupied) {
+                // Swapping assignments - both cells are occupied
+                await this.swapAssignments(dropZone);
+            } else {
+                // Moving to empty cell
+                await this.moveAssignment(dropZone);
+            }
         } else if (!isOccupied) {
             // Creating new assignment
             await this.createAssignment(dropZone);
@@ -493,19 +499,7 @@ class ScheduleDragDropManager {
             return false;
         }
 
-        // Check teacher availability
-        try {
-            const response = await fetch(`/src/controllers/HorarioHandler.php?action=check_availability&docente_id=${this.draggedData.teacherId}&bloque=${bloque}&dia=${dia}`);
-            const data = await response.json();
-            
-            if (data.success && !data.data.is_available) {
-                return false;
-            }
-        } catch (error) {
-            console.error('Error checking availability:', error);
-            // Allow drop if availability check fails
-        }
-
+        // Skip availability check - let the backend handle all validation
         return true;
     }
 
@@ -706,6 +700,117 @@ class ScheduleDragDropManager {
         } catch (error) {
             console.error('Error moving assignment:', error);
             this.showToast('Error de conexión al mover asignación', 'error');
+        }
+    }
+
+    async swapAssignments(dropZone) {
+        const bloque = dropZone.dataset.bloque;
+        const dia = dropZone.dataset.dia;
+        
+        // Use currentDragData as fallback if draggedData is null
+        const draggedData = this.draggedData || this.currentDragData;
+        
+        if (!draggedData) {
+            this.showToast('Error: No se encontraron datos de asignación origen', 'error');
+            return;
+        }
+
+        // Extract destination assignment data from dropZone
+        const destinationElement = dropZone.querySelector('.draggable-existing-assignment');
+        if (!destinationElement) {
+            this.showToast('Error: No se encontró la asignación destino', 'error');
+            return;
+        }
+
+        const destinationData = {
+            assignmentId: destinationElement.dataset.assignmentId,
+            teacherId: destinationElement.dataset.teacherId,
+            subjectId: destinationElement.dataset.subjectId,
+            subjectName: destinationElement.dataset.subjectName,
+            teacherName: destinationElement.dataset.teacherName
+        };
+
+        this.showToast('Intercambiando asignaciones...', 'info');
+
+        // Try swap without force override first
+        // The backend will handle validation and return appropriate errors
+        await this.performSwap(draggedData, destinationData, dropZone, false);
+    }
+
+    async performSwap(sourceData, destData, dropZone, forceOverride) {
+        // Prevent duplicate operations
+        if (!this.startOperation('swap')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/src/controllers/HorarioHandler.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'swap_assignments',
+                    id_horario_1: sourceData.assignmentId,
+                    id_horario_2: destData.assignmentId,
+                    force_override: forceOverride
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showToast(`Asignaciones intercambiadas: ${sourceData.subjectName} ↔ ${destData.subjectName}`, 'success');
+                
+                // Refresh the entire schedule grid to show the swapped assignments
+                if (typeof filterScheduleGrid === 'function') {
+                    filterScheduleGrid(this.currentGroupId);
+                }
+            } else {
+                // Check if this is a conflict error and we haven't tried force override yet
+                if (!forceOverride && data.message && data.message.includes('Conflicto de disponibilidad')) {
+                    const conflictMessage = `Los docentes no están disponibles en los nuevos horarios. ¿Intercambiar de Todas Formas?`;
+                    
+                    if (typeof confirmConflict === 'function') {
+                        const confirmed = await confirmConflict(conflictMessage, {
+                            title: 'Conflicto de Disponibilidad',
+                            confirmText: 'Intercambiar de Todas Formas',
+                            cancelText: 'Cancelar'
+                        });
+                        
+                        if (confirmed) {
+                            // Try again with force override
+                            this.endOperation(); // End current operation
+                            await this.performSwap(sourceData, destData, dropZone, true);
+                            return; // Don't end operation here, let the recursive call handle it
+                        } else {
+                            this.endOperation();
+                            return;
+                        }
+                    } else {
+                        this.showToast('Error: ' + data.message, 'error');
+                    }
+                } else {
+                    this.showToast('Error: ' + data.message, 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error performing swap:', error);
+            this.showToast('Error de conexión al intercambiar asignaciones', 'error');
+        } finally {
+            this.endOperation();
+        }
+    }
+
+
+    async checkTeacherAvailability(teacherId, bloque, dia) {
+        try {
+            const response = await fetch(`/src/controllers/HorarioHandler.php?action=check_availability&docente_id=${teacherId}&bloque=${bloque}&dia=${dia}`);
+            const data = await response.json();
+            return data.success && data.data && data.data.is_available;
+        } catch (error) {
+            console.error('Error checking teacher availability:', error);
+            return false; // Assume not available if check fails
         }
     }
 

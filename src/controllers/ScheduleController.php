@@ -44,6 +44,7 @@ class HorarioController {
                 'get_available_assignments' => $this->getAvailableAssignments(),
                 'quick_create' => $this->quickCreate(),
                 'quick_move' => $this->quickMove(),
+                'swap_assignments' => $this->swapAssignments(),
                 'check_availability' => $this->checkAvailability(),
                 default => throw new Exception("Acción no válida: $action")
             };
@@ -551,6 +552,172 @@ class HorarioController {
         } catch (Exception $e) {
             $this->db->rollback();
             throw $e;
+        }
+    }
+    
+    /**
+     * Swap two assignments positions
+     */
+    private function swapAssignments() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        error_log("swapAssignments - Received data: " . json_encode($data));
+        
+        if (!$data) {
+            error_log("swapAssignments - No data received");
+            ResponseHelper::error("Datos JSON requeridos");
+        }
+        
+        $idHorario1 = $data['id_horario_1'] ?? null;
+        $idHorario2 = $data['id_horario_2'] ?? null;
+        $forceOverride = $data['force_override'] ?? false;
+        
+        error_log("swapAssignments - Parsed: idHorario1=$idHorario1, idHorario2=$idHorario2, forceOverride=" . ($forceOverride ? 'true' : 'false'));
+        
+        if (!$idHorario1 || !$idHorario2) {
+            error_log("swapAssignments - Missing IDs: idHorario1=$idHorario1, idHorario2=$idHorario2");
+            ResponseHelper::error("IDs de ambos horarios son requeridos");
+        }
+        
+        if ($idHorario1 == $idHorario2) {
+            error_log("swapAssignments - Same IDs: idHorario1=$idHorario1, idHorario2=$idHorario2");
+            ResponseHelper::error("No se puede intercambiar un horario consigo mismo");
+        }
+        
+        try {
+            $this->db->beginTransaction();
+            
+            // Get both assignments
+            error_log("swapAssignments - Getting assignment1 with ID: $idHorario1");
+            $assignment1 = $this->horarioModel->getHorarioById($idHorario1);
+            error_log("swapAssignments - Assignment1 result: " . json_encode($assignment1));
+            
+            error_log("swapAssignments - Getting assignment2 with ID: $idHorario2");
+            $assignment2 = $this->horarioModel->getHorarioById($idHorario2);
+            error_log("swapAssignments - Assignment2 result: " . json_encode($assignment2));
+            
+            if (!$assignment1) {
+                error_log("swapAssignments - Assignment1 not found");
+                throw new Exception("Horario 1 no encontrado");
+            }
+            if (!$assignment2) {
+                error_log("swapAssignments - Assignment2 not found");
+                throw new Exception("Horario 2 no encontrado");
+            }
+            
+            // Store original positions
+            $original1 = [
+                'id_bloque' => $assignment1['id_bloque'],
+                'dia' => $assignment1['dia']
+            ];
+            $original2 = [
+                'id_bloque' => $assignment2['id_bloque'],
+                'dia' => $assignment2['dia']
+            ];
+            
+            // Check for conflicts if not forcing override
+            if (!$forceOverride) {
+                // For swap, we only need to check teacher availability, not group conflicts
+                // since both groups already have classes in those time slots
+                $teacherConflicts = [];
+                
+                // Check if teacher 1 is available in position 2 (only teacher conflicts)
+                // Exclude both assignments being swapped from the check
+                if (!$this->isDocenteAvailableForSwap($assignment1['id_docente'], $original2['id_bloque'], $original2['dia'], $idHorario1, $idHorario2)) {
+                    $teacherConflicts[] = "El docente de la primera asignación no está disponible en el nuevo horario";
+                }
+                
+                // Check if teacher 2 is available in position 1 (only teacher conflicts)
+                // Exclude both assignments being swapped from the check
+                if (!$this->isDocenteAvailableForSwap($assignment2['id_docente'], $original1['id_bloque'], $original1['dia'], $idHorario1, $idHorario2)) {
+                    $teacherConflicts[] = "El docente de la segunda asignación no está disponible en el nuevo horario";
+                }
+                
+                if (!empty($teacherConflicts)) {
+                    $this->db->rollback();
+                    ResponseHelper::error("Conflicto de disponibilidad detectado: " . implode(', ', $teacherConflicts));
+                }
+            }
+            
+            // Perform the swap by directly updating the database
+            // This avoids the conflict checking in updateHorario()
+            $query1 = "UPDATE horario SET id_bloque = :bloque, dia = :dia WHERE id_horario = :id";
+            $stmt1 = $this->db->prepare($query1);
+            $success1 = $stmt1->execute([
+                ':bloque' => $original2['id_bloque'],
+                ':dia' => $original2['dia'],
+                ':id' => $idHorario1
+            ]);
+            
+            $query2 = "UPDATE horario SET id_bloque = :bloque, dia = :dia WHERE id_horario = :id";
+            $stmt2 = $this->db->prepare($query2);
+            $success2 = $stmt2->execute([
+                ':bloque' => $original1['id_bloque'],
+                ':dia' => $original1['dia'],
+                ':id' => $idHorario2
+            ]);
+            
+            if (!$success1 || !$success2) {
+                throw new Exception("Error al intercambiar los horarios");
+            }
+            
+            // Get updated assignments with full details
+            $updatedAssignment1 = $this->horarioModel->getHorarioCompletoById($idHorario1);
+            $updatedAssignment2 = $this->horarioModel->getHorarioCompletoById($idHorario2);
+            
+            $this->logActivity("Intercambió horarios ID: $idHorario1 ↔ $idHorario2");
+            $this->db->commit();
+            
+            ResponseHelper::success("Horarios intercambiados exitosamente", [
+                'assignment1' => $updatedAssignment1,
+                'assignment2' => $updatedAssignment2
+            ]);
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
+    
+    /**
+     * Check if a teacher is available for a swap operation
+     * Only checks teacher availability, not group conflicts
+     * For swaps, we need to exclude BOTH assignments being swapped
+     */
+    private function isDocenteAvailableForSwap($docenteId, $bloque, $dia, $excludeHorarioId = null, $excludeHorarioId2 = null) {
+        try {
+            // Check if teacher has any other assignment at this time (excluding both assignments being swapped)
+            $query = "SELECT COUNT(*) as count FROM horario 
+                     WHERE id_docente = :docente_id 
+                     AND id_bloque = :bloque 
+                     AND dia = :dia";
+            
+            $params = [
+                ':docente_id' => $docenteId,
+                ':bloque' => $bloque,
+                ':dia' => $dia
+            ];
+            
+            if ($excludeHorarioId) {
+                $query .= " AND id_horario != :exclude_id";
+                $params[':exclude_id'] = $excludeHorarioId;
+            }
+            
+            if ($excludeHorarioId2) {
+                $query .= " AND id_horario != :exclude_id2";
+                $params[':exclude_id2'] = $excludeHorarioId2;
+            }
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($params);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Teacher is available if they have no other assignments at this time
+            return $result['count'] == 0;
+            
+        } catch (Exception $e) {
+            error_log("Error checking teacher availability for swap: " . $e->getMessage());
+            return false; // Assume not available if check fails
         }
     }
     

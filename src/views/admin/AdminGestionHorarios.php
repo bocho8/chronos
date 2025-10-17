@@ -1616,6 +1616,7 @@ try {
                 
                 if (schedule) {
                     // This cell has a schedule for the selected group
+                    cell.dataset.occupied = 'true';
                     cell.innerHTML = `
                         <div class="bg-blue-100 text-blue-800 p-1 rounded text-xs draggable-existing-assignment cursor-move" 
                              draggable="true"
@@ -1646,6 +1647,7 @@ try {
                     cell.onclick = null; // Remove click handler for assigned slots
                 } else {
                     // This cell is available for the selected group
+                    cell.dataset.occupied = 'false';
                     cell.innerHTML = '<div class="text-gray-400 text-xs hover:text-gray-600 transition-colors"><?php _e("available"); ?></div>';
                     cell.onclick = function() {
                         openScheduleModal(bloque, dia);

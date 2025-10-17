@@ -459,7 +459,7 @@ class ToastManager {
             
             // Set content
             titleEl.textContent = title;
-            messageEl.textContent = message;
+            messageEl.textContent = typeof message === 'string' ? message : JSON.stringify(message);
             confirmBtn.textContent = confirmText;
             cancelBtn.textContent = cancelText;
             
