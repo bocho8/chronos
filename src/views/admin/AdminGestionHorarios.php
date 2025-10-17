@@ -709,7 +709,7 @@ try {
         window.isEditMode = false;
         let currentBloque = null;
         let currentDia = null;
-        let currentViewMode = 'normal'; // 'normal', 'conflicts', 'comparison'
+        let currentViewMode = localStorage.getItem('scheduleViewMode') || 'conflicts';
         let selectedGroupId = null;
         let allSchedules = []; // Will be populated when schedules are loaded
 
@@ -1714,6 +1714,7 @@ try {
         // View mode functions
         function showNormalView() {
             currentViewMode = 'normal';
+            localStorage.setItem('scheduleViewMode', 'normal');
             updateViewButtons();
             
             // Clear conflict warnings and summary
@@ -1730,6 +1731,7 @@ try {
         
         function showConflictView() {
             currentViewMode = 'conflicts';
+            localStorage.setItem('scheduleViewMode', 'conflicts');
             updateViewButtons();
             if (selectedGroupId) {
                 fetchSchedulesForGroup(selectedGroupId);
@@ -1738,6 +1740,7 @@ try {
         
         function showComparisonView() {
             currentViewMode = 'comparison';
+            localStorage.setItem('scheduleViewMode', 'comparison');
             updateViewButtons();
             if (selectedGroupId) {
                 fetchSchedulesForGroup(selectedGroupId);
@@ -1835,6 +1838,21 @@ try {
             }
             if (viewComparisonBtn) {
                 viewComparisonBtn.addEventListener('click', showComparisonView);
+            }
+
+            // Apply the saved/default view mode (conflicts)
+            if (currentViewMode === 'comparison') {
+                // Set comparison button as active
+                document.getElementById('viewComparison').className = 'px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800';
+                document.getElementById('viewNormal').className = 'px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50';
+                document.getElementById('viewConflicts').className = 'px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50';
+            } else if (currentViewMode === 'conflicts') {
+                // Set conflicts button as active (this is the default)
+                document.getElementById('viewConflicts').className = 'px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800';
+                document.getElementById('viewNormal').className = 'px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50';
+                document.getElementById('viewComparison').className = 'px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50';
+            } else {
+                // normal view button styling already set by default in HTML
             }
 
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
