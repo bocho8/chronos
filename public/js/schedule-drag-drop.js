@@ -17,6 +17,7 @@ class ScheduleDragDropManager {
         this.draggedData = null;
         this.isDragging = false;
         this.dropZones = [];
+        this.currentDropZone = null; // Track currently highlighted drop zone
         
         // Auto-scroll properties
         this.scrollInterval = null;
@@ -61,6 +62,11 @@ class ScheduleDragDropManager {
         };
         
         checkGroupFilter();
+        
+        // Global dragend safety net - catch all cases where highlights might get stuck
+        document.addEventListener('dragend', () => {
+            this.clearAllHighlights();
+        });
     }
 
     setupSidebarToggle() {
@@ -347,9 +353,7 @@ class ScheduleDragDropManager {
         });
         
         // Clear all drag states
-        document.querySelectorAll('.drop-zone').forEach(zone => {
-            zone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move');
-        });
+        this.clearAllHighlights();
     }
 
     handleDragOver(e) {
@@ -366,12 +370,12 @@ class ScheduleDragDropManager {
         if (isValid) {
             // Check if this is an existing assignment being moved (has assignmentId without underscore)
             if (this.draggedData && this.draggedData.assignmentId && !this.draggedData.assignmentId.includes('_')) {
-                dropZone.classList.add('drag-over-move');
+                this.setDropZoneHighlight(dropZone, 'drag-over-move');
             } else {
-                dropZone.classList.add('drag-over');
+                this.setDropZoneHighlight(dropZone, 'drag-over');
             }
         } else {
-            dropZone.classList.add('drag-over-invalid');
+            this.setDropZoneHighlight(dropZone, 'drag-over-invalid');
         }
     }
 
@@ -379,20 +383,29 @@ class ScheduleDragDropManager {
         const dropZone = e.target.closest('.drop-zone');
         if (!dropZone) return;
 
-        // Only remove classes if we're actually leaving the drop zone
-        if (!dropZone.contains(e.relatedTarget)) {
-            dropZone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move');
+        // Check if we're truly leaving the drop zone
+        // relatedTarget can be null when dragging fast or during scroll
+        const isLeavingZone = !e.relatedTarget || !dropZone.contains(e.relatedTarget);
+        
+        if (isLeavingZone) {
+            // Only clear if this is the currently highlighted zone
+            if (this.currentDropZone === dropZone) {
+                dropZone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move');
+                this.currentDropZone = null;
+            }
         }
     }
 
     async handleDrop(e) {
         e.preventDefault();
+        
+        // Clear all highlights immediately when drop occurs
+        this.clearAllHighlights();
+        
         const dropZone = e.target.closest('.drop-zone');
         if (!dropZone) {
             return;
         }
-
-        dropZone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move');
 
         // Try to get dragged data from instance, currentDragData, or dataTransfer
         
@@ -780,6 +793,25 @@ class ScheduleDragDropManager {
             showToast(message, type);
         } else {
         }
+    }
+
+    // Highlight management methods
+    clearAllHighlights() {
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move');
+        });
+        this.currentDropZone = null;
+    }
+
+    setDropZoneHighlight(dropZone, highlightClass) {
+        // Clear previous highlight
+        if (this.currentDropZone && this.currentDropZone !== dropZone) {
+            this.currentDropZone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move');
+        }
+        
+        // Set new highlight
+        dropZone.classList.add(highlightClass);
+        this.currentDropZone = dropZone;
     }
 
     // Auto-scroll methods
