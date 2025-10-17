@@ -570,9 +570,11 @@ window.testModal = async function() {
         module.exports = { ToastManager, toastManager };
     }
 
-    // Make ToastManager available globally
+    // Make ToastManager and showToast available globally
     window.ToastManager = ToastManager;
     window.toastManager = toastManager;
+    window.showToast = showToast;
+    window.hideToast = hideToast;
 
 })();
 

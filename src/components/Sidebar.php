@@ -192,6 +192,11 @@ class Sidebar {
                         'url' => '/src/views/admin/AdminAsignacionMaterias.php',
                         'text' => 'group_subject_assignment',
                         'icon' => '📖'
+                    ],
+                    [
+                        'url' => '/src/views/admin/AdminBloques.php',
+                        'text' => 'time_blocks_management',
+                        'icon' => '⏰'
                     ]
                 ]
             ]

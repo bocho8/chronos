@@ -404,6 +404,92 @@ class Horario {
     }
     
     /**
+     * Obtiene un bloque horario por ID
+     */
+    public function getBloqueById($id_bloque) {
+        try {
+            $query = "SELECT * FROM bloque_horario WHERE id_bloque = :id_bloque";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_bloque', $id_bloque, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting bloque by ID: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Crea un nuevo bloque horario
+     */
+    public function createBloque($hora_inicio, $hora_fin) {
+        try {
+            $query = "INSERT INTO bloque_horario (hora_inicio, hora_fin) VALUES (:hora_inicio, :hora_fin)";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':hora_inicio', $hora_inicio);
+            $stmt->bindParam(':hora_fin', $hora_fin);
+            
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error creating bloque: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Actualiza un bloque horario existente
+     */
+    public function updateBloque($id_bloque, $hora_inicio, $hora_fin) {
+        try {
+            $query = "UPDATE bloque_horario SET hora_inicio = :hora_inicio, hora_fin = :hora_fin WHERE id_bloque = :id_bloque";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_bloque', $id_bloque, PDO::PARAM_INT);
+            $stmt->bindParam(':hora_inicio', $hora_inicio);
+            $stmt->bindParam(':hora_fin', $hora_fin);
+            
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error updating bloque: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Elimina un bloque horario
+     */
+    public function deleteBloque($id_bloque) {
+        try {
+            $query = "DELETE FROM bloque_horario WHERE id_bloque = :id_bloque";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_bloque', $id_bloque, PDO::PARAM_INT);
+            
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error deleting bloque: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Verifica si un bloque horario tiene dependencias (usado en horarios)
+     */
+    public function checkBloqueDependencies($id_bloque) {
+        try {
+            $query = "SELECT COUNT(*) as count FROM horario WHERE id_bloque = :id_bloque";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_bloque', $id_bloque, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return (int)$result['count'];
+        } catch (PDOException $e) {
+            error_log("Error checking bloque dependencies: " . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
      * Obtiene todos los grupos
      */
     public function getAllGrupos() {

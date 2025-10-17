@@ -18,6 +18,8 @@
     --color-red-900: oklch(39.6% 0.141 25.723);
     --color-orange-100: oklch(95.4% 0.038 75.164);
     --color-orange-600: oklch(64.6% 0.222 41.116);
+    --color-orange-700: oklch(55.3% 0.195 38.402);
+    --color-orange-800: oklch(47% 0.157 37.304);
     --color-yellow-50: oklch(98.7% 0.026 102.212);
     --color-yellow-100: oklch(97.3% 0.071 103.193);
     --color-yellow-300: oklch(90.5% 0.182 98.111);
@@ -273,6 +275,9 @@
   }
 }
 @layer utilities {
+  .collapse {
+    visibility: collapse;
+  }
   .visible {
     visibility: visible;
   }
@@ -515,6 +520,12 @@
   .min-h-\[60px\] {
     min-height: 60px;
   }
+  .min-h-\[200px\] {
+    min-height: 200px;
+  }
+  .min-h-\[250px\] {
+    min-height: 250px;
+  }
   .min-h-\[calc\(100vh-60px\)\] {
     min-height: calc(100vh - 60px);
   }
@@ -605,6 +616,9 @@
   .flex-1 {
     flex: 1;
   }
+  .flex-shrink {
+    flex-shrink: 1;
+  }
   .flex-shrink-0 {
     flex-shrink: 0;
   }
@@ -626,6 +640,9 @@
   }
   .animate-spin {
     animation: var(--animate-spin);
+  }
+  .cursor-move {
+    cursor: move;
   }
   .cursor-pointer {
     cursor: pointer;
@@ -727,6 +744,13 @@
       --tw-space-y-reverse: 0;
       margin-block-start: calc(calc(var(--spacing) * 4) * var(--tw-space-y-reverse));
       margin-block-end: calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-y-reverse)));
+    }
+  }
+  .space-y-6 {
+    :where(& > :not(:last-child)) {
+      --tw-space-y-reverse: 0;
+      margin-block-start: calc(calc(var(--spacing) * 6) * var(--tw-space-y-reverse));
+      margin-block-end: calc(calc(var(--spacing) * 6) * calc(1 - var(--tw-space-y-reverse)));
     }
   }
   .space-x-1 {
@@ -983,6 +1007,9 @@
   }
   .bg-orange-100 {
     background-color: var(--color-orange-100);
+  }
+  .bg-orange-600 {
+    background-color: var(--color-orange-600);
   }
   .bg-pink-100 {
     background-color: var(--color-pink-100);
@@ -1510,6 +1537,13 @@
       }
     }
   }
+  .hover\:bg-orange-700 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-orange-700);
+      }
+    }
+  }
   .hover\:bg-red-50 {
     &:hover {
       @media (hover: hover) {
@@ -1612,6 +1646,13 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-navy);
+      }
+    }
+  }
+  .hover\:text-orange-800 {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-orange-800);
       }
     }
   }
