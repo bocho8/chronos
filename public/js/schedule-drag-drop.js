@@ -18,6 +18,7 @@ class ScheduleDragDropManager {
         this.isDragging = false;
         this.dropZones = [];
         this.currentDropZone = null; // Track currently highlighted drop zone
+        this.currentFilter = 'filterAll'; // Track current active filter
         
         // Auto-scroll properties
         this.scrollInterval = null;
@@ -35,12 +36,6 @@ class ScheduleDragDropManager {
     }
 
     setupEventListeners() {
-        // Sidebar toggle
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', this.toggleSidebar.bind(this));
-        }
-
         // Group selection change - wait for the element to be available
         const checkGroupFilter = () => {
             const groupFilter = document.getElementById('filter_grupo');
@@ -70,11 +65,11 @@ class ScheduleDragDropManager {
     }
 
     setupSidebarToggle() {
-        // Don't collapse the sidebar by default - let it be visible
-        // const sidebar = document.querySelector('.bg-white.rounded-lg.shadow-sm.border.border-lightborder.mb-6');
-        // if (sidebar) {
-        //     sidebar.classList.add('sidebar-collapsed');
-        // }
+        // Set up the sidebar toggle button
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', this.toggleSidebar.bind(this));
+        }
     }
 
     setupSearchAndFilters() {
@@ -95,9 +90,15 @@ class ScheduleDragDropManager {
     }
 
     toggleSidebar() {
-        const sidebar = document.querySelector('.bg-white.rounded-lg.shadow-sm.border.border-lightborder.mb-6');
-        if (sidebar) {
-            sidebar.classList.toggle('sidebar-collapsed');
+        // Find the sidebar content element directly
+        const sidebarContent = document.getElementById('sidebarContent');
+        if (sidebarContent) {
+            // Toggle visibility directly
+            if (sidebarContent.style.display === 'none') {
+                sidebarContent.style.display = 'block';
+            } else {
+                sidebarContent.style.display = 'none';
+            }
         }
     }
 
@@ -143,6 +144,9 @@ class ScheduleDragDropManager {
         
         // Setup drag events for each card
         this.setupDragEvents();
+        
+        // Apply current filter after loading assignments
+        this.applyCurrentFilter();
     }
 
     createAssignmentCard(assignment) {
@@ -727,22 +731,42 @@ class ScheduleDragDropManager {
     }
 
     filterAssignments() {
-        const searchTerm = document.getElementById('sidebarSearch').value.toLowerCase();
+        const searchInput = document.getElementById('sidebarSearch');
+        if (!searchInput) return;
+        
+        const searchTerm = searchInput.value.toLowerCase().trim();
         const assignments = document.querySelectorAll('.draggable-assignment');
         
         assignments.forEach(assignment => {
-            const subjectName = assignment.dataset.subjectName.toLowerCase();
-            const teacherName = assignment.dataset.teacherName.toLowerCase();
+            // First apply the current filter
+            let shouldShow = true;
             
-            if (subjectName.includes(searchTerm) || teacherName.includes(searchTerm)) {
-                assignment.style.display = 'block';
-            } else {
-                assignment.style.display = 'none';
+            switch (this.currentFilter) {
+                case 'filterAvailable':
+                    shouldShow = assignment.querySelector('.availability-available') !== null;
+                    break;
+                case 'filterBySubject':
+                    shouldShow = true;
+                    break;
+                case 'filterAll':
+                default:
+                    shouldShow = true;
             }
+            
+            // Then apply search filter
+            if (shouldShow && searchTerm !== '') {
+                const subjectName = (assignment.dataset.subjectName || '').toLowerCase();
+                const teacherName = (assignment.dataset.teacherName || '').toLowerCase();
+                shouldShow = subjectName.includes(searchTerm) || teacherName.includes(searchTerm);
+            }
+            
+            assignment.style.display = shouldShow ? 'block' : 'none';
         });
     }
 
     setActiveFilter(filterId) {
+        this.currentFilter = filterId;
+        
         // Update button states
         const buttons = ['filterAll', 'filterAvailable', 'filterBySubject'];
         buttons.forEach(id => {
@@ -757,28 +781,12 @@ class ScheduleDragDropManager {
         });
 
         // Apply filter logic
-        this.applyFilter(filterId);
+        this.filterAssignments();
     }
 
-    applyFilter(filterId) {
-        const assignments = document.querySelectorAll('.draggable-assignment');
-        
-        assignments.forEach(assignment => {
-            let shouldShow = true;
-            
-            switch (filterId) {
-                case 'filterAvailable':
-                    shouldShow = assignment.querySelector('.availability-available') !== null;
-                    break;
-                case 'filterBySubject':
-                    // Group by subject logic could be implemented here
-                    break;
-                default:
-                    shouldShow = true;
-            }
-            
-            assignment.style.display = shouldShow ? 'block' : 'none';
-        });
+    applyCurrentFilter() {
+        // Apply the current filter and search
+        this.filterAssignments();
     }
 
     showMessage(message) {

@@ -232,12 +232,17 @@ try {
         
         /* Drag & Drop Sidebar Styles */
         .sidebar-collapsed #sidebarContent {
-            display: none;
+            display: none !important;
         }
         
         /* Ensure sidebar is visible by default */
         #sidebarContent {
             display: block;
+        }
+        
+        /* Alternative selector for debugging */
+        .bg-white.rounded-lg.shadow-sm.border.border-lightborder.mb-6.sidebar-collapsed #sidebarContent {
+            display: none !important;
         }
         
         .draggable-assignment {
