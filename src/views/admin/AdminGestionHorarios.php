@@ -1803,13 +1803,22 @@ try {
             // Initialize group filter
             const groupFilter = document.getElementById('filter_grupo');
             if (groupFilter) {
-                // Auto-select first group
-                if (groupFilter.options.length > 0) {
-                    const firstGroupId = groupFilter.options[0].value;
-                    if (firstGroupId) {
-                        selectedGroupId = firstGroupId;
-                        filterScheduleGrid(firstGroupId);
-                    }
+                // Check if there's a saved group preference
+                const savedGroup = localStorage.getItem('scheduleSelectedGroup');
+                let initialGroupId = null;
+                
+                if (savedGroup && groupFilter.querySelector(`option[value="${savedGroup}"]`)) {
+                    // Use saved group preference
+                    initialGroupId = savedGroup;
+                    groupFilter.value = savedGroup;
+                } else if (groupFilter.options.length > 0) {
+                    // Fallback to first group if no saved preference
+                    initialGroupId = groupFilter.options[0].value;
+                }
+                
+                if (initialGroupId) {
+                    selectedGroupId = initialGroupId;
+                    filterScheduleGrid(initialGroupId);
                 }
                 
                 // Add change listener for group selection
