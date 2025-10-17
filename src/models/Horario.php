@@ -104,12 +104,17 @@ class Horario {
                 }
             }
 
-            if ($this->hasScheduleConflict($data)) {
-                throw new Exception("Ya existe una asignación para este horario");
-            }
+            // Only check conflicts if force_override is not set or false
+            $forceOverride = $data['force_override'] ?? false;
+            
+            if (!$forceOverride) {
+                if ($this->hasScheduleConflict($data)) {
+                    throw new Exception("Ya existe una asignación para este horario");
+                }
 
-            if (!$this->isDocenteAvailable($data['id_docente'], $data['id_bloque'], $data['dia'])) {
-                throw new Exception("El docente no está disponible en este horario");
+                if (!$this->isDocenteAvailable($data['id_docente'], $data['id_bloque'], $data['dia'])) {
+                    throw new Exception("El docente no está disponible en este horario");
+                }
             }
             
             $query = "INSERT INTO horario (id_grupo, id_docente, id_materia, id_bloque, dia) 

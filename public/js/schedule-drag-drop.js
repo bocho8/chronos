@@ -26,6 +26,15 @@ class ScheduleDragDropManager {
         this.maxScrollSpeed = 10; // pixels per frame
         this.assignmentsContainer = null;
         
+        // Error handling and operation state
+        this.lastToastMessage = null;
+        this.lastToastTime = 0;
+        this.toastDebounceMs = 500;
+        this.operationInProgress = {
+            type: null, // 'create', 'move', 'delete'
+            startTime: 0
+        };
+        
         this.init();
     }
 
@@ -501,6 +510,11 @@ class ScheduleDragDropManager {
     }
 
     async createAssignment(dropZone) {
+        // Prevent duplicate operations
+        if (!this.startOperation('create')) {
+            return;
+        }
+
         const bloque = dropZone.dataset.bloque;
         const dia = dropZone.dataset.dia;
 
@@ -509,9 +523,11 @@ class ScheduleDragDropManager {
         
         if (!draggedData) {
             this.showToast('Error: No se encontraron datos de arrastre', 'error');
+            this.endOperation();
             return;
         }
 
+        this.showToast('Creando asignación...', 'info');
 
         // Make AJAX call first
         try {
@@ -567,7 +583,12 @@ class ScheduleDragDropManager {
                     
                     
                     if (confirmed) {
+                        // End the current operation before starting the force create
+                        this.endOperation();
                         await this.forceCreateAssignment(dropZone, draggedData);
+                    } else {
+                        // User cancelled, end the operation
+                        this.endOperation();
                     }
                 } else {
                     console.error('confirmConflict function not available, falling back to error toast');
@@ -580,12 +601,20 @@ class ScheduleDragDropManager {
         } catch (error) {
             console.error('Error creating assignment:', error);
             this.showToast('Error de conexión al crear asignación', 'error');
+            this.endOperation();
         }
     }
 
     async forceCreateAssignment(dropZone, draggedData) {
+        // Prevent duplicate operations
+        if (!this.startOperation('create')) {
+            return;
+        }
+
         const bloque = dropZone.dataset.bloque;
         const dia = dropZone.dataset.dia;
+        
+        this.showToast('Creando asignación...', 'info');
         
         try {
             const response = await fetch('/src/controllers/HorarioHandler.php', {
@@ -616,8 +645,9 @@ class ScheduleDragDropManager {
             if (data.success) {
                 this.showToast(`Asignación creada: ${draggedData.subjectName} - ${draggedData.teacherName}`, 'success');
                 this.updateDropZone(dropZone, data.data);
-                this.loadAssignments();
                 
+                // Only call these once after successful creation
+                this.loadAssignments();
                 if (typeof filterScheduleGrid === 'function') {
                     filterScheduleGrid(this.currentGroupId);
                 }
@@ -627,7 +657,9 @@ class ScheduleDragDropManager {
             }
         } catch (error) {
             console.error('Error forcing assignment:', error);
-            this.showToast('Error al crear asignación', 'error');
+            this.showToast('Error de conexión al crear asignación', 'error');
+        } finally {
+            this.endOperation();
         }
     }
 
@@ -797,10 +829,40 @@ class ScheduleDragDropManager {
     }
 
     showToast(message, type = 'info') {
+        const now = Date.now();
+        
+        // Prevent duplicate toasts within debounce period
+        if (this.lastToastMessage === message && 
+            (now - this.lastToastTime) < this.toastDebounceMs) {
+            return;
+        }
+        
+        this.lastToastMessage = message;
+        this.lastToastTime = now;
+        
         if (typeof showToast === 'function') {
             showToast(message, type);
         } else {
+            console.error('Toast system not available:', message);
         }
+    }
+
+    // Operation state management
+    startOperation(type) {
+        if (this.operationInProgress.type) {
+            console.warn('Operation already in progress:', this.operationInProgress.type);
+            return false;
+        }
+        this.operationInProgress = { type, startTime: Date.now() };
+        return true;
+    }
+
+    endOperation() {
+        this.operationInProgress = { type: null, startTime: 0 };
+    }
+
+    isOperationInProgress() {
+        return this.operationInProgress.type !== null;
     }
 
     // Highlight management methods
