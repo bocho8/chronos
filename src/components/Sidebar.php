@@ -337,14 +337,21 @@ class Sidebar {
             background-color: #1f366d;
         }
         aside {
-            min-height: 100vh;
+            height: 100vh;
             position: fixed;
             top: 0;
             left: 0;
             z-index: 40;
+            display: flex;
+            flex-direction: column;
         }
         .sidebar-link span {
             margin-right: 12px;
+        }
+        aside ul {
+            overflow-y: auto;
+            flex: 1;
+            max-height: calc(100vh - 60px);
         }
         </style>
         ';
