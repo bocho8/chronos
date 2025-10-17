@@ -36,12 +36,100 @@ class ScheduleDragDropManager {
         };
         
         this.init();
+        
+        // Make preference functions available globally for debugging
+        window.schedulePreferences = {
+            clear: () => this.clearPreferences(),
+            get: () => this.getPreferences(),
+            save: (key, value) => this.savePreferences(key, value)
+        };
     }
 
     init() {
         this.setupEventListeners();
         this.setupSidebarToggle();
         this.setupSearchAndFilters();
+        this.loadPreferences();
+        this.loadInitialAssignments();
+    }
+
+    // Preferences management
+    loadPreferences() {
+        // Load saved group
+        const savedGroup = localStorage.getItem('scheduleSelectedGroup');
+        if (savedGroup) {
+            const groupFilter = document.getElementById('filter_grupo');
+            if (groupFilter && groupFilter.querySelector(`option[value="${savedGroup}"]`)) {
+                groupFilter.value = savedGroup;
+                this.currentGroupId = savedGroup;
+            }
+        }
+        
+        // Load sidebar state
+        const sidebarCollapsed = localStorage.getItem('scheduleSidebarCollapsed') === 'true';
+        if (sidebarCollapsed) {
+            this.collapseSidebar();
+        }
+        
+        // Load assignment filter
+        const savedFilter = localStorage.getItem('scheduleAssignmentFilter');
+        if (savedFilter) {
+            this.currentFilter = savedFilter;
+            this.setActiveFilter(savedFilter);
+        }
+        
+        // Load search term
+        const savedSearchTerm = localStorage.getItem('scheduleSearchTerm');
+        if (savedSearchTerm) {
+            const searchInput = document.getElementById('sidebarSearch');
+            if (searchInput) {
+                searchInput.value = savedSearchTerm;
+            }
+        }
+    }
+
+    savePreferences(key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            console.error('Error saving preference:', e);
+        }
+    }
+
+    collapseSidebar() {
+        const sidebarContent = document.getElementById('sidebarContent');
+        if (sidebarContent) {
+            sidebarContent.style.display = 'none';
+        }
+    }
+
+    clearPreferences() {
+        const keys = [
+            'scheduleSelectedGroup',
+            'scheduleSidebarCollapsed',
+            'scheduleViewMode',
+            'scheduleAssignmentFilter',
+            'scheduleSearchTerm'
+        ];
+        keys.forEach(key => localStorage.removeItem(key));
+    }
+
+    // Debug function to view all preferences
+    getPreferences() {
+        return {
+            selectedGroup: localStorage.getItem('scheduleSelectedGroup'),
+            sidebarCollapsed: localStorage.getItem('scheduleSidebarCollapsed'),
+            viewMode: localStorage.getItem('scheduleViewMode'),
+            assignmentFilter: localStorage.getItem('scheduleAssignmentFilter'),
+            searchTerm: localStorage.getItem('scheduleSearchTerm')
+        };
+    }
+
+    loadInitialAssignments() {
+        // Load assignments for the current group (after preferences are loaded)
+        if (this.currentGroupId) {
+            this.loadAssignments();
+        }
     }
 
     setupEventListeners() {
@@ -51,14 +139,12 @@ class ScheduleDragDropManager {
             if (groupFilter) {
                 groupFilter.addEventListener('change', (e) => {
                     this.currentGroupId = e.target.value;
+                    this.savePreferences('scheduleSelectedGroup', e.target.value);
                     this.loadAssignments();
                 });
                 
-                // Load assignments for initially selected group
-                if (groupFilter.value) {
-                    this.currentGroupId = groupFilter.value;
-                    this.loadAssignments();
-                }
+                // Note: Initial assignments are loaded in loadInitialAssignments() 
+                // after preferences are restored
             } else {
                 // Retry after a short delay if element not found
                 setTimeout(checkGroupFilter, 100);
@@ -85,7 +171,10 @@ class ScheduleDragDropManager {
         // Search functionality
         const searchInput = document.getElementById('sidebarSearch');
         if (searchInput) {
-            searchInput.addEventListener('input', this.filterAssignments.bind(this));
+            searchInput.addEventListener('input', (e) => {
+                this.savePreferences('scheduleSearchTerm', e.target.value);
+                this.filterAssignments();
+            });
         }
 
         // Filter buttons
@@ -103,11 +192,9 @@ class ScheduleDragDropManager {
         const sidebarContent = document.getElementById('sidebarContent');
         if (sidebarContent) {
             // Toggle visibility directly
-            if (sidebarContent.style.display === 'none') {
-                sidebarContent.style.display = 'block';
-            } else {
-                sidebarContent.style.display = 'none';
-            }
+            const isCollapsed = sidebarContent.style.display === 'none';
+            sidebarContent.style.display = isCollapsed ? 'block' : 'none';
+            this.savePreferences('scheduleSidebarCollapsed', !isCollapsed);
         }
     }
 
@@ -903,6 +990,7 @@ class ScheduleDragDropManager {
 
     setActiveFilter(filterId) {
         this.currentFilter = filterId;
+        this.savePreferences('scheduleAssignmentFilter', filterId);
         
         // Update button states
         const buttons = ['filterAll', 'filterAvailable', 'filterBySubject'];
