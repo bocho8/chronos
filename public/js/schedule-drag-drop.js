@@ -44,6 +44,13 @@ class ScheduleDragDropManager {
             get: () => this.getPreferences(),
             save: (key, value) => this.savePreferences(key, value)
         };
+        
+        // Make group ID setter available globally
+        window.setScheduleGroupId = (groupId) => {
+            this.currentGroupId = groupId;
+            this.savePreferences('scheduleSelectedGroup', groupId);
+            this.loadAssignments();
+        };
     }
 
     init() {
@@ -497,6 +504,12 @@ class ScheduleDragDropManager {
 
     async handleDragEnter(e) {
         e.preventDefault();
+        
+        // Safety check: ensure e.target is a DOM element
+        if (!e.target || typeof e.target.closest !== 'function') {
+            return;
+        }
+        
         const dropZone = e.target.closest('.drop-zone');
         if (!dropZone) return;
 
@@ -514,6 +527,11 @@ class ScheduleDragDropManager {
     }
 
     handleDragLeave(e) {
+        // Safety check: ensure e.target is a DOM element
+        if (!e.target || typeof e.target.closest !== 'function') {
+            return;
+        }
+        
         const dropZone = e.target.closest('.drop-zone');
         if (!dropZone) return;
 
@@ -645,20 +663,23 @@ class ScheduleDragDropManager {
         this.showToast('Creando asignación...', 'info');
 
         // Make AJAX call first
+        const requestData = {
+            action: 'quick_create',
+            id_grupo: this.currentGroupId,
+            id_materia: draggedData.subjectId,
+            id_docente: draggedData.teacherId,
+            id_bloque: bloque,
+            dia: dia
+        };
+        
+        
         try {
             const response = await fetch('/src/controllers/HorarioHandler.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    action: 'quick_create',
-                    id_grupo: this.currentGroupId,
-                    id_materia: draggedData.subjectId,
-                    id_docente: draggedData.teacherId,
-                    id_bloque: bloque,
-                    dia: dia
-                })
+                body: JSON.stringify(requestData)
             });
 
             let data;
@@ -939,15 +960,11 @@ class ScheduleDragDropManager {
         if (!teacherId) return;
         
         try {
-            console.log('Loading availability for teacher:', teacherId);
             const response = await fetch(`/src/controllers/HorarioHandler.php?action=get_teacher_availability_grid&docente_id=${teacherId}`);
             const data = await response.json();
             
-            console.log('Availability response:', data);
-            
             if (data.success && data.data) {
                 this.currentTeacherAvailability = data.data.availability_grid;
-                console.log('Availability grid:', this.currentTeacherAvailability);
                 this.applyAvailabilityHighlights();
             }
         } catch (error) {
@@ -957,10 +974,6 @@ class ScheduleDragDropManager {
 
     applyAvailabilityHighlights() {
         const dropZones = document.querySelectorAll('.drop-zone');
-        console.log('Applying availability highlights to', dropZones.length, 'drop zones');
-        
-        let validCount = 0;
-        let invalidCount = 0;
         
         dropZones.forEach(zone => {
             const bloque = zone.dataset.bloque;
@@ -974,17 +987,11 @@ class ScheduleDragDropManager {
             if (!isOccupied) {
                 if (isAvailable) {
                     zone.classList.add('availability-highlight-valid');
-                    validCount++;
-                    console.log(`Added valid highlight to ${dia} ${bloque}`);
                 } else {
                     zone.classList.add('availability-highlight-invalid');
-                    invalidCount++;
-                    console.log(`Added invalid highlight to ${dia} ${bloque}`);
                 }
             }
         });
-        
-        console.log('Applied highlights - Valid:', validCount, 'Invalid:', invalidCount);
     }
 
     isTeacherAvailableForSlot(dia, bloque) {

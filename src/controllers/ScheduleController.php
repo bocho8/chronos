@@ -795,6 +795,7 @@ class HorarioController {
     private function checkConflicts($data, $excludeId = null) {
         $conflicts = [];
         
+        
         try {
             // Check teacher conflicts
             $teacherQuery = "
@@ -847,6 +848,19 @@ class HorarioController {
             if (!empty($groupConflicts)) {
                 $conflict = $groupConflicts[0];
                 $conflicts[] = "El grupo ya tiene una clase en este horario ({$conflict['materia_nombre']} - {$conflict['docente_nombre']} {$conflict['docente_apellido']})";
+            }
+            
+            // Check teacher availability from disponibilidad table
+            $availabilityQuery = "SELECT disponible FROM disponibilidad 
+                                 WHERE id_docente = ? AND id_bloque = ? AND dia = ?";
+            $stmt = $this->db->prepare($availabilityQuery);
+            $stmt->execute([$data['id_docente'], $data['id_bloque'], $data['dia']]);
+            $availability = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Only block if there's a record AND it's explicitly set to false (unavailable)
+            // If no record exists, teacher is available by default
+            if ($availability && ($availability['disponible'] === false || $availability['disponible'] === '0' || $availability['disponible'] === 0)) {
+                $conflicts[] = "El docente no está disponible en este horario";
             }
             
         } catch (Exception $e) {

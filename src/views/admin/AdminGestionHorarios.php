@@ -2125,6 +2125,10 @@ try {
                 if (initialGroupId) {
                     selectedGroupId = initialGroupId;
                     filterScheduleGrid(initialGroupId);
+                    // Notify drag and drop manager of the group selection
+                    if (window.setScheduleGroupId) {
+                        window.setScheduleGroupId(initialGroupId);
+                    }
                 }
                 
                 // Add change listener for group selection
@@ -2132,6 +2136,10 @@ try {
                     selectedGroupId = this.value;
                     if (selectedGroupId) {
                         filterScheduleGrid(selectedGroupId);
+                        // Notify drag and drop manager of the group change
+                        if (window.setScheduleGroupId) {
+                            window.setScheduleGroupId(selectedGroupId);
+                        }
                     }
                 });
             }
