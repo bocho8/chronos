@@ -652,6 +652,45 @@ try {
         // Cache bust: <?php echo time(); ?> - Random: <?php echo rand(1000, 9999); ?>
         
         
+        // Loading state helper functions
+        function showCellLoadingState(bloqueId, dia) {
+            const cell = document.querySelector(`[data-bloque="${bloqueId}"][data-dia="${dia}"]`);
+            if (cell) {
+                cell.innerHTML = '<div class="text-gray-400 text-xs">Cargando...</div>';
+                cell.style.pointerEvents = 'none';
+            }
+        }
+        
+        function hideCellLoadingState() {
+            // Reset pointer-events on all cells to ensure they're clickable
+            const cells = document.querySelectorAll('.horario-cell');
+            cells.forEach(cell => {
+                cell.style.pointerEvents = '';
+            });
+        }
+        
+        function showButtonLoadingState(button) {
+            if (button) {
+                button.disabled = true;
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+                const originalText = button.textContent;
+                button.setAttribute('data-original-text', originalText);
+                button.textContent = 'Cargando...';
+            }
+        }
+        
+        function hideButtonLoadingState(button) {
+            if (button) {
+                button.disabled = false;
+                button.classList.remove('opacity-50', 'cursor-not-allowed');
+                const originalText = button.getAttribute('data-original-text');
+                if (originalText) {
+                    button.textContent = originalText;
+                    button.removeAttribute('data-original-text');
+                }
+            }
+        }
+
         // Global function to avoid any scoping issues
         window.handleScheduleFormSubmission = function(e) {
             e.preventDefault();
@@ -660,6 +699,9 @@ try {
             if (!form) {
                 return;
             }
+            
+            const submitButton = form.querySelector('button[type="button"][onclick*="handleScheduleFormSubmission"]');
+            showButtonLoadingState(submitButton);
             
             const url = '/src/controllers/HorarioHandler.php';
             
@@ -687,7 +729,12 @@ try {
                 if (data.success) {
                     showToast(data.message, 'success');
                     closeHorarioModal();
-                    setTimeout(() => location.reload(), 1000);
+                    // Refresh grid instead of page reload
+                    if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
+                        filterScheduleGrid(selectedGroupId);
+                        // Reset pointer-events on cells after grid refresh
+                        hideCellLoadingState();
+                    }
                 } else {
                     showToast('Error: ' + data.message, 'error');
                 }
@@ -695,6 +742,9 @@ try {
             .catch(error => {
                 console.error('Error:', error);
                 showToast('Error processing request', 'error');
+            })
+            .finally(() => {
+                hideButtonLoadingState(submitButton);
             });
         };
         // Ensure showToast is available globally
@@ -875,6 +925,7 @@ try {
         }
         
         function editHorario(id) {
+            console.log('🎯 editHorario called with ID:', id);
             isEditMode = true;
             window.isEditMode = true;
             document.getElementById('horarioModalTitle').textContent = '<?php _e('edit_schedule'); ?>';
@@ -934,8 +985,19 @@ try {
         }
         
         function deleteHorario(id) {
+            console.log('🎯 deleteHorario called with ID:', id);
             const confirmMessage = `¿Está seguro de que desea eliminar esta asignación de horario?`;
             if (confirm(confirmMessage)) {
+                // Find the cell that contains this schedule to show loading state
+                const scheduleElement = document.querySelector(`[data-horario-id="${id}"]`);
+                let cellElement = null;
+                if (scheduleElement) {
+                    cellElement = scheduleElement.closest('.horario-cell');
+                    if (cellElement) {
+                        showCellLoadingState(cellElement.dataset.bloque, cellElement.dataset.dia);
+                    }
+                }
+                
                 const formData = new FormData();
                 formData.append('action', 'delete');
                 formData.append('id', id);
@@ -948,7 +1010,12 @@ try {
                 .then(data => {
                     if (data.success) {
                         showToast('Horario eliminado exitosamente', 'success');
-                        setTimeout(() => location.reload(), 1000);
+                        // Refresh grid instead of page reload
+                        if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
+                            filterScheduleGrid(selectedGroupId);
+                            // Reset pointer-events on cells after grid refresh
+                            hideCellLoadingState();
+                        }
                     } else {
                         showToast('Error: ' + data.message, 'error');
                     }
@@ -965,16 +1032,18 @@ try {
             
             if (!validateHorarioForm()) {
                 showToast('<?php _e('please_correct_errors'); ?>', 'error');
-                    return;
-                }
+                return;
+            }
+            
+            const form = document.getElementById('horarioForm');
+            const submitButton = form.querySelector('button[type="button"][onclick*="handleScheduleFormSubmission"]');
+            showButtonLoadingState(submitButton);
                 
             const url = '/src/controllers/HorarioHandler.php';
             const method = 'POST';
             
             let requestBody;
             let contentType;
-            
-            const form = document.getElementById('horarioForm');
             
             // Create a completely new request object
             const requestData = {
@@ -986,7 +1055,6 @@ try {
                 id_materia: document.getElementById('id_materia').value,
                 id_docente: document.getElementById('id_docente').value
             };
-            
             
             requestBody = JSON.stringify(requestData);
             contentType = 'application/json';
@@ -1002,7 +1070,6 @@ try {
                 };
             }
             
-            
             fetch(url, fetchOptions)
             .then(response => {
                 if (!response.ok) {
@@ -1014,7 +1081,12 @@ try {
                 if (data.success) {
                     showToast(data.message, 'success');
                     closeHorarioModal();
-                    setTimeout(() => location.reload(), 1000);
+                    // Refresh grid instead of page reload
+                    if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
+                        filterScheduleGrid(selectedGroupId);
+                        // Reset pointer-events on cells after grid refresh
+                        hideCellLoadingState();
+                    }
                 } else {
                     if (data.data && typeof data.data === 'object') {
                         Object.keys(data.data).forEach(field => {
@@ -1028,6 +1100,9 @@ try {
             .catch(error => {
                 console.error('Error:', error);
                 showToast('<?php _e('error_processing_request'); ?>', 'error');
+            })
+            .finally(() => {
+                hideButtonLoadingState(submitButton);
             });
         }
         
@@ -1178,6 +1253,9 @@ try {
             
             // Show conflict summary
             showConflictSummary(totalConflicts);
+            
+            // Re-setup button events after conflict detection
+            reSetupAllButtonEvents();
         }
         
         function showConflictSummary(conflictCount) {
@@ -1249,6 +1327,9 @@ try {
             
             // Show conflict summary
             showConflictSummary(totalConflicts);
+            
+            // Re-setup button events after conflict detection
+            reSetupAllButtonEvents();
         }
         
         function findConflictsWithAllSchedules(currentAssignment, allSchedules) {
@@ -1330,6 +1411,43 @@ try {
             conflictIndicator.innerHTML = `⚠️ ${conflicts.map(c => c.message).join(' | ')}`;
             
             assignment.assignment.appendChild(conflictIndicator);
+            
+            // Re-setup button events for this specific assignment after adding conflict indicator
+            // This ensures buttons work even after DOM modifications
+            const editButton = assignment.assignment.querySelector('.edit-schedule-btn');
+            const deleteButton = assignment.assignment.querySelector('.delete-schedule-btn');
+            
+            if (editButton) {
+                const horarioId = editButton.getAttribute('data-horario-id');
+                if (horarioId) {
+                    // Remove any existing event listeners by cloning the button
+                    const newEditButton = editButton.cloneNode(true);
+                    editButton.parentNode.replaceChild(newEditButton, editButton);
+                    
+                    // Add fresh event listener
+                    newEditButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        console.log(`🖱️ Edit button clicked for horario ${horarioId} (conflicted)`);
+                        editHorario(horarioId);
+                    });
+                }
+            }
+            
+            if (deleteButton) {
+                const horarioId = deleteButton.getAttribute('data-horario-id');
+                if (horarioId) {
+                    // Remove any existing event listeners by cloning the button
+                    const newDeleteButton = deleteButton.cloneNode(true);
+                    deleteButton.parentNode.replaceChild(newDeleteButton, deleteButton);
+                    
+                    // Add fresh event listener
+                    newDeleteButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        console.log(`🖱️ Delete button clicked for horario ${horarioId} (conflicted)`);
+                        deleteHorario(horarioId);
+                    });
+                }
+            }
         }
         
         function clearConflictWarnings() {
@@ -1590,6 +1708,7 @@ try {
         }
         
         function updateScheduleGrid(schedules, groupId) {
+            console.log('🔄 updateScheduleGrid called with', schedules.length, 'schedules for group', groupId);
             // Update the global allSchedules array for conflict detection
             allSchedules = schedules;
             
@@ -1633,12 +1752,12 @@ try {
                             <div>${schedule.materia_nombre}</div>
                             <div class="text-xs">${schedule.docente_nombre} ${schedule.docente_apellido}</div>
                             <div class="mt-1">
-                                <button onclick="event.stopPropagation(); editHorario(${schedule.id_horario})" 
-                                        class="text-blue-600 hover:text-blue-800 text-xs mr-1">
+                                <button class="edit-schedule-btn text-blue-600 hover:text-blue-800 text-xs mr-1" 
+                                        data-horario-id="${schedule.id_horario}">
                                     <?php _e('edit'); ?>
                                 </button>
-                                <button onclick="event.stopPropagation(); deleteHorario(${schedule.id_horario})" 
-                                        class="text-red-600 hover:text-red-800 text-xs">
+                                <button class="delete-schedule-btn text-red-600 hover:text-red-800 text-xs" 
+                                        data-horario-id="${schedule.id_horario}">
                                     <?php _e('delete'); ?>
                                 </button>
                             </div>
@@ -1661,6 +1780,7 @@ try {
             // Apply view mode after grid is updated
             if (currentViewMode === 'conflicts') {
                 detectConflicts();
+                // Note: reSetupAllButtonEvents() is called inside detectConflicts after it completes
             } else if (currentViewMode === 'comparison') {
                 renderComparisonView();
             }
@@ -1669,7 +1789,111 @@ try {
             if (window.scheduleDragDropManager) {
                 window.scheduleDragDropManager.refreshDragEvents();
             }
+            
+            // Re-setup button events after grid update
+            // This ensures buttons work after AJAX operations
+            reSetupAllButtonEvents();
+            
+            // Debug: Test if buttons are actually clickable
+            setTimeout(() => {
+                const editButtons = document.querySelectorAll('.edit-schedule-btn');
+                const deleteButtons = document.querySelectorAll('.delete-schedule-btn');
+                
+                console.log('🔍 Testing button clickability...');
+                editButtons.forEach((button, index) => {
+                    console.log(`Edit button ${index}:`, button);
+                    console.log(`  - onclick attribute:`, button.getAttribute('onclick'));
+                    console.log(`  - clickable:`, !button.disabled);
+                    console.log(`  - visible:`, button.offsetParent !== null);
+                    
+                    // Add click event listener for debugging
+                    button.addEventListener('click', (e) => {
+                        console.log(`🖱️ Edit button ${index} clicked via addEventListener!`);
+                        console.log(`  - Event target:`, e.target);
+                        console.log(`  - Event currentTarget:`, e.currentTarget);
+                        console.log(`  - Event type:`, e.type);
+                        console.log(`  - Event bubbles:`, e.bubbles);
+                        console.log(`  - Event cancelable:`, e.cancelable);
+                        console.log(`  - Event defaultPrevented:`, e.defaultPrevented);
+                    });
+                });
+                
+                deleteButtons.forEach((button, index) => {
+                    console.log(`Delete button ${index}:`, button);
+                    console.log(`  - onclick attribute:`, button.getAttribute('onclick'));
+                    console.log(`  - clickable:`, !button.disabled);
+                    console.log(`  - visible:`, button.offsetParent !== null);
+                    
+                    // Add click event listener for debugging
+                    button.addEventListener('click', (e) => {
+                        console.log(`🖱️ Delete button ${index} clicked via addEventListener!`);
+                        console.log(`  - Event target:`, e.target);
+                        console.log(`  - Event currentTarget:`, e.currentTarget);
+                        console.log(`  - Event type:`, e.type);
+                        console.log(`  - Event bubbles:`, e.bubbles);
+                        console.log(`  - Event cancelable:`, e.cancelable);
+                        console.log(`  - Event defaultPrevented:`, e.defaultPrevented);
+                    });
+                });
+            }, 100);
         }
+        
+        // Function to re-setup button events for all schedule assignments
+        function reSetupAllButtonEvents() {
+            console.log('🔧 Re-setting up button events...');
+            const editButtons = document.querySelectorAll('.edit-schedule-btn');
+            const deleteButtons = document.querySelectorAll('.delete-schedule-btn');
+            
+            console.log(`Found ${editButtons.length} edit buttons and ${deleteButtons.length} delete buttons`);
+            
+            // Remove existing event listeners to avoid duplicates
+            editButtons.forEach((button) => {
+                button.replaceWith(button.cloneNode(true));
+            });
+            deleteButtons.forEach((button) => {
+                button.replaceWith(button.cloneNode(true));
+            });
+            
+            // Re-query after cloning to get fresh elements
+            const freshEditButtons = document.querySelectorAll('.edit-schedule-btn');
+            const freshDeleteButtons = document.querySelectorAll('.delete-schedule-btn');
+            
+            freshEditButtons.forEach((button, index) => {
+                const horarioId = button.getAttribute('data-horario-id');
+                console.log(`Setting up edit button ${index}: horarioId=${horarioId}`);
+                
+                if (horarioId) {
+                    // Remove any existing onclick attributes
+                    button.removeAttribute('onclick');
+                    
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        console.log(`🖱️ Edit button clicked for horario ${horarioId}`);
+                        editHorario(horarioId);
+                    });
+                    console.log(`✅ Added event listener to edit button ${index}`);
+                }
+            });
+            
+            freshDeleteButtons.forEach((button, index) => {
+                const horarioId = button.getAttribute('data-horario-id');
+                console.log(`Setting up delete button ${index}: horarioId=${horarioId}`);
+                
+                if (horarioId) {
+                    // Remove any existing onclick attributes
+                    button.removeAttribute('onclick');
+                    
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        console.log(`🖱️ Delete button clicked for horario ${horarioId}`);
+                        deleteHorario(horarioId);
+                    });
+                    console.log(`✅ Added event listener to delete button ${index}`);
+                }
+            });
+            console.log('🔧 Button event setup complete');
+        }
+        
         
         function updateFilterResults() {
             const filterResults = document.getElementById('filterResults');
@@ -1924,6 +2148,10 @@ try {
                     }
                 });
             }
+            
+            // Make sure functions are accessible globally
+            window.editHorario = editHorario;
+            window.deleteHorario = deleteHorario;
         });
     </script>
 
