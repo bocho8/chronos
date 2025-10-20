@@ -256,19 +256,137 @@ class ScheduleDragDropManager {
             return;
         }
 
-
         if (this.assignments.length === 0) {
             container.innerHTML = '<div class="text-center text-gray-500 text-sm py-8">No hay materias asignadas a este grupo<br><small>Configure las materias del grupo primero</small></div>';
             return;
         }
 
-        container.innerHTML = this.assignments.map(assignment => this.createAssignmentCard(assignment)).join('');
+        // Check if assignments are already grouped (new format) or need grouping (old format)
+        const isGrouped = this.assignments.length > 0 && this.assignments[0].hasOwnProperty('teachers');
+        
+        if (isGrouped) {
+            // New grouped format - render directly
+            container.innerHTML = this.assignments.map(assignment => this.createGroupedAssignmentCard(assignment)).join('');
+        } else {
+            // Old format - group by subject first
+            const groupedAssignments = this.groupAssignmentsBySubject(this.assignments);
+            container.innerHTML = groupedAssignments.map(assignment => this.createGroupedAssignmentCard(assignment)).join('');
+        }
         
         // Setup drag events for each card
         this.setupDragEvents();
         
         // Apply current filter after loading assignments
         this.applyCurrentFilter();
+    }
+
+    groupAssignmentsBySubject(assignments) {
+        const grouped = {};
+        
+        assignments.forEach(assignment => {
+            const subjectId = assignment.id_materia;
+            
+            if (!grouped[subjectId]) {
+                grouped[subjectId] = {
+                    id_materia: subjectId,
+                    materia_nombre: assignment.materia_nombre,
+                    teachers: [],
+                    total_teachers: 0,
+                    available_teachers: 0,
+                    total_hours_available: 0,
+                    availability_percentage: 0,
+                    is_auto_selectable: false
+                };
+            }
+            
+            grouped[subjectId].teachers.push({
+                id_docente: assignment.id_docente,
+                nombre: assignment.docente_nombre,
+                apellido: assignment.docente_apellido,
+                hours_assigned: assignment.hours_assigned,
+                hours_available: assignment.hours_available,
+                is_available: assignment.is_available,
+                hours_total: assignment.hours_total
+            });
+            
+            grouped[subjectId].total_teachers++;
+            if (assignment.is_available) {
+                grouped[subjectId].available_teachers++;
+                grouped[subjectId].total_hours_available += assignment.hours_available;
+            }
+        });
+        
+        // Calculate availability percentage and auto-selectable status
+        Object.values(grouped).forEach(group => {
+            group.availability_percentage = group.total_teachers > 0 
+                ? Math.round((group.available_teachers / group.total_teachers) * 100) 
+                : 0;
+            group.is_auto_selectable = group.available_teachers > 0;
+        });
+        
+        return Object.values(grouped);
+    }
+
+    createGroupedAssignmentCard(assignment) {
+        const availabilityClass = this.getGroupedAvailabilityClass(assignment);
+        
+        // Sort teachers: available first, then by score
+        const sortedTeachers = assignment.teachers
+            .sort((a, b) => {
+                if (a.is_available !== b.is_available) return b.is_available - a.is_available;
+                return (b.score || 0) - (a.score || 0);
+            });
+        
+        // Show max 4 teacher badges
+        const visibleTeachers = sortedTeachers.slice(0, 4);
+        const remainingCount = sortedTeachers.length - visibleTeachers.length;
+        
+        return `
+            <div class="draggable-assignment grouped-assignment" 
+                 draggable="true"
+                 data-subject-id="${assignment.id_materia}"
+                 data-subject-name="${assignment.materia_nombre}"
+                 data-is-grouped="true"
+                 data-auto-selectable="${assignment.is_auto_selectable}">
+                
+                <div class="assignment-header">
+                    <div class="assignment-subject">${assignment.materia_nombre}</div>
+                </div>
+                
+                <div class="availability-bar">
+                    <div class="availability-fill ${availabilityClass}" 
+                         style="width: ${assignment.availability_percentage}%"></div>
+                </div>
+                
+                <div class="teacher-badges">
+                    ${visibleTeachers.map(teacher => {
+                        const scoreClass = this.getTeacherScoreClass(teacher.score || 0);
+                        return `
+                            <div class="teacher-badge ${teacher.is_available ? 'available' : 'unavailable'} ${scoreClass}"
+                                 draggable="${teacher.is_available ? 'true' : 'false'}"
+                                 data-teacher-id="${teacher.id_docente}"
+                                 data-teacher-name="${teacher.nombre} ${teacher.apellido}"
+                                 data-subject-id="${assignment.id_materia}"
+                                 data-subject-name="${assignment.materia_nombre}"
+                                 data-score="${teacher.score || 0}"
+                                 title="${teacher.nombre} ${teacher.apellido}&#10;Score: ${teacher.score || 0}&#10;Hours: ${teacher.hours_available}/${teacher.hours_total}h">
+                                👤 ${teacher.apellido}
+                            </div>
+                        `;
+                    }).join('')}
+                    ${remainingCount > 0 ? `
+                        <span class="teacher-badge-more" title="${remainingCount} docentes más">
+                            +${remainingCount}
+                        </span>
+                    ` : ''}
+                </div>
+                
+                <div class="assignment-stats">
+                    <div class="teacher-count">${assignment.available_teachers}/${assignment.total_teachers} docentes</div>
+                    <div class="hours-available">${assignment.total_hours_available} hrs</div>
+                </div>
+            </div>
+        `;
     }
 
     createAssignmentCard(assignment) {
@@ -303,6 +421,21 @@ class ScheduleDragDropManager {
         return '🟡';
     }
 
+    getGroupedAvailabilityClass(assignment) {
+        const percentage = assignment.availability_percentage;
+        if (percentage >= 80) return 'availability-high';
+        if (percentage >= 50) return 'availability-medium';
+        if (percentage >= 20) return 'availability-low';
+        return 'availability-none';
+    }
+
+    getTeacherScoreClass(score) {
+        if (score >= 80) return 'score-excellent';
+        if (score >= 60) return 'score-good';
+        if (score >= 40) return 'score-fair';
+        return 'score-low';
+    }
+
     setupDragEvents() {
         const draggableElements = document.querySelectorAll('.draggable-assignment');
         const dropZones = document.querySelectorAll('.drop-zone');
@@ -313,6 +446,16 @@ class ScheduleDragDropManager {
         draggableElements.forEach(element => {
             element.addEventListener('dragstart', this.handleDragStart.bind(this));
             element.addEventListener('dragend', this.handleDragEnd.bind(this));
+        });
+
+        // Setup teacher badge drag events
+        const teacherBadges = document.querySelectorAll('.teacher-badge[draggable="true"]');
+        teacherBadges.forEach(badge => {
+            badge.addEventListener('dragstart', (e) => {
+                e.stopPropagation(); // Prevent parent card drag
+                this.handleBadgeDragStart(e);
+            });
+            badge.addEventListener('dragend', this.handleDragEnd.bind(this));
         });
 
         // Setup existing schedule assignments as draggable
@@ -378,23 +521,74 @@ class ScheduleDragDropManager {
         });
     }
 
-    handleDragStart(e) {
+    handleBadgeDragStart(e) {
         this.draggedElement = e.target;
         this.draggedData = {
             subjectId: e.target.dataset.subjectId,
             teacherId: e.target.dataset.teacherId,
             subjectName: e.target.dataset.subjectName,
             teacherName: e.target.dataset.teacherName,
-            assignmentId: e.target.dataset.assignmentId
+            isGrouped: false,
+            isBadgeDrag: true,
+            score: e.target.dataset.score
         };
         
         this.isDragging = true;
         e.target.classList.add('dragging');
         
-        // Fetch and apply availability highlighting (async, don't await to avoid blocking drag)
+        // Load availability for this specific teacher
         this.loadAndApplyAvailabilityHighlights(this.draggedData.teacherId).catch(error => {
             console.error('Error loading availability highlights:', error);
         });
+        
+        this.startScrollSupport();
+        
+        // Disable onclick on all drop zones during drag
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.setAttribute('data-original-onclick', zone.getAttribute('onclick') || '');
+            zone.removeAttribute('onclick');
+        });
+        
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setData('text/plain', JSON.stringify(this.draggedData));
+        
+        this.currentDragData = this.draggedData;
+    }
+
+    handleDragStart(e) {
+        this.draggedElement = e.target;
+        
+        // Check if this is a grouped assignment
+        const isGrouped = e.target.dataset.isGrouped === 'true';
+        
+        if (isGrouped) {
+            this.draggedData = {
+                subjectId: e.target.dataset.subjectId,
+                subjectName: e.target.dataset.subjectName,
+                isGrouped: true,
+                autoSelectable: e.target.dataset.autoSelectable === 'true'
+            };
+        } else {
+            this.draggedData = {
+                subjectId: e.target.dataset.subjectId,
+                teacherId: e.target.dataset.teacherId,
+                subjectName: e.target.dataset.subjectName,
+                teacherName: e.target.dataset.teacherName,
+                assignmentId: e.target.dataset.assignmentId,
+                isGrouped: false
+            };
+        }
+        
+        this.isDragging = true;
+        e.target.classList.add('dragging');
+        
+        // For grouped assignments, we'll handle availability highlighting after auto-selection
+        if (!isGrouped && this.draggedData.teacherId) {
+            // Fetch and apply availability highlighting (async, don't await to avoid blocking drag)
+            this.loadAndApplyAvailabilityHighlights(this.draggedData.teacherId).catch(error => {
+                console.error('Error loading availability highlights:', error);
+            });
+        }
         
         // Start scroll support for auto-scroll and wheel scrolling
         this.startScrollSupport();
@@ -408,7 +602,6 @@ class ScheduleDragDropManager {
         // Set drag image and data
         e.dataTransfer.effectAllowed = 'copy';
         e.dataTransfer.setData('text/plain', JSON.stringify(this.draggedData));
-        
         
         // Store data in a more persistent way
         this.currentDragData = this.draggedData;
@@ -660,6 +853,12 @@ class ScheduleDragDropManager {
             return;
         }
 
+        // Handle grouped assignments with auto-selection
+        if (draggedData.isGrouped) {
+            await this.createGroupedAssignment(dropZone, draggedData, bloque, dia);
+            return;
+        }
+
         this.showToast('Creando asignación...', 'info');
 
         // Make AJAX call first
@@ -793,6 +992,149 @@ class ScheduleDragDropManager {
             }
         } catch (error) {
             console.error('Error forcing assignment:', error);
+            this.showToast('Error de conexión al crear asignación', 'error');
+        } finally {
+            this.endOperation();
+        }
+    }
+
+    async createGroupedAssignment(dropZone, draggedData, bloque, dia) {
+        try {
+            // First, auto-select the best teacher
+            this.showToast('Seleccionando mejor docente...', 'info');
+            
+            const autoSelectResponse = await fetch('/src/controllers/HorarioHandler.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'auto_select_teacher',
+                    id_materia: draggedData.subjectId,
+                    id_grupo: this.currentGroupId,
+                    id_bloque: bloque,
+                    dia: dia
+                })
+            });
+
+            const autoSelectData = await autoSelectResponse.json();
+            
+            if (!autoSelectData.success) {
+                this.showToast('Error: ' + autoSelectData.message, 'error');
+                this.endOperation();
+                return;
+            }
+
+            const selectedTeacher = autoSelectData.data.selected_teacher;
+            this.showToast(`Docente seleccionado: ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'success');
+
+            // Now create the assignment with the selected teacher
+            this.showToast('Creando asignación...', 'info');
+            
+            const requestData = {
+                action: 'quick_create',
+                id_grupo: this.currentGroupId,
+                id_materia: draggedData.subjectId,
+                id_docente: selectedTeacher.id_docente,
+                id_bloque: bloque,
+                dia: dia
+            };
+            
+            const response = await fetch('/src/controllers/HorarioHandler.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showToast(`Asignación creada: ${draggedData.subjectName} - ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'success');
+                this.updateDropZone(dropZone, data.data);
+                
+                // Refresh assignments and schedule grid
+                this.loadAssignments();
+                if (typeof filterScheduleGrid === 'function') {
+                    filterScheduleGrid(this.currentGroupId);
+                }
+            } else {
+                // Show confirmation modal for conflicts
+                if (data.message && data.message.includes('Conflicto detectado')) {
+                    const cleanMessage = data.message.replace('Conflicto detectado: ', '');
+                    
+                    if (typeof confirmConflict === 'function') {
+                        const confirmed = await confirmConflict(cleanMessage, {
+                            title: 'Conflicto de Horario',
+                            confirmText: 'Crear de Todas Formas',
+                            cancelText: 'Cancelar'
+                        });
+                        
+                        if (confirmed) {
+                            // End the current operation before starting the force create
+                            this.endOperation();
+                            await this.forceCreateGroupedAssignment(dropZone, draggedData, selectedTeacher, bloque, dia);
+                        } else {
+                            this.endOperation();
+                        }
+                    } else {
+                        this.showToast('Error: ' + (data.message || 'No se pudo crear la asignación'), 'error');
+                        this.endOperation();
+                    }
+                } else {
+                    this.showToast('Error: ' + (data.message || 'No se pudo crear la asignación'), 'error');
+                    this.endOperation();
+                }
+            }
+        } catch (error) {
+            console.error('Error creating grouped assignment:', error);
+            this.showToast('Error de conexión al crear asignación', 'error');
+            this.endOperation();
+        }
+    }
+
+    async forceCreateGroupedAssignment(dropZone, draggedData, selectedTeacher, bloque, dia) {
+        // Prevent duplicate operations
+        if (!this.startOperation('create')) {
+            return;
+        }
+
+        this.showToast('Creando asignación...', 'info');
+        
+        try {
+            const response = await fetch('/src/controllers/HorarioHandler.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'quick_create',
+                    id_grupo: this.currentGroupId,
+                    id_materia: draggedData.subjectId,
+                    id_docente: selectedTeacher.id_docente,
+                    id_bloque: bloque,
+                    dia: dia,
+                    force_override: true
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showToast(`Asignación creada: ${draggedData.subjectName} - ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'success');
+                this.updateDropZone(dropZone, data.data);
+                
+                // Refresh assignments and schedule grid
+                this.loadAssignments();
+                if (typeof filterScheduleGrid === 'function') {
+                    filterScheduleGrid(this.currentGroupId);
+                }
+            } else {
+                this.showToast('Error: ' + data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error forcing grouped assignment:', error);
             this.showToast('Error de conexión al crear asignación', 'error');
         } finally {
             this.endOperation();

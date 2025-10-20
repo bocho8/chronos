@@ -264,8 +264,9 @@ try {
             transition: all 0.2s ease;
             border: 1px solid #e5e7eb;
             border-radius: 6px;
-            padding: 8px 12px;
+            padding: 10px;
             background: white;
+            margin-bottom: 8px;
             position: relative;
         }
         
@@ -283,6 +284,32 @@ try {
         .draggable-assignment.dragging {
             opacity: 0.5;
             transform: rotate(5deg);
+        }
+        
+        /* Grouped card specific styles - override and extend base */
+        .draggable-assignment.grouped-assignment {
+            padding: 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            position: relative; /* Ensure stacking context */
+            z-index: 1; /* Base z-index */
+        }
+        
+        /* Elevate card on hover to ensure expanded list appears on top */
+        .grouped-assignment:hover {
+            z-index: 100; /* Higher than other cards */
+        }
+        
+        /* Ensure proper internal spacing for grouped cards */
+        .grouped-assignment .assignment-header,
+        .grouped-assignment .assignment-stats,
+        .grouped-assignment .availability-bar,
+        .grouped-assignment .assignment-teachers-collapsed {
+            margin-bottom: 8px;
+        }
+        
+        .grouped-assignment .assignment-teachers-collapsed {
+            margin-bottom: 0; /* Last element - no margin */
         }
         
         .draggable-existing-assignment.dragging {
@@ -496,6 +523,236 @@ try {
             box-shadow: inset 0 0 12px rgba(239, 68, 68, 0.5), 0 0 8px rgba(239, 68, 68, 0.3) !important;
             opacity: 0.8 !important;
             cursor: not-allowed !important;
+        }
+        
+        /* Compact Grouped Assignment Cards */
+        .grouped-assignment {
+            position: relative;
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .grouped-assignment:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: #3b82f6;
+        }
+        
+        .grouped-assignment.dragging {
+            opacity: 0.7;
+            transform: rotate(3deg) scale(1.05);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .assignment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 8px; /* Add gap to prevent overlap */
+        }
+        
+        .assignment-subject {
+            font-weight: 600;
+            color: #111827;
+            font-size: 14px;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap; /* Prevent text wrapping into badge */
+        }
+        
+        .assignment-auto-badge {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            flex-shrink: 0; /* Prevent badge from shrinking */
+        }
+        
+        .assignment-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 11px;
+            color: #6b7280;
+            gap: 8px; /* Add spacing between stats */
+        }
+        
+        .teacher-count, .hours-available {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap; /* Prevent wrapping */
+        }
+        
+        .availability-bar {
+            width: 100%;
+            height: 8px; /* Increase from 6px for better visibility */
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            position: relative; /* Ensure fill renders correctly */
+        }
+        
+        .availability-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+            min-width: 2px; /* Ensure some visibility even at low percentages */
+        }
+        
+        .availability-fill.availability-high {
+            background: linear-gradient(90deg, #10b981, #059669);
+        }
+        
+        .availability-fill.availability-medium {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+        }
+        
+        .availability-fill.availability-low {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+        }
+        
+        .availability-fill.availability-none {
+            background: linear-gradient(90deg, #9ca3af, #6b7280);
+        }
+        
+        /* Teacher badges container */
+        .teacher-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        /* Individual teacher badge */
+        .teacher-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 500;
+            border: 1px solid;
+            cursor: grab;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        /* Score-based colors for available teachers */
+        .teacher-badge.available.score-excellent {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .teacher-badge.available.score-good {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            border-color: #3b82f6;
+            color: #1e3a8a;
+        }
+
+        .teacher-badge.available.score-fair {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-color: #f59e0b;
+            color: #78350f;
+        }
+
+        .teacher-badge.available.score-low {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border-color: #ef4444;
+            color: #7f1d1d;
+        }
+
+        /* Hover effects */
+        .teacher-badge.available:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Dragging state */
+        .teacher-badge.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        /* Unavailable teacher badge */
+        .teacher-badge.unavailable {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: #6b7280;
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .teacher-badge[draggable="false"] {
+            cursor: not-allowed;
+        }
+
+        /* More teachers indicator */
+        .teacher-badge-more {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 500;
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px dashed #d1d5db;
+            cursor: default;
+        }
+        
+        /* Remove old teacher list styles */
+        .assignment-teachers-collapsed,
+        .assignment-teachers-expanded,
+        .teacher-item {
+            display: none !important;
+        }
+        
+        /* Ensure proper card spacing in assignments list */
+        #assignmentsList {
+            display: flex;
+            flex-direction: column;
+            gap: 8px; /* Spacing between cards */
+        }
+        
+        /* Remove margin-bottom from last card since we're using gap */
+        #assignmentsList .draggable-assignment:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* Mobile Responsive for Compact Cards */
+        @media (max-width: 768px) {
+            .grouped-assignment {
+                padding: 8px;
+            }
+            
+            .assignment-subject {
+                font-size: 13px;
+            }
+            
+            .assignment-stats {
+                font-size: 10px;
+            }
+            
+            .assignment-teachers-collapsed {
+                font-size: 10px;
+                max-height: 24px;
+            }
         }
         
     </style>

@@ -42,6 +42,7 @@ class HorarioController {
                 'get_docentes' => $this->getDocentes(),
                 'get_teachers_by_subject' => $this->getTeachersBySubject(),
                 'get_available_assignments' => $this->getAvailableAssignments(),
+                'auto_select_teacher' => $this->autoSelectTeacher(),
                 'quick_create' => $this->quickCreate(),
                 'quick_move' => $this->quickMove(),
                 'swap_assignments' => $this->swapAssignments(),
@@ -338,6 +339,7 @@ class HorarioController {
     
     /**
      * Get available subject-teacher assignments for drag-and-drop sidebar
+     * Returns grouped assignments by subject with all teachers included
      */
     private function getAvailableAssignments() {
         $grupoId = $_GET['grupo_id'] ?? null;
@@ -358,7 +360,7 @@ class HorarioController {
             if ($hasAssignedSubjects) {
                 // Get only subjects assigned to this group
                 $materiasQuery = "
-                    SELECT DISTINCT m.id_materia, m.nombre
+                    SELECT DISTINCT m.id_materia, m.nombre, m.horas_semanales
                     FROM materia m
                     INNER JOIN grupo_materia gm ON m.id_materia = gm.id_materia
                     WHERE gm.id_grupo = ?
@@ -368,7 +370,7 @@ class HorarioController {
                 $materiasStmt->execute([$grupoId]);
             } else {
                 // Get all subjects if none assigned to group
-                $materiasQuery = "SELECT id_materia, nombre FROM materia ORDER BY nombre";
+                $materiasQuery = "SELECT id_materia, nombre, horas_semanales FROM materia ORDER BY nombre";
                 $materiasStmt = $this->db->prepare($materiasQuery);
                 $materiasStmt->execute();
             }
@@ -377,7 +379,7 @@ class HorarioController {
             
             // Get teachers with their user info (nombre, apellido)
             $docentesQuery = "
-                SELECT d.id_docente, u.nombre, u.apellido
+                SELECT d.id_docente, u.nombre, u.apellido, d.horas_asignadas
                 FROM docente d
                 INNER JOIN usuario u ON d.id_usuario = u.id_usuario
                 ORDER BY u.nombre, u.apellido
@@ -387,9 +389,13 @@ class HorarioController {
             $docentes = $docentesStmt->fetchAll(PDO::FETCH_ASSOC);
             error_log("Found " . count($docentes) . " teachers");
             
-            // Create subject-teacher combinations
-            $assignments = [];
+            // Group assignments by subject
+            $groupedAssignments = [];
             foreach ($materias as $materia) {
+                $teachers = [];
+                $totalAvailableTeachers = 0;
+                $totalHoursAvailable = 0;
+                
                 foreach ($docentes as $docente) {
                     // Count hours already assigned for this combination
                     $hoursQuery = "
@@ -401,29 +407,126 @@ class HorarioController {
                     $hoursStmt->execute([$docente['id_docente'], $materia['id_materia'], $grupoId]);
                     $hoursAssigned = (int)$hoursStmt->fetch(PDO::FETCH_ASSOC)['hours_assigned'];
                     
-                    // Default max hours per subject-teacher combination
-                    $hoursAvailable = 20;
+                    // Use subject's weekly hours as max, or default to 20
+                    $maxHours = max($materia['horas_semanales'], 20);
+                    $hoursAvailable = $maxHours - $hoursAssigned;
+                    $isAvailable = $hoursAvailable > 0;
                     
-                    $assignments[] = [
-                        'id_materia' => (int)$materia['id_materia'],
-                        'materia_nombre' => $materia['nombre'],
+                    if ($isAvailable) {
+                        $totalAvailableTeachers++;
+                        $totalHoursAvailable += $hoursAvailable;
+                    }
+                    
+                    $teachers[] = [
                         'id_docente' => (int)$docente['id_docente'],
-                        'docente_nombre' => $docente['nombre'],
-                        'docente_apellido' => $docente['apellido'],
+                        'nombre' => $docente['nombre'],
+                        'apellido' => $docente['apellido'],
                         'hours_assigned' => $hoursAssigned,
-                        'hours_available' => $hoursAvailable - $hoursAssigned,
-                        'is_available' => $hoursAvailable > $hoursAssigned,
-                        'hours_total' => $hoursAvailable
+                        'hours_available' => $hoursAvailable,
+                        'is_available' => $isAvailable,
+                        'hours_total' => $maxHours,
+                        'global_hours_assigned' => (int)$docente['horas_asignadas'],
+                        'score' => $this->calculateTeacherScore($docente['id_docente'], $materia['id_materia'])
                     ];
                 }
+                
+                // Calculate aggregate availability percentage
+                $availabilityPercentage = count($teachers) > 0 ? round(($totalAvailableTeachers / count($teachers)) * 100) : 0;
+                
+                $groupedAssignments[] = [
+                    'id_materia' => (int)$materia['id_materia'],
+                    'materia_nombre' => $materia['nombre'],
+                    'horas_semanales' => (int)$materia['horas_semanales'],
+                    'teachers' => $teachers,
+                    'total_teachers' => count($teachers),
+                    'available_teachers' => $totalAvailableTeachers,
+                    'total_hours_available' => $totalHoursAvailable,
+                    'availability_percentage' => $availabilityPercentage,
+                    'is_auto_selectable' => $totalAvailableTeachers > 0
+                ];
             }
             
-            error_log("Successfully created " . count($assignments) . " assignments for group $grupoId");
-            ResponseHelper::success("Asignaciones obtenidas exitosamente", $assignments);
+            error_log("Successfully created " . count($groupedAssignments) . " grouped assignments for group $grupoId");
+            ResponseHelper::success("Asignaciones agrupadas obtenidas exitosamente", $groupedAssignments);
             
         } catch (Exception $e) {
             error_log("Error getting available assignments: " . $e->getMessage());
             ResponseHelper::error("Error al obtener las asignaciones disponibles");
+        }
+    }
+    
+    /**
+     * Calculate teacher score based on workload and teaching history
+     */
+    private function calculateTeacherScore($teacherId, $subjectId) {
+        try {
+            // Get teacher's current hours
+            $teacherQuery = "SELECT horas_asignadas FROM docente WHERE id_docente = ?";
+            $teacherStmt = $this->db->prepare($teacherQuery);
+            $teacherStmt->execute([$teacherId]);
+            $result = $teacherStmt->fetch(PDO::FETCH_ASSOC);
+            $teacherHours = $result ? (int)$result['horas_asignadas'] : 0;
+            
+            // Get average hours
+            $avgQuery = "SELECT AVG(horas_asignadas) as avg_hours FROM docente";
+            $avgStmt = $this->db->prepare($avgQuery);
+            $avgStmt->execute();
+            $avgResult = $avgStmt->fetch(PDO::FETCH_ASSOC);
+            $avgHours = $avgResult ? (float)$avgResult['avg_hours'] : 0;
+            
+            // Workload score (lower workload = higher score)
+            $workloadRatio = $avgHours > 0 ? $teacherHours / $avgHours : 1;
+            $workloadScore = max(0, 100 - ($workloadRatio * 50));
+            
+            // Teaching history score
+            $historyQuery = "SELECT COUNT(*) as count FROM horario WHERE id_docente = ? AND id_materia = ?";
+            $historyStmt = $this->db->prepare($historyQuery);
+            $historyStmt->execute([$teacherId, $subjectId]);
+            $historyResult = $historyStmt->fetch(PDO::FETCH_ASSOC);
+            $historyCount = $historyResult ? (int)$historyResult['count'] : 0;
+            $historyScore = min(30, $historyCount * 10); // Up to 30 points for history
+            
+            return round($workloadScore + $historyScore);
+        } catch (Exception $e) {
+            error_log("Error calculating teacher score: " . $e->getMessage());
+            return 50; // Default mid-range score on error
+        }
+    }
+    
+    /**
+     * Auto-select best teacher for a subject assignment
+     */
+    private function autoSelectTeacher() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (!$data) {
+            ResponseHelper::error("Datos JSON requeridos");
+        }
+        
+        $subjectId = $data['id_materia'] ?? null;
+        $groupId = $data['id_grupo'] ?? null;
+        $blockId = $data['id_bloque'] ?? null;
+        $day = $data['dia'] ?? null;
+        
+        if (!$subjectId || !$groupId || !$blockId || !$day) {
+            ResponseHelper::error("Parámetros requeridos: id_materia, id_grupo, id_bloque, dia");
+        }
+        
+        try {
+            require_once __DIR__ . '/TeacherSelectionService.php';
+            $selectionService = new TeacherSelectionService($this->db);
+            
+            $result = $selectionService->selectBestTeacher($subjectId, $groupId, $blockId, $day);
+            
+            if ($result['success']) {
+                ResponseHelper::success("Docente seleccionado automáticamente", $result);
+            } else {
+                ResponseHelper::error($result['message']);
+            }
+            
+        } catch (Exception $e) {
+            error_log("Error in autoSelectTeacher: " . $e->getMessage());
+            ResponseHelper::error("Error al seleccionar docente automáticamente");
         }
     }
     
