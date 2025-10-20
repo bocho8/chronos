@@ -431,6 +431,73 @@ try {
             }
         }
         
+        /* Teacher availability highlighting during drag */
+        .availability-highlight-valid {
+            background-color: #d1fae5 !important; /* light green */
+            border: 3px solid #10b981 !important; /* green border */
+            box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.5), 0 0 8px rgba(16, 185, 129, 0.3) !important;
+            position: relative !important;
+        }
+
+        .availability-highlight-valid::before {
+            content: "✓" !important;
+            position: absolute !important;
+            top: 2px !important;
+            right: 2px !important;
+            color: #10b981 !important;
+            font-weight: bold !important;
+            font-size: 12px !important;
+            z-index: 10 !important;
+        }
+
+        .availability-highlight-invalid {
+            background-color: #fee2e2 !important; /* light red */
+            border: 3px solid #ef4444 !important; /* red border */
+            box-shadow: inset 0 0 12px rgba(239, 68, 68, 0.5), 0 0 8px rgba(239, 68, 68, 0.3) !important;
+            opacity: 0.8 !important;
+            cursor: not-allowed !important;
+            position: relative !important;
+        }
+
+        .availability-highlight-invalid::before {
+            content: "✗" !important;
+            position: absolute !important;
+            top: 2px !important;
+            right: 2px !important;
+            color: #ef4444 !important;
+            font-weight: bold !important;
+            font-size: 12px !important;
+            z-index: 10 !important;
+        }
+
+        /* Ensure highlights are visible during drag and hover */
+        .drop-zone.availability-highlight-valid.drag-over {
+            background-color: #a7f3d0 !important; /* darker green on hover */
+            border-color: #059669 !important;
+            box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.7), 0 0 12px rgba(16, 185, 129, 0.5) !important;
+        }
+
+        .drop-zone.availability-highlight-invalid.drag-over {
+            background-color: #fca5a5 !important; /* darker red on hover */
+            border-color: #dc2626 !important;
+            box-shadow: inset 0 0 12px rgba(239, 68, 68, 0.7), 0 0 12px rgba(239, 68, 68, 0.5) !important;
+        }
+
+        /* Override any conflicting drag-over styles to preserve availability highlighting */
+        .drop-zone.availability-highlight-valid {
+            background-color: #d1fae5 !important; /* light green */
+            border: 3px solid #10b981 !important; /* green border */
+            box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.5), 0 0 8px rgba(16, 185, 129, 0.3) !important;
+        }
+
+        .drop-zone.availability-highlight-invalid {
+            background-color: #fee2e2 !important; /* light red */
+            border: 3px solid #ef4444 !important; /* red border */
+            box-shadow: inset 0 0 12px rgba(239, 68, 68, 0.5), 0 0 8px rgba(239, 68, 68, 0.3) !important;
+            opacity: 0.8 !important;
+            cursor: not-allowed !important;
+        }
+        
     </style>
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">

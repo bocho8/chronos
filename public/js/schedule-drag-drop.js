@@ -19,6 +19,7 @@ class ScheduleDragDropManager {
         this.dropZones = [];
         this.currentDropZone = null; // Track currently highlighted drop zone
         this.currentFilter = 'filterAll'; // Track current active filter
+        this.currentTeacherAvailability = null; // Store fetched availability
         
         // Auto-scroll properties
         this.scrollInterval = null;
@@ -383,6 +384,11 @@ class ScheduleDragDropManager {
         this.isDragging = true;
         e.target.classList.add('dragging');
         
+        // Fetch and apply availability highlighting (async, don't await to avoid blocking drag)
+        this.loadAndApplyAvailabilityHighlights(this.draggedData.teacherId).catch(error => {
+            console.error('Error loading availability highlights:', error);
+        });
+        
         // Start scroll support for auto-scroll and wheel scrolling
         this.startScrollSupport();
         
@@ -421,6 +427,11 @@ class ScheduleDragDropManager {
         this.isDragging = true;
         e.target.classList.add('dragging');
         
+        // Fetch and apply availability highlighting (async, don't await to avoid blocking drag)
+        this.loadAndApplyAvailabilityHighlights(this.draggedData.teacherId).catch(error => {
+            console.error('Error loading availability highlights:', error);
+        });
+        
         // Start scroll support for auto-scroll and wheel scrolling
         this.startScrollSupport();
         
@@ -440,6 +451,10 @@ class ScheduleDragDropManager {
         e.target.classList.remove('dragging');
         this.isDragging = false;
         this.draggedElement = null;
+        
+        // Clear availability highlights
+        this.clearAvailabilityHighlights();
+        this.currentTeacherAvailability = null;
         
         // Stop scroll support
         this.stopScrollSupport();
@@ -920,6 +935,74 @@ class ScheduleDragDropManager {
         }
     }
 
+    async loadAndApplyAvailabilityHighlights(teacherId) {
+        if (!teacherId) return;
+        
+        try {
+            console.log('Loading availability for teacher:', teacherId);
+            const response = await fetch(`/src/controllers/HorarioHandler.php?action=get_teacher_availability_grid&docente_id=${teacherId}`);
+            const data = await response.json();
+            
+            console.log('Availability response:', data);
+            
+            if (data.success && data.data) {
+                this.currentTeacherAvailability = data.data.availability_grid;
+                console.log('Availability grid:', this.currentTeacherAvailability);
+                this.applyAvailabilityHighlights();
+            }
+        } catch (error) {
+            console.error('Error loading teacher availability:', error);
+        }
+    }
+
+    applyAvailabilityHighlights() {
+        const dropZones = document.querySelectorAll('.drop-zone');
+        console.log('Applying availability highlights to', dropZones.length, 'drop zones');
+        
+        let validCount = 0;
+        let invalidCount = 0;
+        
+        dropZones.forEach(zone => {
+            const bloque = zone.dataset.bloque;
+            const dia = zone.dataset.dia;
+            const isOccupied = zone.dataset.occupied === 'true';
+            
+            // Check availability from fetched grid
+            const isAvailable = this.isTeacherAvailableForSlot(dia, bloque);
+            
+            // Skip occupied cells - don't highlight them
+            if (!isOccupied) {
+                if (isAvailable) {
+                    zone.classList.add('availability-highlight-valid');
+                    validCount++;
+                    console.log(`Added valid highlight to ${dia} ${bloque}`);
+                } else {
+                    zone.classList.add('availability-highlight-invalid');
+                    invalidCount++;
+                    console.log(`Added invalid highlight to ${dia} ${bloque}`);
+                }
+            }
+        });
+        
+        console.log('Applied highlights - Valid:', validCount, 'Invalid:', invalidCount);
+    }
+
+    isTeacherAvailableForSlot(dia, bloque) {
+        if (!this.currentTeacherAvailability) return true; // default to available
+        
+        if (!this.currentTeacherAvailability[dia]) return true;
+        
+        const availability = this.currentTeacherAvailability[dia][bloque];
+        return availability !== false; // true or undefined means available
+    }
+
+    clearAvailabilityHighlights() {
+        const dropZones = document.querySelectorAll('.drop-zone');
+        dropZones.forEach(zone => {
+            zone.classList.remove('availability-highlight-valid', 'availability-highlight-invalid');
+        });
+    }
+
     updateDropZone(dropZone, assignmentData) {
         dropZone.dataset.occupied = 'true';
         dropZone.innerHTML = `
@@ -1081,15 +1164,16 @@ class ScheduleDragDropManager {
     // Highlight management methods
     clearAllHighlights() {
         document.querySelectorAll('.drop-zone').forEach(zone => {
-            zone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move');
+            zone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move', 'availability-highlight-valid', 'availability-highlight-invalid');
         });
         this.currentDropZone = null;
     }
 
     setDropZoneHighlight(dropZone, highlightClass) {
-        // Clear previous highlight
+        // Clear previous drag-over highlight but preserve availability highlights
         if (this.currentDropZone && this.currentDropZone !== dropZone) {
             this.currentDropZone.classList.remove('drag-over', 'drag-over-invalid', 'drag-over-move');
+            // Don't remove availability highlights - they should persist
         }
         
         // Set new highlight

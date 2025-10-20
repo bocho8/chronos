@@ -46,6 +46,7 @@ class HorarioController {
                 'quick_move' => $this->quickMove(),
                 'swap_assignments' => $this->swapAssignments(),
                 'check_availability' => $this->checkAvailability(),
+                'get_teacher_availability_grid' => $this->getTeacherAvailabilityGrid(),
                 default => throw new Exception("Acción no válida: $action")
             };
         } catch (Exception $e) {
@@ -733,12 +734,58 @@ class HorarioController {
             ResponseHelper::error("ID de docente, bloque y día son requeridos");
         }
         
-        // For now, always return available to avoid database issues
+        // Get actual availability from database
+        $query = "SELECT disponible FROM disponibilidad 
+                  WHERE id_docente = :id_docente AND id_bloque = :id_bloque AND dia = :dia";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([
+            ':id_docente' => $docenteId,
+            ':id_bloque' => $bloque,
+            ':dia' => $dia
+        ]);
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $isAvailable = $result ? (bool)$result['disponible'] : true; // default true if no record
+        
         ResponseHelper::success("Disponibilidad verificada", [
-            'is_available' => true,
+            'is_available' => $isAvailable,
             'docente_id' => $docenteId,
             'bloque' => $bloque,
             'dia' => $dia
+        ]);
+    }
+    
+    /**
+     * Get teacher availability grid for all time slots
+     */
+    private function getTeacherAvailabilityGrid() {
+        $docenteId = $_GET['docente_id'] ?? null;
+        
+        if (!$docenteId) {
+            ResponseHelper::error("ID de docente requerido");
+        }
+        
+        $query = "SELECT id_bloque, dia, disponible 
+                  FROM disponibilidad 
+                  WHERE id_docente = :id_docente";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([':id_docente' => $docenteId]);
+        $availability = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Format as nested array for easy lookup: [dia][bloque] = available
+        $grid = [];
+        foreach ($availability as $slot) {
+            if (!isset($grid[$slot['dia']])) {
+                $grid[$slot['dia']] = [];
+            }
+            $grid[$slot['dia']][$slot['id_bloque']] = (bool)$slot['disponible'];
+        }
+        
+        ResponseHelper::success("Disponibilidad del docente obtenida", [
+            'docente_id' => $docenteId,
+            'availability_grid' => $grid
         ]);
     }
     
