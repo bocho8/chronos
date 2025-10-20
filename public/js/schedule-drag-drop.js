@@ -20,6 +20,7 @@ class ScheduleDragDropManager {
         this.currentDropZone = null; // Track currently highlighted drop zone
         this.currentFilter = 'filterAll'; // Track current active filter
         this.currentTeacherAvailability = null; // Store fetched availability
+        this.badgeEventsSetup = false; // Track if badge events are already set up
         
         // Auto-scroll properties
         this.scrollInterval = null;
@@ -448,15 +449,24 @@ class ScheduleDragDropManager {
             element.addEventListener('dragend', this.handleDragEnd.bind(this));
         });
 
-        // Setup teacher badge drag events
-        const teacherBadges = document.querySelectorAll('.teacher-badge[draggable="true"]');
-        teacherBadges.forEach(badge => {
-            badge.addEventListener('dragstart', (e) => {
-                e.stopPropagation(); // Prevent parent card drag
-                this.handleBadgeDragStart(e);
+        // Setup teacher badge drag events using event delegation
+        // This will work for dynamically created badges
+        if (!this.badgeEventsSetup) {
+            document.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('teacher-badge') && e.target.draggable === true) {
+                    e.stopPropagation(); // Prevent parent card drag
+                    this.handleBadgeDragStart(e);
+                }
             });
-            badge.addEventListener('dragend', this.handleDragEnd.bind(this));
-        });
+            
+            document.addEventListener('dragend', (e) => {
+                if (e.target.classList.contains('teacher-badge')) {
+                    this.handleDragEnd(e);
+                }
+            });
+            
+            this.badgeEventsSetup = true;
+        }
 
         // Setup existing schedule assignments as draggable
         existingAssignments.forEach(element => {
@@ -582,9 +592,14 @@ class ScheduleDragDropManager {
         this.isDragging = true;
         e.target.classList.add('dragging');
         
-        // For grouped assignments, we'll handle availability highlighting after auto-selection
-        if (!isGrouped && this.draggedData.teacherId) {
-            // Fetch and apply availability highlighting (async, don't await to avoid blocking drag)
+        // Handle availability highlighting
+        if (isGrouped) {
+            // For grouped assignments (subject cards), show availability for all teachers
+            this.loadCombinedAvailability(this.draggedData.subjectId).catch(error => {
+                console.error('Error loading combined availability highlights:', error);
+            });
+        } else if (this.draggedData.teacherId) {
+            // For individual teachers, show only that teacher's availability
             this.loadAndApplyAvailabilityHighlights(this.draggedData.teacherId).catch(error => {
                 console.error('Error loading availability highlights:', error);
             });
@@ -620,9 +635,10 @@ class ScheduleDragDropManager {
             teacherId: e.target.dataset.teacherId,
             subjectName: e.target.dataset.subjectName,
             teacherName: e.target.dataset.teacherName,
-            assignmentId: e.target.dataset.assignmentId
+            assignmentId: e.target.dataset.assignmentId,
+            isGrouped: false,
+            isExistingAssignment: true
         };
-        
         
         this.isDragging = true;
         e.target.classList.add('dragging');
@@ -645,6 +661,8 @@ class ScheduleDragDropManager {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', JSON.stringify(this.draggedData));
         
+        // Store data in a more persistent way
+        this.currentDragData = this.draggedData;
     }
 
     handleDragEnd(e) {
@@ -1312,6 +1330,87 @@ class ScheduleDragDropManager {
         } catch (error) {
             console.error('Error loading teacher availability:', error);
         }
+    }
+
+    async loadCombinedAvailability(subjectId) {
+        if (!subjectId) return;
+        
+        try {
+            // Find the assignment for this subject to get all teachers
+            const assignment = this.assignments.find(a => a.id_materia == subjectId);
+            if (!assignment || !assignment.teachers) {
+                console.warn('No teachers found for subject:', subjectId);
+                return;
+            }
+            
+            // Get all available teachers for this subject
+            const availableTeachers = assignment.teachers.filter(teacher => teacher.is_available);
+            
+            if (availableTeachers.length === 0) {
+                console.warn('No available teachers for subject:', subjectId);
+                return;
+            }
+            
+            // Load availability for each teacher and combine them
+            const availabilityPromises = availableTeachers.map(teacher => 
+                this.loadTeacherAvailability(teacher.id_docente)
+            );
+            
+            const availabilityResults = await Promise.all(availabilityPromises);
+            
+            // Combine all availability grids (union of available slots)
+            const combinedAvailability = this.combineAvailabilityGrids(availabilityResults);
+            
+            this.currentTeacherAvailability = combinedAvailability;
+            this.applyAvailabilityHighlights();
+            
+        } catch (error) {
+            console.error('Error loading combined availability:', error);
+        }
+    }
+
+    async loadTeacherAvailability(teacherId) {
+        try {
+            const response = await fetch(`/src/controllers/HorarioHandler.php?action=get_teacher_availability_grid&docente_id=${teacherId}`);
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                return data.data.availability_grid;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error loading teacher availability for ID', teacherId, ':', error);
+            return null;
+        }
+    }
+
+    combineAvailabilityGrids(availabilityGrids) {
+        // Filter out null results
+        const validGrids = availabilityGrids.filter(grid => grid !== null);
+        
+        if (validGrids.length === 0) return {};
+        
+        // Start with the first grid
+        const combined = { ...validGrids[0] };
+        
+        // Merge remaining grids (union of available slots)
+        for (let i = 1; i < validGrids.length; i++) {
+            const grid = validGrids[i];
+            for (const [day, blocks] of Object.entries(grid)) {
+                if (!combined[day]) {
+                    combined[day] = { ...blocks };
+                } else {
+                    for (const [block, available] of Object.entries(blocks)) {
+                        // If any teacher is available for this slot, mark it as available
+                        if (available || combined[day][block]) {
+                            combined[day][block] = true;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return combined;
     }
 
     applyAvailabilityHighlights() {
