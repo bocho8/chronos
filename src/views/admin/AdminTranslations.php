@@ -186,6 +186,10 @@ if (!AuthHelper::checkSessionTimeout()) {
                             <button onclick="exportTranslations('csv')" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
                                 <?php _e('export_csv'); ?>
                             </button>
+                            <div class="flex-1"></div>
+                            <button onclick="openAddKeyModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                                + Add Key
+                            </button>
                         </div>
                     </div>
 
@@ -249,15 +253,6 @@ if (!AuthHelper::checkSessionTimeout()) {
                                         <option value="partial"><?php _e('partial'); ?></option>
                                         <option value="spanish-error">Spanish Errors</option>
                                     </select>
-                                    <button onclick="fillMissingTranslations()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
-                                        <?php _e('fill_missing'); ?>
-                                    </button>
-                                    <button onclick="detectSpanishErrors()" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
-                                        Detect Spanish Errors
-                                    </button>
-                                    <button onclick="clearAllSpanishErrors()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
-                                        Clear All Spanish
-                                    </button>
                                     <button onclick="refreshTranslations()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
                                         <?php _e('refresh'); ?>
                                     </button>
@@ -304,6 +299,25 @@ if (!AuthHelper::checkSessionTimeout()) {
     </div>
 
 
+    <!-- Add Key Modal -->
+    <div id="addKeyModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Add Translation Key</h3>
+                <button onclick="closeAddKeyModal()" class="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <div class="space-y-3">
+                <label for="addKeyInput" class="block text-sm font-medium text-gray-700">Key name</label>
+                <input id="addKeyInput" type="text" placeholder="new_key_name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <p id="addKeyError" class="text-sm text-red-600 hidden"></p>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+                <button onclick="closeAddKeyModal()" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"><?php _e('cancel'); ?></button>
+                <button onclick="submitAddKey()" id="addKeySubmit" class="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">Create</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
@@ -329,6 +343,14 @@ if (!AuthHelper::checkSessionTimeout()) {
         function setupEventListeners() {
             document.getElementById('searchInput').addEventListener('input', filterTranslations);
             document.getElementById('statusFilter').addEventListener('change', filterTranslations);
+            // Modal Enter key
+            document.addEventListener('keydown', function(e) {
+                const modal = document.getElementById('addKeyModal');
+                if (!modal.classList.contains('hidden') && e.key === 'Enter') {
+                    e.preventDefault();
+                    submitAddKey();
+                }
+            });
         }
 
         async function loadTranslations() {
@@ -346,6 +368,97 @@ if (!AuthHelper::checkSessionTimeout()) {
             } catch (error) {
                 console.error('Error loading translations:', error); // Debug log
                 showToast('Error loading translations: ' + error.message, 'error');
+            }
+        }
+
+        // Add Key Modal controls
+        function openAddKeyModal() {
+            const modal = document.getElementById('addKeyModal');
+            const input = document.getElementById('addKeyInput');
+            const err = document.getElementById('addKeyError');
+            err.classList.add('hidden');
+            err.textContent = '';
+            input.value = '';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => input.focus(), 0);
+        }
+
+        function closeAddKeyModal() {
+            const modal = document.getElementById('addKeyModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function submitAddKey() {
+            const input = document.getElementById('addKeyInput');
+            const err = document.getElementById('addKeyError');
+            const submitBtn = document.getElementById('addKeySubmit');
+            let key = (input.value || '').trim();
+
+            // Basic checks
+            if (!key) {
+                err.textContent = 'Key is required';
+                err.classList.remove('hidden');
+                return;
+            }
+
+            // Client-side format check to avoid unnecessary request
+            const formatRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+            if (!formatRegex.test(key)) {
+                err.textContent = 'Invalid key format. Use letters, numbers, underscores; cannot start with number.';
+                err.classList.remove('hidden');
+                return;
+            }
+
+            // Check duplicates from loaded data
+            if (translations[key]) {
+                err.textContent = 'Key already exists';
+                err.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creating...';
+
+                // Server-side format validation (authoritative)
+                const validateRes = await fetch('/admin/translations/validate-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key })
+                });
+                const validateData = await validateRes.json();
+                if (!validateData.success || !validateData.data || !validateData.data.valid) {
+                    err.textContent = 'Key format is invalid';
+                    err.classList.remove('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create';
+                    return;
+                }
+
+                // Create empty Spanish entry
+                const createRes = await fetch('/admin/translations/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: key, language: 'es', value: '' })
+                });
+                const createData = await createRes.json();
+
+                if (createData.success) {
+                    closeAddKeyModal();
+                    showToast('Key created');
+                    await loadTranslations();
+                } else {
+                    err.textContent = 'Failed to create key: ' + (createData.message || 'Unknown error');
+                    err.classList.remove('hidden');
+                }
+            } catch (e) {
+                err.textContent = 'Error: ' + e.message;
+                err.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create';
             }
         }
 
