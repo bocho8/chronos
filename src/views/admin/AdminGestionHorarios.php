@@ -1264,7 +1264,6 @@ try {
         }
         
         function editHorario(id) {
-            console.log('🎯 editHorario called with ID:', id);
             isEditMode = true;
             window.isEditMode = true;
             document.getElementById('horarioModalTitle').textContent = '<?php _e('edit_schedule'); ?>';
@@ -1324,7 +1323,6 @@ try {
         }
         
         function deleteHorario(id) {
-            console.log('🎯 deleteHorario called with ID:', id);
             const confirmMessage = `¿Está seguro de que desea eliminar esta asignación de horario?`;
             if (confirm(confirmMessage)) {
                 // Find the cell that contains this schedule to show loading state
@@ -1766,7 +1764,6 @@ try {
                     // Add fresh event listener
                     newEditButton.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        console.log(`🖱️ Edit button clicked for horario ${horarioId} (conflicted)`);
                         editHorario(horarioId);
                     });
                 }
@@ -1782,7 +1779,6 @@ try {
                     // Add fresh event listener
                     newDeleteButton.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        console.log(`🖱️ Delete button clicked for horario ${horarioId} (conflicted)`);
                         deleteHorario(horarioId);
                     });
                 }
@@ -2047,7 +2043,6 @@ try {
         }
         
         function updateScheduleGrid(schedules, groupId) {
-            console.log('🔄 updateScheduleGrid called with', schedules.length, 'schedules for group', groupId);
             // Update the global allSchedules array for conflict detection
             allSchedules = schedules;
             
@@ -2137,53 +2132,13 @@ try {
             setTimeout(() => {
                 const editButtons = document.querySelectorAll('.edit-schedule-btn');
                 const deleteButtons = document.querySelectorAll('.delete-schedule-btn');
-                
-                console.log('🔍 Testing button clickability...');
-                editButtons.forEach((button, index) => {
-                    console.log(`Edit button ${index}:`, button);
-                    console.log(`  - onclick attribute:`, button.getAttribute('onclick'));
-                    console.log(`  - clickable:`, !button.disabled);
-                    console.log(`  - visible:`, button.offsetParent !== null);
-                    
-                    // Add click event listener for debugging
-                    button.addEventListener('click', (e) => {
-                        console.log(`🖱️ Edit button ${index} clicked via addEventListener!`);
-                        console.log(`  - Event target:`, e.target);
-                        console.log(`  - Event currentTarget:`, e.currentTarget);
-                        console.log(`  - Event type:`, e.type);
-                        console.log(`  - Event bubbles:`, e.bubbles);
-                        console.log(`  - Event cancelable:`, e.cancelable);
-                        console.log(`  - Event defaultPrevented:`, e.defaultPrevented);
-                    });
-                });
-                
-                deleteButtons.forEach((button, index) => {
-                    console.log(`Delete button ${index}:`, button);
-                    console.log(`  - onclick attribute:`, button.getAttribute('onclick'));
-                    console.log(`  - clickable:`, !button.disabled);
-                    console.log(`  - visible:`, button.offsetParent !== null);
-                    
-                    // Add click event listener for debugging
-                    button.addEventListener('click', (e) => {
-                        console.log(`🖱️ Delete button ${index} clicked via addEventListener!`);
-                        console.log(`  - Event target:`, e.target);
-                        console.log(`  - Event currentTarget:`, e.currentTarget);
-                        console.log(`  - Event type:`, e.type);
-                        console.log(`  - Event bubbles:`, e.bubbles);
-                        console.log(`  - Event cancelable:`, e.cancelable);
-                        console.log(`  - Event defaultPrevented:`, e.defaultPrevented);
-                    });
-                });
             }, 100);
         }
         
         // Function to re-setup button events for all schedule assignments
         function reSetupAllButtonEvents() {
-            console.log('🔧 Re-setting up button events...');
             const editButtons = document.querySelectorAll('.edit-schedule-btn');
             const deleteButtons = document.querySelectorAll('.delete-schedule-btn');
-            
-            console.log(`Found ${editButtons.length} edit buttons and ${deleteButtons.length} delete buttons`);
             
             // Remove existing event listeners to avoid duplicates
             editButtons.forEach((button) => {
@@ -2199,7 +2154,6 @@ try {
             
             freshEditButtons.forEach((button, index) => {
                 const horarioId = button.getAttribute('data-horario-id');
-                console.log(`Setting up edit button ${index}: horarioId=${horarioId}`);
                 
                 if (horarioId) {
                     // Remove any existing onclick attributes
@@ -2207,16 +2161,13 @@ try {
                     
                     button.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        console.log(`🖱️ Edit button clicked for horario ${horarioId}`);
                         editHorario(horarioId);
                     });
-                    console.log(`✅ Added event listener to edit button ${index}`);
                 }
             });
             
             freshDeleteButtons.forEach((button, index) => {
                 const horarioId = button.getAttribute('data-horario-id');
-                console.log(`Setting up delete button ${index}: horarioId=${horarioId}`);
                 
                 if (horarioId) {
                     // Remove any existing onclick attributes
@@ -2224,13 +2175,10 @@ try {
                     
                     button.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        console.log(`🖱️ Delete button clicked for horario ${horarioId}`);
                         deleteHorario(horarioId);
                     });
-                    console.log(`✅ Added event listener to delete button ${index}`);
                 }
             });
-            console.log('🔧 Button event setup complete');
         }
         
         

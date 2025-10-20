@@ -75,16 +75,12 @@ class ScheduleDragDropManager {
     loadPreferences() {
         // Load saved group
         const savedGroup = localStorage.getItem('scheduleSelectedGroup');
-        console.log('Loading preferences, savedGroup:', savedGroup);
         if (savedGroup) {
             const groupFilter = document.getElementById('filter_grupo');
-            console.log('Group filter element:', groupFilter);
             if (groupFilter && groupFilter.querySelector(`option[value="${savedGroup}"]`)) {
                 groupFilter.value = savedGroup;
                 this.currentGroupId = savedGroup;
-                console.log('Group preference restored:', savedGroup);
             } else {
-                console.log('Group filter not found or option not available');
             }
         }
         
@@ -150,12 +146,8 @@ class ScheduleDragDropManager {
 
     loadInitialAssignments() {
         // Load assignments for the current group (after preferences are loaded)
-        console.log('Loading initial assignments, currentGroupId:', this.currentGroupId);
         if (this.currentGroupId) {
-            console.log('Loading assignments for group:', this.currentGroupId);
             this.loadAssignments();
-        } else {
-            console.log('No group selected, skipping assignment loading');
         }
     }
 
