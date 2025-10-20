@@ -319,9 +319,10 @@ class ScheduleDragDropManager {
                 button.addEventListener('mousedown', (e) => {
                     e.stopPropagation();
                 });
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
+                // Don't prevent click propagation - let our event delegation handle it
+                // button.addEventListener('click', (e) => {
+                //     e.stopPropagation();
+                // });
             });
         });
 
@@ -966,9 +967,10 @@ class ScheduleDragDropManager {
             button.addEventListener('mousedown', (e) => {
                 e.stopPropagation();
             });
-            button.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
+            // Don't prevent click propagation - let our event delegation handle it
+            // button.addEventListener('click', (e) => {
+            //     e.stopPropagation();
+            // });
         });
     }
 
