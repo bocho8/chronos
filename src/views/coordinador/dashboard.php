@@ -19,31 +19,32 @@
 <body class="bg-gray-100">
 
     <div class="flex h-screen">
-        <aside class="w-64 bg-white flex flex-col shadow-lg">
-            <div class="h-16 flex items-center justify-center bg-[#002366] border-b border-blue-950">
+        <aside class="w-56 md:w-64 bg-white flex flex-col shadow-lg">
+            <div class="h-14 md:h-16 flex items-center justify-center bg-[#002366] border-b border-blue-950">
                 <div class="flex items-center space-x-2">
-                    <img src="/assets/images/LogoScuola.png" alt="Logo" class="h-8 w-auto">
-                    <h1 class="text-lg font-bold text-white">Scuola Italiana</h1>
+                    <img src="/assets/images/LogoScuola.png" alt="Logo" class="h-6 md:h-8 w-auto">
+                    <h1 class="text-base md:text-lg font-bold text-white hidden sm:block">Scuola Italiana</h1>
+                    <h1 class="text-sm font-bold text-white sm:hidden">SIM</h1>
                 </div>
             </div>
-            <nav class="flex-1 px-4 py-4">
-                <ul class="space-y-2">
+            <nav class="flex-1 px-3 md:px-4 py-3 md:py-4">
+                <ul class="space-y-1 md:space-y-2">
                     <li>
-                        <a href="dashboard.php" class="flex items-center p-2 text-base font-normal text-blue-800 bg-blue-100 rounded-lg">
-                            <span class="text-sm">📋</span>
-                            <span class="ml-3">Inicio</span>
+                        <a href="dashboard.php" class="flex items-center p-2 text-sm md:text-base font-normal text-blue-800 bg-blue-100 rounded-lg">
+                            <span class="text-xs md:text-sm">📋</span>
+                            <span class="ml-2 md:ml-3">Inicio</span>
                         </a>
                     </li>
                     <li>
-                        <a href="coordinador-docentes.php" class="flex items-center p-2 text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
-                            <span class="text-sm">📋</span>
-                            <span class="ml-3">Docentes</span>
+                        <a href="coordinador-docentes.php" class="flex items-center p-2 text-sm md:text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
+                            <span class="text-xs md:text-sm">👨‍🏫</span>
+                            <span class="ml-2 md:ml-3">Docentes</span>
                         </a>
                     </li>
                     <li>
-                        <a href="coordinador-calendario.php" class="flex items-center p-2 text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
-                            <span class="text-sm">📋</span>
-                            <span class="ml-3">Calendario</span>
+                        <a href="coordinador-calendario.php" class="flex items-center p-2 text-sm md:text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
+                            <span class="text-xs md:text-sm">📅</span>
+                            <span class="ml-2 md:ml-3">Calendario</span>
                         </a>
                     </li>
                 </ul>
@@ -51,49 +52,49 @@
         </aside>
 
         <div class="flex-1 flex flex-col">
-            <header class="h-16 bg-[#002366] text-white flex items-center justify-center px-6 shadow-md relative">
-                <div class="text-xl font-semibold">
+            <header class="h-14 md:h-16 bg-[#002366] text-white flex items-center justify-center px-4 md:px-6 shadow-md relative">
+                <div class="text-lg md:text-xl font-semibold">
                     Bienvenido (COORDINADOR)
                 </div>
-                <div class="absolute top-1/2 right-6 transform -translate-y-1/2">
+                <div class="absolute top-1/2 right-4 md:right-6 transform -translate-y-1/2">
                     <button class="focus:outline-none">
                         <span class="text-sm">📋</span>
                     </button>
                 </div>
             </header>
 
-            <main class="flex-1 p-8 overflow-y-auto">
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto">
                 
                 <div>
-                    <h2 class="text-3xl font-bold text-gray-800">Bienvenido al Panel Coordinador</h2>
-                    <p class="text-gray-500 mt-1">Gestiona docentes y horarios.</p>
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Bienvenido al Panel Coordinador</h2>
+                    <p class="text-gray-500 mt-1 text-sm md:text-base">Gestiona docentes y horarios.</p>
                     
-                    <div class="mt-8 space-y-4">
-                        <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between">
-                            <div class="flex items-center space-x-4">
-                                <div class="w-16 h-16 bg-gray-200 rounded-full"></div>
+                    <div class="mt-6 md:mt-8 space-y-3 md:space-y-4">
+                        <div class="bg-white p-3 md:p-4 rounded-lg shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                            <div class="flex items-center space-x-3 md:space-x-4">
+                                <div class="w-12 h-12 md:w-16 md:h-16 bg-gray-200 rounded-full"></div>
                                 <div>
-                                    <h3 class="font-bold text-gray-800">Coordinador Alberto De Mattos</h3>
-                                    <p class="text-sm text-gray-500">Experiencia: 18 años.</p>
+                                    <h3 class="font-bold text-gray-800 text-sm md:text-base">Coordinador Alberto De Mattos</h3>
+                                    <p class="text-xs md:text-sm text-gray-500">Experiencia: 18 años.</p>
                                 </div>
                             </div>
-                            <div class="flex space-x-3">
-                                <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cerrar Sesión</button>
-                                <button class="px-4 py-2 text-sm font-medium text-white bg-[#002366] rounded-md hover:bg-blue-900">Perfil</button>
+                            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                                <button class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cerrar Sesión</button>
+                                <button class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white bg-[#002366] rounded-md hover:bg-blue-900">Perfil</button>
                             </div>
                         </div>
 
-                        <div class="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between">
-                            <div class="flex items-center space-x-4">
-                                <div class="w-16 h-16 bg-gray-200 rounded-full"></div>
+                        <div class="bg-white p-3 md:p-4 rounded-lg shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                            <div class="flex items-center space-x-3 md:space-x-4">
+                                <div class="w-12 h-12 md:w-16 md:h-16 bg-gray-200 rounded-full"></div>
                                 <div>
-                                    <h3 class="font-bold text-gray-800">Coordinadora Patricia Molinari</h3>
-                                    <p class="text-sm text-gray-500">Experiencia: 12 años.</p>
+                                    <h3 class="font-bold text-gray-800 text-sm md:text-base">Coordinadora Patricia Molinari</h3>
+                                    <p class="text-xs md:text-sm text-gray-500">Experiencia: 12 años.</p>
                                 </div>
                             </div>
-                            <div class="flex space-x-3">
-                                <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cerrar Sesión</button>
-                                <button class="px-4 py-2 text-sm font-medium text-white bg-[#002366] rounded-md hover:bg-blue-900">Perfil</button>
+                            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                                <button class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cerrar Sesión</button>
+                                <button class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white bg-[#002366] rounded-md hover:bg-blue-900">Perfil</button>
                             </div>
                         </div>
                     </div>

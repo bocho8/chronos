@@ -27,7 +27,7 @@ $languageSwitcher->handleLanguageChange();
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">
     <header class="bg-navy text-white h-[60px] flex items-center">
-        <div class="w-full grid grid-cols-3 items-center px-4 h-full">
+        <div class="w-full grid grid-cols-3 items-center px-4 md:px-6 h-full">
             <div class="flex items-center gap-2.5">
                 <img src="/assets/images/LogoScuola.png" alt="Scuola Italiana" class="h-9 w-auto">
                 <span class="text-white font-semibold text-lg">Scuola Italiana</span>

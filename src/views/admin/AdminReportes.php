@@ -108,12 +108,13 @@ try {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col">
+        <main class="flex-1 flex flex-col main-content">
             <!-- Header -->
-            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
                 <div class="w-8"></div>
                 
-                <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
                 
                 <div class="flex items-center">
                     <?php echo $languageSwitcher->render('', 'mr-4'); ?>
@@ -150,12 +151,12 @@ try {
             </header>
 
             <!-- Main Content -->
-            <section class="flex-1 px-6 py-8">
+            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-6xl mx-auto">
                     <!-- Page Header -->
-                    <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('reports'); ?></h2>
-                        <p class="text-muted mb-6 text-base"><?php _e('reports_description'); ?></p>
+                    <div class="mb-6 md:mb-8">
+                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('reports'); ?></h2>
+                        <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('reports_description'); ?></p>
                     </div>
 
                     <!-- Statistics Cards -->

@@ -299,19 +299,20 @@ try {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col">
+        <main class="flex-1 flex flex-col main-content">
             <!-- Header -->
-            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
                 <!-- Espacio para el botón de menú hamburguesa -->
                 <div class="w-8"></div>
                 
                 <!-- Título centrado -->
-                <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
                 
                 <!-- Contenedor de iconos a la derecha -->
                 <div class="flex items-center">
-                    <?php echo $languageSwitcher->render('', 'mr-4'); ?>
-                    <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
+                    <?php echo $languageSwitcher->render('', 'mr-2 md:mr-4'); ?>
+                    <button class="mr-2 md:mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
                         <span class="text-white text-sm">🔔</span>
                     </button>
                     
@@ -346,20 +347,20 @@ try {
             </header>
 
             <!-- Contenido principal - Centrado -->
-            <section class="flex-1 px-6 py-8">
+            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-6xl mx-auto">
-                    <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('subjects_management'); ?></h2>
-                        <p class="text-muted mb-6 text-base"><?php _e('subjects_management_description'); ?></p>
+                    <div class="mb-6 md:mb-8">
+                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('subjects_management'); ?></h2>
+                        <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('subjects_management_description'); ?></p>
                     </div>
 
                     <!-- Tab Navigation -->
-                    <div class="bg-white rounded-lg shadow-sm border border-lightborder mb-6">
-                        <div class="flex border-b border-lightborder">
-                            <button onclick="switchTab('subjects')" id="tabSubjects" class="tab-button active px-6 py-3 font-medium text-sm border-b-2 border-darkblue text-darkblue">
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder mb-4 md:mb-6">
+                        <div class="flex flex-col sm:flex-row border-b border-lightborder">
+                            <button onclick="switchTab('subjects')" id="tabSubjects" class="tab-button active px-4 md:px-6 py-2 md:py-3 font-medium text-xs md:text-sm border-b-2 border-darkblue text-darkblue">
                                 <?php _e('subjects'); ?>
                             </button>
-                            <button onclick="switchTab('guidelines')" id="tabGuidelines" class="tab-button px-6 py-3 font-medium text-sm border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+                            <button onclick="switchTab('guidelines')" id="tabGuidelines" class="tab-button px-4 md:px-6 py-2 md:py-3 font-medium text-xs md:text-sm border-b-2 border-transparent text-gray-600 hover:text-gray-900">
                                 <?php _e('anep_guidelines'); ?>
                             </button>
                         </div>
@@ -368,16 +369,16 @@ try {
                     <!-- Subjects Tab Content -->
                     <div id="contentSubjects" class="tab-content">
                         <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8" data-default-labels='["Horas semanales", "Pautas", "Programas", "Estados"]'>
-                        <div class="flex justify-between items-center p-4 border-b border-lightborder bg-gray-50">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-3 md:p-4 border-b border-lightborder bg-gray-50 gap-3 md:gap-0">
                             <div class="flex items-center">
                                 <div class="select-all-container">
                                     <input type="checkbox" id="selectAll" class="item-checkbox">
-                                    <label for="selectAll"><?php _e('select_all'); ?></label>
+                                    <label for="selectAll" class="text-sm md:text-base"><?php _e('select_all'); ?></label>
                                 </div>
-                                <h3 class="font-medium text-darktext ml-4"><?php _e('subjects'); ?></h3>
+                                <h3 class="font-medium text-darktext ml-3 md:ml-4 text-sm md:text-base"><?php _e('subjects'); ?></h3>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="openMateriaModal()" class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
+                                <button onclick="openMateriaModal()" class="py-2 px-3 md:px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
                                     <span class="mr-1 text-sm">+</span>
                                     <?php _e('add_subject'); ?>
                                 </button>

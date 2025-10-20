@@ -157,36 +157,36 @@ function getRedirectUrl($role) {
     </div>
   </header>
 
-  <main class="flex items-center justify-center min-h-[calc(100vh-60px)] p-6">
+  <main class="flex items-center justify-center min-h-[calc(100vh-60px)] p-4 md:p-6">
     <div class="w-full flex justify-center">
-      <section class="bg-card rounded-3xl p-10 md:px-16 md:py-10 w-full max-w-[500px] shadow-lg" aria-labelledby="titulo-login">
-      <h2 id="titulo-login" class="text-center text-2xl md:text-[28px] font-extrabold text-navy mb-6"><?php _e('login_title'); ?></h2>
+      <section class="bg-card rounded-2xl md:rounded-3xl p-6 md:p-10 lg:px-16 lg:py-10 w-full max-w-[400px] md:max-w-[500px] shadow-lg" aria-labelledby="titulo-login">
+      <h2 id="titulo-login" class="text-center text-xl md:text-2xl lg:text-[28px] font-extrabold text-navy mb-4 md:mb-6"><?php _e('login_title'); ?></h2>
 
-      <form method="POST" autocomplete="off" id="loginForm" class="flex flex-col gap-5">
+      <form method="POST" autocomplete="off" id="loginForm" class="flex flex-col gap-4 md:gap-5">
 
         <label class="flex flex-col gap-1.5">
-          <span class="font-semibold"><?php _e('ci_label'); ?></span>
+          <span class="font-semibold text-sm md:text-base"><?php _e('ci_label'); ?></span>
           <input type="text" id="ci" name="ci" placeholder="<?php _e('ci_placeholder'); ?>" autocomplete="off" 
                  value="<?php echo htmlspecialchars($ci); ?>"
-                 class="h-[42px] px-3 py-2.5 border border-gray-300 rounded-lg bg-white font-sans <?php echo isset($errors['ci']) ? 'input-error' : ''; ?>">
-          <div class="error-message text-red-600 text-sm mt-1" id="ciError">
+                 class="h-[40px] md:h-[42px] px-3 py-2 md:py-2.5 border border-gray-300 rounded-lg bg-white font-sans text-sm md:text-base <?php echo isset($errors['ci']) ? 'input-error' : ''; ?>">
+          <div class="error-message text-red-600 text-xs md:text-sm mt-1" id="ciError">
             <?php echo isset($errors['ci']) ? htmlspecialchars($errors['ci']) : ''; ?>
           </div>
         </label>
 
         <label class="flex flex-col gap-1.5">
-          <span class="font-semibold"><?php _e('password_label'); ?></span>
+          <span class="font-semibold text-sm md:text-base"><?php _e('password_label'); ?></span>
           <input type="password" id="password" name="password" placeholder="<?php _e('password_placeholder'); ?>" autocomplete="off"
-                 class="h-[42px] px-3 py-2.5 border border-gray-300 rounded-lg bg-white font-sans <?php echo isset($errors['password']) ? 'input-error' : ''; ?>">
-          <div class="error-message text-red-600 text-sm mt-1" id="passwordError">
+                 class="h-[40px] md:h-[42px] px-3 py-2 md:py-2.5 border border-gray-300 rounded-lg bg-white font-sans text-sm md:text-base <?php echo isset($errors['password']) ? 'input-error' : ''; ?>">
+          <div class="error-message text-red-600 text-xs md:text-sm mt-1" id="passwordError">
             <?php echo isset($errors['password']) ? htmlspecialchars($errors['password']) : ''; ?>
           </div>
         </label>
 
         <label class="flex flex-col gap-1.5">
-          <span class="font-semibold"><?php _e('role_label'); ?></span>
+          <span class="font-semibold text-sm md:text-base"><?php _e('role_label'); ?></span>
           <div class="relative">
-            <select name="role" id="role" class="appearance-none w-full h-[42px] px-3 py-2.5 pr-10 border border-gray-300 rounded-lg bg-white font-sans text-gray-900 <?php echo isset($errors['role']) ? 'input-error' : ''; ?>">
+            <select name="role" id="role" class="appearance-none w-full h-[40px] md:h-[42px] px-3 py-2 md:py-2.5 pr-10 border border-gray-300 rounded-lg bg-white font-sans text-gray-900 text-sm md:text-base <?php echo isset($errors['role']) ? 'input-error' : ''; ?>">
               <option value=""><?php _e('role_placeholder'); ?></option>
               <option value="ADMIN" <?php echo $role === 'ADMIN' ? 'selected' : ''; ?>><?php _e('role_admin'); ?></option>
               <option value="DIRECTOR" <?php echo $role === 'DIRECTOR' ? 'selected' : ''; ?>><?php _e('role_director'); ?></option>
@@ -196,7 +196,7 @@ function getRedirectUrl($role) {
             </select>
             <span class="select__icon" aria-hidden="true"></span>
           </div>
-          <div class="error-message text-red-600 text-sm mt-1" id="roleError">
+          <div class="error-message text-red-600 text-xs md:text-sm mt-1" id="roleError">
             <?php echo isset($errors['role']) ? htmlspecialchars($errors['role']) : ''; ?>
           </div>
         </label>
@@ -219,7 +219,7 @@ function getRedirectUrl($role) {
           </div>
         <?php endif; ?>
 
-        <button type="submit" class="h-11 px-4 py-2.5 rounded-lg border-0 font-bold cursor-pointer bg-navy text-white w-full hover:bg-[#142852]"><?php _e('login'); ?></button>
+        <button type="submit" class="h-10 md:h-11 px-4 py-2 md:py-2.5 rounded-lg border-0 font-bold cursor-pointer bg-navy text-white w-full hover:bg-[#142852] text-sm md:text-base"><?php _e('login'); ?></button>
 
         <div class="mt-1.5 flex items-center justify-end">
           <a class="text-navy no-underline font-semibold text-sm hover:underline" href="#" tabindex="0"><?php _e('forgot_password'); ?></a>

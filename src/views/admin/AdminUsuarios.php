@@ -242,19 +242,20 @@ function getUserInitials($nombre, $apellido) {
     <?php echo $sidebar->render(); ?>
 
     <!-- Main -->
-    <main class="flex-1 flex flex-col">
+    <main class="flex-1 flex flex-col main-content">
       <!-- Header -->
-      <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+      <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
         <!-- Espacio para el botón de menú hamburguesa -->
         <div class="w-8"></div>
         
         <!-- Título centrado -->
-        <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+        <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+        <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
         
         <!-- Contenedor de iconos a la derecha -->
         <div class="flex items-center">
-          <?php echo $languageSwitcher->render('', 'mr-4'); ?>
-          <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
+          <?php echo $languageSwitcher->render('', 'mr-2 md:mr-4'); ?>
+          <button class="mr-2 md:mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
             <span class="text-white text-sm">🔔</span>
           </button>
           
@@ -289,37 +290,39 @@ function getUserInitials($nombre, $apellido) {
       </header>
 
       <!-- Contenido principal - Centrado -->
-      <section class="flex-1 px-6 py-8">
+      <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
         <div class="max-w-6xl mx-auto">
-          <div class="mb-8">
-            <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('users_management'); ?></h2>
-            <p class="text-muted mb-6 text-base"><?php _e('users_management_description'); ?></p>
+          <div class="mb-6 md:mb-8">
+            <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('users_management'); ?></h2>
+            <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('users_management_description'); ?></p>
           </div>
 
           <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8" data-default-labels='["Estados"]'>
             <!-- Header de la tabla -->
-            <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-3 md:p-4 border-b border-gray-200 bg-gray-50 gap-3 md:gap-0">
               <div class="flex items-center">
                 <div class="select-all-container">
                   <input type="checkbox" id="selectAll" class="item-checkbox">
-                  <label for="selectAll"><?php _e('select_all'); ?></label>
+                  <label for="selectAll" class="text-sm md:text-base"><?php _e('select_all'); ?></label>
                 </div>
-                <h3 class="font-medium text-darktext ml-4"><?php _e('users'); ?></h3>
+                <h3 class="font-medium text-darktext ml-3 md:ml-4 text-sm md:text-base"><?php _e('users'); ?></h3>
               </div>
-              <div class="flex gap-2">
-                <div class="relative">
+              <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <div class="relative w-full sm:w-auto">
                   <input type="text" id="searchInput" placeholder="<?php _e('search_users'); ?>" 
-                         class="py-2 px-4 pr-10 border border-gray-300 rounded text-sm focus:ring-darkblue focus:border-darkblue"
+                         class="w-full py-2 px-3 md:px-4 pr-10 border border-gray-300 rounded text-xs md:text-sm focus:ring-darkblue focus:border-darkblue"
                          onkeyup="searchUsuarios(this.value)">
                   <span class="text-gray-400 text-2xl">•</span>
                 </div>
-                <button class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50">
-                  <?php _e('export'); ?>
-                </button>
-                <button onclick="openUsuarioModal()" class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
-                  <span class="mr-1 text-sm">+</span>
-                  <?php _e('add_user'); ?>
-                </button>
+                <div class="flex gap-2">
+                  <button class="py-2 px-3 md:px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-white text-gray-700 hover:bg-gray-50">
+                    <?php _e('export'); ?>
+                  </button>
+                  <button onclick="openUsuarioModal()" class="py-2 px-3 md:px-4 border-none rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-darkblue text-white hover:bg-navy flex items-center">
+                    <span class="mr-1 text-sm">+</span>
+                    <?php _e('add_user'); ?>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -346,7 +349,7 @@ function getUserInitials($nombre, $apellido) {
             <div id="usuariosList" class="divide-y divide-gray-200">
               <?php if (!empty($usuarios)): ?>
                 <?php foreach ($usuarios as $usuario): ?>
-                  <article class="usuario-item item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                  <article class="usuario-item item-row flex flex-col md:flex-row items-start md:items-center justify-between p-3 md:p-4 transition-colors hover:bg-lightbg" 
                            data-nombre="<?php echo htmlspecialchars(strtolower($usuario['nombre'] . ' ' . $usuario['apellido'])); ?>"
                            data-apellido="<?php echo htmlspecialchars(strtolower($usuario['apellido'])); ?>"
                            data-email="<?php echo htmlspecialchars(strtolower($usuario['email'])); ?>"
@@ -374,31 +377,40 @@ function getUserInitials($nombre, $apellido) {
                                }
                                echo htmlspecialchars(json_encode($mapping));
                            ?>">
-                    <div class="flex items-center">
+                    <div class="flex items-center w-full md:w-auto">
                       <div class="checkbox-container">
                         <input type="checkbox" class="item-checkbox" data-item-id="<?php echo $usuario['id_usuario']; ?>">
                       </div>
-                      <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
+                      <div class="avatar w-8 h-8 md:w-10 md:h-10 rounded-full bg-darkblue mr-2 md:mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold text-xs md:text-sm">
                         <?php echo getUserInitials($usuario['nombre'], $usuario['apellido']); ?>
                       </div>
-                      <div class="meta">
-                        <div class="font-semibold text-darktext mb-1">
+                      <div class="meta flex-1 min-w-0">
+                        <div class="font-semibold text-darktext mb-1 text-sm md:text-base">
                           <?php echo htmlspecialchars($usuario['nombre'] . ' ' . $usuario['apellido']); ?>
                         </div>
-                        <div class="text-muted text-sm">
-                          <?php echo htmlspecialchars($usuario['email']); ?> • 
-                          CI: <?php echo htmlspecialchars($usuario['cedula']); ?> • 
-                          <?php _e('roles'); ?>: <?php echo htmlspecialchars($usuario['roles'] ?? 'Sin roles'); ?>
+                        <div class="text-muted text-xs md:text-sm">
+                          <div class="block md:hidden">
+                            <?php echo htmlspecialchars($usuario['email']); ?>
+                          </div>
+                          <div class="hidden md:block">
+                            <?php echo htmlspecialchars($usuario['email']); ?> • 
+                            CI: <?php echo htmlspecialchars($usuario['cedula']); ?> • 
+                            <?php _e('roles'); ?>: <?php echo htmlspecialchars($usuario['roles'] ?? 'Sin roles'); ?>
+                          </div>
+                          <div class="block md:hidden text-xs">
+                            CI: <?php echo htmlspecialchars($usuario['cedula']); ?> • 
+                            <?php _e('roles'); ?>: <?php echo htmlspecialchars($usuario['roles'] ?? 'Sin roles'); ?>
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-2 mt-2 md:mt-0">
                       <button onclick="editUsuario(<?php echo $usuario['id_usuario']; ?>)" 
-                              class="text-darkblue hover:text-navy text-sm font-medium transition-colors">
+                              class="text-darkblue hover:text-navy text-xs md:text-sm font-medium transition-colors">
                         <?php _e('edit'); ?>
                       </button>
                       <button onclick="deleteUsuario(<?php echo $usuario['id_usuario']; ?>, '<?php echo htmlspecialchars($usuario['nombre'] . ' ' . $usuario['apellido']); ?>')" 
-                              class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors">
+                              class="text-red-600 hover:text-red-800 text-xs md:text-sm font-medium transition-colors">
                         <?php _e('delete'); ?>
                       </button>
                     </div>
@@ -419,14 +431,14 @@ function getUserInitials($nombre, $apellido) {
 
   <!-- Modal para agregar/editar usuario -->
   <div id="usuarioModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDescription">
-    <div class="modal-content p-8 w-full max-w-md mx-auto">
-      <div class="flex justify-between items-center mb-6">
-        <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_user'); ?></h3>
+    <div class="modal-content p-4 md:p-8 w-full max-w-sm md:max-w-md mx-auto">
+      <div class="flex justify-between items-center mb-4 md:mb-6">
+        <h3 id="modalTitle" class="text-base md:text-lg font-semibold text-gray-900"><?php _e('add_user'); ?></h3>
         <button onclick="closeUsuarioModal()" class="text-gray-400 hover:text-gray-600" aria-label="<?php _e('close_modal'); ?>">
           <span class="text-sm" aria-hidden="true">×</span>
         </button>
       </div>
-      <p id="modalDescription" class="text-sm text-gray-600 mb-6 sr-only"><?php _e('modal_description'); ?></p>
+      <p id="modalDescription" class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6 sr-only"><?php _e('modal_description'); ?></p>
 
       <form id="usuarioForm" class="space-y-4">
         <input type="hidden" id="id_usuario" name="id">

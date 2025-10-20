@@ -207,19 +207,20 @@ try {
         <?php echo $sidebar->render(); ?>
         
         <!-- Main Content -->
-        <main class="flex-1 flex flex-col">
+        <main class="flex-1 flex flex-col main-content">
             <!-- Header -->
-            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
                 <!-- Espacio para el botón de menú hamburguesa -->
                 <div class="w-8"></div>
                 
                 <!-- Título centrado -->
-                <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
                 
                 <!-- Contenedor de iconos a la derecha -->
                 <div class="flex items-center">
-                    <?php echo $languageSwitcher->render('', 'mr-4'); ?>
-                    <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
+                    <?php echo $languageSwitcher->render('', 'mr-2 md:mr-4'); ?>
+                    <button class="mr-2 md:mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
                         <span class="text-white text-sm">🔔</span>
                     </button>
                     
@@ -254,21 +255,21 @@ try {
             </header>
 
             <!-- Contenido principal - Centrado -->
-            <section class="flex-1 px-6 py-8">
+            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-6xl mx-auto">
-                    <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('time_blocks_management'); ?></h2>
-                        <p class="text-muted mb-6 text-base"><?php _e('manage_time_blocks_description'); ?></p>
+                    <div class="mb-6 md:mb-8">
+                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('time_blocks_management'); ?></h2>
+                        <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('manage_time_blocks_description'); ?></p>
                     </div>
 
                     <!-- Time Blocks Management -->
                     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
-                        <div class="flex justify-between items-center p-4 border-b border-lightborder bg-gray-50">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-3 md:p-4 border-b border-lightborder bg-gray-50 gap-3 md:gap-0">
                             <div class="flex items-center">
                                 <h3 class="font-medium text-darktext"><?php _e('time_blocks_list'); ?></h3>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="openCreateModal()" class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
+                                <button onclick="openCreateModal()" class="py-2 px-3 md:px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
                                     <span class="mr-1 text-sm">+</span>
                                     <?php _e('add_time_block'); ?>
                                 </button>

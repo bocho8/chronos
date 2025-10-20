@@ -44,11 +44,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <body class="bg-gray-100 font-sans text-gray-800">
 
     <div class="flex h-screen">
-        <aside class="w-64 bg-white shadow-lg flex flex-col items-center">
+        <aside class="w-56 md:w-64 bg-white shadow-lg flex flex-col items-center">
             
-            <div class="flex items-center space-x-2 w-full pl-6 bg-blue-900 text-white h-20">
-                <img src="/assets/images/LogoScuola.png" alt="Logo" class="h-8 w-auto"> 
-                <span class="text-xl font-bold leading-tight">Scuola Italiana<br>di Montevideo</span>
+            <div class="flex items-center space-x-2 w-full pl-4 md:pl-6 bg-blue-900 text-white h-16 md:h-20">
+                <img src="/assets/images/LogoScuola.png" alt="Logo" class="h-6 md:h-8 w-auto"> 
+                <span class="text-lg md:text-xl font-bold leading-tight hidden sm:block">Scuola Italiana<br>di Montevideo</span>
+                <span class="text-sm font-bold sm:hidden">SIM</span>
             </div>
             
             <nav class="w-full p-6">

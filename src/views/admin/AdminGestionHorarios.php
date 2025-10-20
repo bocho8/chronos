@@ -167,15 +167,29 @@ try {
         }
         @media (max-width: 768px) {
             .horario-cell {
-                min-width: 80px;
-                font-size: 0.75rem;
-                padding: 6px 4px;
+                min-width: 70px;
+                font-size: 0.7rem;
+                padding: 4px 2px;
+            }
+            .sidebar-content {
+                max-height: 200px;
+                overflow-y: auto;
+            }
+        }
+        @media (max-width: 640px) {
+            .horario-cell {
+                min-width: 60px;
+                font-size: 0.65rem;
+                padding: 2px 1px;
+            }
+            .sidebar-content {
+                max-height: 150px;
             }
         }
         @media (max-width: 480px) {
             .horario-cell {
-                min-width: 60px;
-                font-size: 0.65rem;
+                min-width: 50px;
+                font-size: 0.6rem;
             }
         }
 
@@ -423,19 +437,20 @@ try {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col">
+        <main class="flex-1 flex flex-col main-content">
             <!-- Header -->
-            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
                 <!-- Espacio para el botón de menú hamburguesa -->
                 <div class="w-8"></div>
                 
                 <!-- Título centrado -->
-                <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
                 
                 <!-- Contenedor de iconos a la derecha -->
                 <div class="flex items-center">
-                    <?php echo $languageSwitcher->render('', 'mr-4'); ?>
-                    <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
+                    <?php echo $languageSwitcher->render('', 'mr-2 md:mr-4'); ?>
+                    <button class="mr-2 md:mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
                         <span class="text-white text-sm">🔔</span>
                     </button>
                     
@@ -470,21 +485,21 @@ try {
             </header>
 
             <!-- Contenido principal - Centrado -->
-            <section class="flex-1 px-4 py-6 md:px-8 md:py-8 lg:px-12">
+            <section class="flex-1 px-3 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
                 <div class="max-w-7xl mx-auto">
                     <!-- Header de la página -->
-                    <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('schedule_management'); ?></h2>
-                        <p class="text-muted text-base"><?php _e('schedule_management_description'); ?></p>
+                    <div class="mb-6 md:mb-8">
+                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('schedule_management'); ?></h2>
+                        <p class="text-muted text-sm md:text-base"><?php _e('schedule_management_description'); ?></p>
                     </div>
                     
                     <!-- Selector de Grupo Principal -->
-                    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border border-lightborder">
+                    <div class="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-4 md:mb-6 border border-lightborder">
                         <div class="max-w-md">
-                            <label for="filter_grupo" class="block text-lg font-semibold text-darktext mb-3">
+                            <label for="filter_grupo" class="block text-base md:text-lg font-semibold text-darktext mb-2 md:mb-3">
                                 Seleccione un Grupo <span class="text-red-500">*</span>
                             </label>
-                            <select id="filter_grupo" class="w-full px-4 py-3 border border-lightborder rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue text-base font-medium" required>
+                            <select id="filter_grupo" class="w-full px-3 md:px-4 py-2 md:py-3 border border-lightborder rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue text-sm md:text-base font-medium" required>
                                 <?php if (!empty($grupos)): ?>
                                     <?php foreach ($grupos as $index => $grupo): ?>
                                         <option value="<?php echo $grupo['id_grupo']; ?>" <?php echo $index === 0 ? 'selected' : ''; ?>>
@@ -499,15 +514,15 @@ try {
                     </div>
                     
                     <!-- Drag & Drop Sidebar -->
-                    <div class="bg-white rounded-lg shadow-sm border border-lightborder mb-6">
-                        <div class="flex items-center justify-between p-4 border-b border-lightborder">
-                            <h3 class="font-medium text-darktext"><?php _e('assignments'); ?></h3>
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder mb-4 md:mb-6">
+                        <div class="flex items-center justify-between p-3 md:p-4 border-b border-lightborder">
+                            <h3 class="font-medium text-darktext text-sm md:text-base"><?php _e('assignments'); ?></h3>
                             <button id="sidebarToggle" class="p-2 rounded-md hover:bg-gray-100 transition-colors" title="Toggle Sidebar">
                                 <span class="text-lg">≡</span>
                             </button>
                         </div>
                         
-                        <div id="sidebarContent" class="p-4">
+                        <div id="sidebarContent" class="p-3 md:p-4">
                             <!-- Search and Filters -->
                             <div class="mb-4">
                                 <div class="relative mb-3">
@@ -597,16 +612,16 @@ try {
                         </div>
                         
                         <!-- Tabla de horarios -->
-                        <div class="overflow-x-auto p-4 md:p-6">
-                            <table class="w-full border-collapse table-fixed rounded-lg overflow-hidden">
+                        <div class="overflow-x-auto p-2 md:p-4 lg:p-6">
+                            <table class="w-full border-collapse table-fixed rounded-lg overflow-hidden min-w-[600px]">
                                 <thead>
                                     <tr>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300 w-32 rounded-tl-lg"><?php _e('time'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('monday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('tuesday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('wednesday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('thursday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300 rounded-tr-lg"><?php _e('friday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 w-24 md:w-32 rounded-tl-lg text-xs md:text-sm"><?php _e('time'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('monday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('tuesday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('wednesday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('thursday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 rounded-tr-lg text-xs md:text-sm"><?php _e('friday'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -617,17 +632,17 @@ try {
                                         $isLastRow = ($index === $totalBloques - 1);
                                     ?>
                                         <tr>
-                                            <td class="bg-[#34495e] text-white p-2 text-center font-semibold border border-gray-300 w-32 <?php echo $isLastRow ? 'rounded-bl-lg' : ''; ?>">
+                                            <td class="bg-[#34495e] text-white p-1 md:p-2 text-center font-semibold border border-gray-300 w-24 md:w-32 <?php echo $isLastRow ? 'rounded-bl-lg' : ''; ?> text-xs md:text-sm">
                                                 <?php echo date('H:i', strtotime($bloque['hora_inicio'])) . ' – ' . date('H:i', strtotime($bloque['hora_fin'])); ?>
                                             </td>
                                 <?php foreach ($dias as $diaIndex => $dia): ?>
-                                            <td class="horario-cell drop-zone text-center font-medium p-2 border border-gray-300 cursor-pointer hover:bg-gray-50 min-h-[60px] <?php echo ($isLastRow && $diaIndex === count($dias) - 1) ? 'rounded-br-lg' : ''; ?>" 
+                                            <td class="horario-cell drop-zone text-center font-medium p-1 md:p-2 border border-gray-300 cursor-pointer hover:bg-gray-50 min-h-[50px] md:min-h-[60px] <?php echo ($isLastRow && $diaIndex === count($dias) - 1) ? 'rounded-br-lg' : ''; ?>" 
                                                 data-bloque="<?php echo $bloque['id_bloque']; ?>" 
                                                 data-dia="<?php echo $dia; ?>"
                                                 data-occupied="false"
                                                 onclick="openScheduleModal(<?php echo $bloque['id_bloque']; ?>, '<?php echo $dia; ?>')">
                                                 <div class="drop-indicator">
-                                                    <span>Drop here</span>
+                                                    <span class="text-xs">Drop here</span>
                                                 </div>
                                                 <div class="text-gray-400 text-xs hover:text-gray-600 transition-colors">
                                                     <?php _e('available'); ?>

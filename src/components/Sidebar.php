@@ -22,25 +22,27 @@ class Sidebar {
     
     public function render() {
         return <<<HTML
-        <aside class="w-64 bg-sidebar border-r border-border">
-            {$this->renderHeader()}
-            {$this->renderNavigation()}
+        <aside class="w-64 lg:w-64 md:w-56 sm:w-0 bg-sidebar border-r border-border sidebar-container">
+            <div class="sidebar-content">
+                {$this->renderHeader()}
+                {$this->renderNavigation()}
+            </div>
         </aside>
         HTML;
     }
     
     private function renderHeader() {
         return <<<HTML
-        <div class="px-5 flex items-center h-[60px] bg-darkblue gap-2.5">
-            <img src="/assets/images/LogoScuola.png" alt="{$this->translation->get('scuola_italiana')}" class="h-9 w-auto">
-            <span class="text-white font-semibold text-lg">{$this->translation->get('scuola_italiana')}</span>
+        <div class="px-3 md:px-5 flex items-center h-[60px] bg-darkblue gap-2.5">
+            <img src="/assets/images/LogoScuola.png" alt="{$this->translation->get('scuola_italiana')}" class="h-8 md:h-9 w-auto">
+            <span class="text-white font-semibold text-sm md:text-lg hidden md:block">{$this->translation->get('scuola_italiana')}</span>
         </div>
         HTML;
     }
     
     private function renderNavigation() {
         return <<<HTML
-        <ul class="py-5 list-none">
+        <ul class="py-3 md:py-5 list-none">
             {$this->renderDashboardSection()}
             {$this->renderRoleBasedSections()}
         </ul>
@@ -55,9 +57,9 @@ class Sidebar {
         
         return <<<HTML
         <li>
-            <a href="{$dashboardUrl}" class="sidebar-link {$activeClass} flex items-center py-3 px-5 {$textColor} no-underline transition-all hover:bg-sidebarHover">
-                <span class="text-sm mr-3">🏠</span>
-                {$this->translation->get('dashboard')}
+            <a href="{$dashboardUrl}" class="sidebar-link {$activeClass} flex items-center py-2 md:py-3 px-3 md:px-5 {$textColor} no-underline transition-all hover:bg-sidebarHover">
+                <span class="text-sm mr-2 md:mr-3">🏠</span>
+                <span class="text-xs md:text-sm">{$this->translation->get('dashboard')}</span>
             </a>
         </li>
         HTML;
@@ -83,8 +85,8 @@ class Sidebar {
         }
         
         return <<<HTML
-        <li class="mt-4">
-            <div class="px-5 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+        <li class="mt-3 md:mt-4">
+            <div class="px-3 md:px-5 py-1 md:py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 {$sectionTitle}
             </div>
         </li>
@@ -100,9 +102,9 @@ class Sidebar {
         
         return <<<HTML
         <li>
-            <a href="{$item['url']}" class="sidebar-link {$activeClass} flex items-center py-3 px-5 {$textColor} no-underline transition-all hover:bg-sidebarHover">
-                <span class="text-sm mr-3">{$item['icon']}</span>
-                {$itemText}
+            <a href="{$item['url']}" class="sidebar-link {$activeClass} flex items-center py-2 md:py-3 px-3 md:px-5 {$textColor} no-underline transition-all hover:bg-sidebarHover">
+                <span class="text-sm mr-2 md:mr-3">{$item['icon']}</span>
+                <span class="text-xs md:text-sm">{$itemText}</span>
             </a>
         </li>
         HTML;
@@ -336,7 +338,7 @@ class Sidebar {
         .bg-darkblue {
             background-color: #1f366d;
         }
-        aside {
+        .sidebar-container {
             height: 100vh;
             position: fixed;
             top: 0;
@@ -344,14 +346,64 @@ class Sidebar {
             z-index: 40;
             display: flex;
             flex-direction: column;
+            transition: width 0.3s ease;
+        }
+        .sidebar-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
         }
         .sidebar-link span {
             margin-right: 12px;
         }
-        aside ul {
+        .sidebar-container ul {
             overflow-y: auto;
             flex: 1;
             max-height: calc(100vh - 60px);
+        }
+        
+        /* Responsive behavior */
+        @media (max-width: 640px) {
+            .sidebar-container {
+                width: 0 !important;
+                overflow: hidden;
+            }
+            .sidebar-container.sidebar-open {
+                width: 256px !important;
+                z-index: 50;
+                box-shadow: 4px 0 6px -1px rgba(0, 0, 0, 0.1);
+            }
+        }
+        
+        @media (min-width: 641px) and (max-width: 768px) {
+            .sidebar-container {
+                width: 224px !important; /* w-56 */
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .sidebar-container {
+                width: 256px !important; /* w-64 */
+            }
+        }
+        
+        /* Main content adjustment for sidebar */
+        .main-content {
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
+        }
+        
+        @media (min-width: 641px) {
+            .main-content {
+                margin-left: 224px; /* w-56 */
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .main-content {
+                margin-left: 256px; /* w-64 */
+            }
         }
         </style>
         ';
