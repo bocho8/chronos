@@ -433,12 +433,25 @@ class HorarioController {
                     ];
                 }
                 
-                // Calculate hours-based availability percentage
-                $totalHoursPossible = count($teachers) * $materia['horas_semanales'];
-                $availabilityPercentage = $totalHoursPossible > 0 ? round(($totalHoursAvailable / $totalHoursPossible) * 100) : 0;
+                // Calculate subject-level availability (not per-teacher)
+                // Check if subject has any hours assigned to any teacher
+                $subjectHoursQuery = "
+                    SELECT COUNT(*) as total_assigned_hours
+                    FROM horario
+                    WHERE id_materia = ? AND id_grupo = ?
+                ";
+                $subjectHoursStmt = $this->db->prepare($subjectHoursQuery);
+                $subjectHoursStmt->execute([$materia['id_materia'], $grupoId]);
+                $totalSubjectHoursAssigned = (int)$subjectHoursStmt->fetch(PDO::FETCH_ASSOC)['total_assigned_hours'];
+                
+                $subjectHoursAvailable = $materia['horas_semanales'] - $totalSubjectHoursAssigned;
+                $totalHoursAvailable = $subjectHoursAvailable; // Use subject-level availability
+                
+                // Calculate percentage based on subject hours
+                $availabilityPercentage = $materia['horas_semanales'] > 0 ? round(($subjectHoursAvailable / $materia['horas_semanales']) * 100) : 0;
                 
                 // Debug logging for availability calculation
-                error_log("Subject {$materia['nombre']}: {$totalAvailableTeachers}/" . count($teachers) . " teachers available, {$totalHoursAvailable}/{$totalHoursPossible} hours available, {$availabilityPercentage}% (hours-based)");
+                error_log("Subject {$materia['nombre']}: {$totalAvailableTeachers}/" . count($teachers) . " teachers available, {$subjectHoursAvailable}/{$materia['horas_semanales']} hours available, {$availabilityPercentage}% (subject-level)");
                 
                 $groupedAssignments[] = [
                     'id_materia' => (int)$materia['id_materia'],
@@ -573,6 +586,28 @@ class HorarioController {
                 error_log("No conflicts found");
             } else {
                 error_log("Skipping conflict check (force override enabled)");
+            }
+            
+            // Validate hours available
+            error_log("Validating hours available...");
+            $hoursQuery = "SELECT COUNT(*) as hours_assigned FROM horario 
+                           WHERE id_docente = ? AND id_materia = ? AND id_grupo = ?";
+            $hoursStmt = $this->db->prepare($hoursQuery);
+            $hoursStmt->execute([$data['id_docente'], $data['id_materia'], $data['id_grupo']]);
+            $hoursAssigned = (int)$hoursStmt->fetch(PDO::FETCH_ASSOC)['hours_assigned'];
+            
+            // Get subject's weekly hours
+            $subjectQuery = "SELECT horas_semanales FROM materia WHERE id_materia = ?";
+            $subjectStmt = $this->db->prepare($subjectQuery);
+            $subjectStmt->execute([$data['id_materia']]);
+            $maxHours = (int)$subjectStmt->fetch(PDO::FETCH_ASSOC)['horas_semanales'];
+            
+            error_log("Hours validation: assigned=$hoursAssigned, max=$maxHours");
+            
+            if ($hoursAssigned >= $maxHours) {
+                error_log("No hours available for this subject");
+                $this->db->rollback();
+                ResponseHelper::error("No hay horas disponibles para esta materia");
             }
             
             error_log("Creating horario...");

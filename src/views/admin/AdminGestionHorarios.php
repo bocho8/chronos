@@ -548,6 +548,30 @@ try {
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
         }
         
+        /* Disabled Assignment Styles */
+        .assignment-disabled {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important;
+            pointer-events: none;
+        }
+        
+        .assignment-disabled:hover {
+            transform: none !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+        }
+        
+        .assignment-disabled-badge {
+            background: #ef4444;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
         .assignment-header {
             display: flex;
             justify-content: space-between;
@@ -691,11 +715,12 @@ try {
 
         /* Unavailable teacher badge */
         .teacher-badge.unavailable {
-            background: #f3f4f6;
-            border-color: #d1d5db;
-            color: #6b7280;
-            opacity: 0.5;
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+            opacity: 0.6;
             cursor: not-allowed;
+            text-decoration: line-through;
         }
 
         .teacher-badge[draggable="false"] {

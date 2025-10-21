@@ -20,7 +20,6 @@ class ScheduleDragDropManager {
         this.currentDropZone = null; // Track currently highlighted drop zone
         this.currentFilter = 'filterAll'; // Track current active filter
         this.currentTeacherAvailability = null; // Store fetched availability
-        this.badgeEventsSetup = false; // Track if badge events are already set up
         
         // Auto-scroll properties
         this.scrollInterval = null;
@@ -36,6 +35,7 @@ class ScheduleDragDropManager {
             type: null, // 'create', 'move', 'delete'
             startTime: 0
         };
+        this.dragEventsSetup = false;
         
         this.init();
         
@@ -56,6 +56,12 @@ class ScheduleDragDropManager {
         // Make refresh function available globally
         window.refreshScheduleDragEvents = () => {
             this.refreshDragEvents();
+        };
+        
+        // Make operation management available globally for debugging
+        window.clearStuckOperation = () => {
+            console.log('🔧 Manually clearing stuck operation:', this.operationInProgress.type);
+            this.endOperation();
         };
     }
 
@@ -361,35 +367,39 @@ class ScheduleDragDropManager {
         const remainingCount = sortedTeachers.length - visibleTeachers.length;
         
         return `
-            <div class="draggable-assignment grouped-assignment" 
-                 draggable="true"
+            <div class="draggable-assignment grouped-assignment ${assignment.total_hours_available <= 0 ? 'assignment-disabled' : ''}" 
+                 draggable="${assignment.total_hours_available > 0 ? 'true' : 'false'}"
                  data-subject-id="${assignment.id_materia}"
                  data-subject-name="${assignment.materia_nombre}"
                  data-is-grouped="true"
-                 data-auto-selectable="${assignment.is_auto_selectable}">
+                 data-auto-selectable="${assignment.is_auto_selectable}"
+                 data-is-disabled="${assignment.total_hours_available <= 0}"
+                 title="${assignment.total_hours_available <= 0 ? 'No hay horas disponibles para asignar' : ''}">
                 
                 <div class="assignment-header">
                     <div class="assignment-subject">${assignment.materia_nombre}</div>
+                    ${assignment.total_hours_available <= 0 ? '<div class="assignment-disabled-badge">Sin horas disponibles</div>' : ''}
                 </div>
                 
                 <div class="availability-bar">
-                    <div class="availability-fill ${availabilityClass}" 
-                         style="width: ${assignment.availability_percentage}%"></div>
+                    <div class="availability-fill ${assignment.total_hours_available <= 0 ? 'availability-none' : availabilityClass}" 
+                         style="width: ${assignment.total_hours_available <= 0 ? '0' : assignment.availability_percentage}%"></div>
                 </div>
                 
                 <div class="teacher-badges">
                     ${visibleTeachers.map(teacher => {
                         const scoreClass = this.getTeacherScoreClass(teacher.score || 0);
                         return `
-                            <div class="teacher-badge ${teacher.is_available ? 'available' : 'unavailable'} ${scoreClass}"
-                                 draggable="${teacher.is_available ? 'true' : 'false'}"
+                            <div class="teacher-badge ${teacher.is_available && teacher.hours_available > 0 ? 'available' : 'unavailable'} ${scoreClass}"
+                                 draggable="${teacher.is_available && teacher.hours_available > 0 ? 'true' : 'false'}"
                                  data-teacher-id="${teacher.id_docente}"
                                  data-teacher-name="${teacher.nombre} ${teacher.apellido}"
                                  data-subject-id="${assignment.id_materia}"
                                  data-subject-name="${assignment.materia_nombre}"
                                  data-score="${teacher.score || 0}"
-                                 title="${teacher.nombre} ${teacher.apellido}&#10;Score: ${teacher.score || 0}&#10;Hours: ${teacher.hours_available}/${teacher.hours_total}h">
+                                 title="${teacher.nombre} ${teacher.apellido}&#10;Score: ${teacher.score || 0}&#10;Hours: ${teacher.hours_available}/${teacher.hours_total}h${teacher.hours_available <= 0 ? '&#10;⚠️ Sin horas disponibles' : ''}">
                                 👤 ${teacher.apellido}
+                                ${teacher.hours_available <= 0 ? ' ❌' : ''}
                             </div>
                         `;
                     }).join('')}
@@ -466,30 +476,20 @@ class ScheduleDragDropManager {
             existingAssignments: existingAssignments.length
         });
 
-        // Setup draggable elements from sidebar
-        draggableElements.forEach(element => {
-            element.addEventListener('dragstart', this.handleDragStart.bind(this));
-            element.addEventListener('dragend', this.handleDragEnd.bind(this));
-        });
-
-        // Setup teacher badge drag events using event delegation
-        // This will work for dynamically created badges
-        if (!this.badgeEventsSetup) {
-            document.addEventListener('dragstart', (e) => {
-                if (e.target.classList.contains('teacher-badge') && e.target.draggable === true) {
-                    e.stopPropagation(); // Prevent parent card drag
-                    this.handleBadgeDragStart(e);
-                }
-            });
-            
-            document.addEventListener('dragend', (e) => {
-                if (e.target.classList.contains('teacher-badge')) {
-                    this.handleDragEnd(e);
-                }
-            });
-            
-            this.badgeEventsSetup = true;
+        // Only set up events once to prevent duplicates
+        if (this.dragEventsSetup) {
+            console.log('🔧 Drag events already set up, skipping...');
+            return;
         }
+
+        // Use event delegation for all drag events to handle dynamic content
+        document.addEventListener('dragstart', this.handleDragStart.bind(this));
+        document.addEventListener('dragover', this.handleDragOver.bind(this));
+        document.addEventListener('drop', this.handleDrop.bind(this));
+        document.addEventListener('dragend', this.handleDragEnd.bind(this));
+
+        // Mark that events are set up
+        this.dragEventsSetup = true;
 
         // Setup existing schedule assignments as draggable
         existingAssignments.forEach(element => {
@@ -543,6 +543,9 @@ class ScheduleDragDropManager {
 
     // Method to refresh drag events after schedule grid updates
     refreshDragEvents() {
+        console.log('🔄 Refreshing drag events...');
+        // Reset the flag to allow re-setup
+        this.dragEventsSetup = false;
         this.setupDragEvents();
     }
 
@@ -590,6 +593,13 @@ class ScheduleDragDropManager {
 
     handleDragStart(e) {
         this.draggedElement = e.target;
+        
+        // Check if this is a teacher badge drag
+        if (e.target.classList.contains('teacher-badge') && e.target.draggable === true) {
+            e.stopPropagation(); // Prevent parent card drag
+            this.handleBadgeDragStart(e);
+            return;
+        }
         
         // Check if this is a grouped assignment
         const isGrouped = e.target.dataset.isGrouped === 'true';
@@ -937,6 +947,9 @@ class ScheduleDragDropManager {
                 this.updateDropZone(dropZone, data.data);
                 console.log('🔄 Reloading assignments after creation...');
                 
+                // Clear operation state immediately after successful creation
+                this.endOperation();
+                
                 // Add a small delay to ensure database is updated
                 setTimeout(() => {
                     this.loadAssignments();
@@ -945,8 +958,6 @@ class ScheduleDragDropManager {
                     }
                     // Refresh drag events after schedule grid update
                     this.refreshDragEvents();
-                    // Clear operation state after completion
-                    this.endOperation();
                 }, 100);
                 
         } else {
@@ -1031,6 +1042,9 @@ class ScheduleDragDropManager {
                 this.showToast(`Asignación creada: ${draggedData.subjectName} - ${draggedData.teacherName}`, 'success');
                 this.updateDropZone(dropZone, data.data);
                 
+                // Clear operation state immediately after successful creation
+                this.endOperation();
+                
                 // Add a small delay to ensure database is updated
                 setTimeout(() => {
                     this.loadAssignments();
@@ -1039,8 +1053,6 @@ class ScheduleDragDropManager {
                     }
                     // Refresh drag events after schedule grid update
                     this.refreshDragEvents();
-                    // Clear operation state after completion
-                    this.endOperation();
                 }, 100);
                 
             } else {
@@ -1110,6 +1122,9 @@ class ScheduleDragDropManager {
                 this.showToast(`Asignación creada: ${draggedData.subjectName} - ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'success');
                 this.updateDropZone(dropZone, data.data);
                 
+                // Clear operation state immediately after successful creation
+                this.endOperation();
+                
                 // Add a small delay to ensure database is updated
                 setTimeout(() => {
                     this.loadAssignments();
@@ -1118,8 +1133,6 @@ class ScheduleDragDropManager {
                     }
                     // Refresh drag events after schedule grid update
                     this.refreshDragEvents();
-                    // Clear operation state after completion
-                    this.endOperation();
                 }, 100);
             } else {
                 // Show confirmation modal for conflicts
@@ -1187,6 +1200,9 @@ class ScheduleDragDropManager {
                 this.showToast(`Asignación creada: ${draggedData.subjectName} - ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'success');
                 this.updateDropZone(dropZone, data.data);
                 
+                // Clear operation state immediately after successful creation
+                this.endOperation();
+                
                 // Add a small delay to ensure database is updated
                 setTimeout(() => {
                     this.loadAssignments();
@@ -1195,8 +1211,6 @@ class ScheduleDragDropManager {
                     }
                     // Refresh drag events after schedule grid update
                     this.refreshDragEvents();
-                    // Clear operation state after completion
-                    this.endOperation();
                 }, 100);
             } else {
                 this.showToast('Error: ' + data.message, 'error');
@@ -1644,15 +1658,34 @@ class ScheduleDragDropManager {
     // Operation state management
     startOperation(type) {
         if (this.operationInProgress.type) {
-            console.warn('Operation already in progress:', this.operationInProgress.type);
+            console.warn('Operation already in progress:', this.operationInProgress.type, 'attempting to start:', type);
             return false;
         }
+        console.log('🚀 Starting operation:', type);
         this.operationInProgress = { type, startTime: Date.now() };
         return true;
     }
 
     endOperation() {
+        console.log('🏁 Ending operation:', this.operationInProgress.type);
         this.operationInProgress = { type: null, startTime: 0 };
+    }
+    
+    // Auto-clear stuck operations after 30 seconds
+    startOperationWithTimeout(type) {
+        if (!this.startOperation(type)) {
+            return false;
+        }
+        
+        // Set a timeout to auto-clear stuck operations
+        setTimeout(() => {
+            if (this.operationInProgress.type === type) {
+                console.warn('⚠️ Auto-clearing stuck operation:', type);
+                this.endOperation();
+            }
+        }, 30000); // 30 seconds
+        
+        return true;
     }
 
     isOperationInProgress() {
