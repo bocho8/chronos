@@ -234,7 +234,6 @@ class ScheduleDragDropManager {
             return;
         }
 
-        console.log('🔄 Loading assignments for group:', this.currentGroupId);
 
         try {
             // Add cache-busting parameter to ensure fresh data
@@ -242,17 +241,9 @@ class ScheduleDragDropManager {
             const response = await fetch(`/src/controllers/HorarioHandler.php?action=get_available_assignments&grupo_id=${this.currentGroupId}&_t=${timestamp}`);
             const data = await response.json();
             
-            console.log('📊 Assignment data received:', data);
             
             if (data.success) {
                 this.assignments = data.data || [];
-                console.log('📋 Processed assignments:', this.assignments.map(a => ({
-                    subject: a.materia_nombre,
-                    availability_percentage: a.availability_percentage,
-                    total_hours_available: a.total_hours_available,
-                    available_teachers: a.available_teachers,
-                    total_teachers: a.total_teachers
-                })));
                 this.renderAssignments();
             } else {
                 console.error('Error loading assignments:', data.message);
@@ -271,7 +262,6 @@ class ScheduleDragDropManager {
             return;
         }
 
-        console.log('🎨 Rendering assignments, count:', this.assignments.length);
 
         if (this.assignments.length === 0) {
             container.innerHTML = '<div class="text-center text-gray-500 text-sm py-8">No hay materias asignadas a este grupo<br><small>Configure las materias del grupo primero</small></div>';
@@ -347,13 +337,6 @@ class ScheduleDragDropManager {
     createGroupedAssignmentCard(assignment) {
         const availabilityClass = this.getGroupedAvailabilityClass(assignment);
         
-        console.log(`📊 Creating card for ${assignment.materia_nombre}:`, {
-            availability_percentage: assignment.availability_percentage,
-            total_hours_available: assignment.total_hours_available,
-            available_teachers: assignment.available_teachers,
-            total_teachers: assignment.total_teachers,
-            availabilityClass: availabilityClass
-        });
         
         // Sort teachers: available first, then by score
         const sortedTeachers = assignment.teachers
@@ -469,15 +452,9 @@ class ScheduleDragDropManager {
         const dropZones = document.querySelectorAll('.drop-zone');
         const existingAssignments = document.querySelectorAll('.draggable-existing-assignment');
 
-        console.log('🔧 Setting up drag events:', {
-            draggableElements: draggableElements.length,
-            dropZones: dropZones.length,
-            existingAssignments: existingAssignments.length
-        });
 
         // Only set up events once to prevent duplicates
         if (this.dragEventsSetup) {
-            console.log('🔧 Drag events already set up, skipping...');
             return;
         }
 
@@ -542,7 +519,6 @@ class ScheduleDragDropManager {
 
     // Method to refresh drag events after schedule grid updates
     refreshDragEvents() {
-        console.log('🔄 Refreshing drag events...');
         // Reset the flag to allow re-setup
         this.dragEventsSetup = false;
         // Reload assignments to update availability indicators
@@ -795,6 +771,11 @@ class ScheduleDragDropManager {
 
     async handleDrop(e) {
         e.preventDefault();
+        
+        // Prevent multiple simultaneous operations
+        if (this.operationInProgress.type) {
+            return;
+        }
         
         // Clear all highlights immediately when drop occurs
         this.clearAllHighlights();
@@ -1088,81 +1069,91 @@ class ScheduleDragDropManager {
 
             const autoSelectData = await autoSelectResponse.json();
             
-            if (!autoSelectData.success) {
+            // Handle case where existing teacher is unavailable
+            if (!autoSelectData.success && autoSelectData.data && autoSelectData.data.reason === 'existing_teacher_unavailable') {
+                const existingTeacher = autoSelectData.data.existing_teacher;
+                
+                // Show warning modal asking if user wants to use different teacher
+                const confirmed = await showConfirmModal(
+                    `El docente actual (${existingTeacher.nombre} ${existingTeacher.apellido}) no está disponible en este horario.`,
+                    `¿Desea asignar un docente diferente para mantener la consistencia del horario?`,
+                    'Buscar otro docente',
+                    'Cancelar'
+                );
+                
+                if (!confirmed) {
+                    this.endOperation();
+                    return;
+                }
+                
+                // Continue with alternative teacher selection (no need to start new operation)
+                
+                // User wants to use alternative - call auto-select again with flag to skip existing teacher
+                const altResponse = await fetch('/src/controllers/HorarioHandler.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'auto_select_teacher',
+                        id_materia: draggedData.subjectId,
+                        id_grupo: this.currentGroupId,
+                        id_bloque: bloque,
+                        dia: dia,
+                        skip_existing: true
+                    })
+                });
+                
+                const altData = await altResponse.json();
+                
+                if (!altData.success) {
+                    this.showToast('Error: ' + altData.message, 'error');
+                    this.endOperation();
+                    return;
+                }
+                
+                // Use alternative teacher
+                const selectedTeacher = altData.data.selected_teacher;
+                this.showToast(`Docente alternativo seleccionado: ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'warning');
+                
+                // Continue with assignment creation
+                await this.createAssignmentWithTeacher(dropZone, draggedData, selectedTeacher, bloque, dia);
+                return;
+                
+            } else if (!autoSelectData.success) {
                 this.showToast('Error: ' + autoSelectData.message, 'error');
                 this.endOperation();
                 return;
             }
 
+            // Normal case - teacher selected successfully
             const selectedTeacher = autoSelectData.data.selected_teacher;
-            this.showToast(`Docente seleccionado: ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'success');
-
-            // Now create the assignment with the selected teacher
-            this.showToast('Creando asignación...', 'info');
+            const reason = autoSelectData.data.reason || 'algorithm';
             
-            const requestData = {
-                action: 'quick_create',
-                id_grupo: this.currentGroupId,
-                id_materia: draggedData.subjectId,
-                id_docente: selectedTeacher.id_docente,
-                id_bloque: bloque,
-                dia: dia
-            };
-            
-            const response = await fetch('/src/controllers/HorarioHandler.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestData)
-            });
-
-            const data = await response.json();
-            
-            if (data.success) {
-                this.showToast(`Asignación creada: ${draggedData.subjectName} - ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'success');
-                this.updateDropZone(dropZone, data.data);
+            // Check for conflicts before creating assignment
+            if (autoSelectData.data.conflict && autoSelectData.data.conflict.type === 'soft') {
+                const conflictMessage = autoSelectData.data.conflict.message;
+                const confirmed = await showConfirmModal(
+                    'Conflicto de Horario',
+                    conflictMessage,
+                    'Crear de Todas Formas',
+                    'Cancelar'
+                );
                 
-                // Clear operation state immediately after successful creation
-                this.endOperation();
-                
-                // Add a small delay to ensure database is updated
-                setTimeout(() => {
-                    this.loadAssignments();
-                    if (typeof filterScheduleGrid === 'function') {
-                        filterScheduleGrid(this.currentGroupId);
-                    }
-                    // Refresh drag events after schedule grid update
-                    this.refreshDragEvents();
-                }, 100);
-            } else {
-                // Show confirmation modal for conflicts
-                if (data.message && data.message.includes('Conflicto detectado')) {
-                    const cleanMessage = data.message.replace('Conflicto detectado: ', '');
-                    
-                    if (typeof confirmConflict === 'function') {
-                        const confirmed = await confirmConflict(cleanMessage, {
-                            title: 'Conflicto de Horario',
-                            confirmText: 'Crear de Todas Formas',
-                            cancelText: 'Cancelar'
-                        });
-                        
-                        if (confirmed) {
-                            // End the current operation before starting the force create
-                            this.endOperation();
-                            await this.forceCreateGroupedAssignment(dropZone, draggedData, selectedTeacher, bloque, dia);
-                        } else {
-                            this.endOperation();
-                        }
-                    } else {
-                        this.showToast('Error: ' + (data.message || 'No se pudo crear la asignación'), 'error');
-                        this.endOperation();
-                    }
-                } else {
-                    this.showToast('Error: ' + (data.message || 'No se pudo crear la asignación'), 'error');
+                if (!confirmed) {
                     this.endOperation();
+                    return;
                 }
             }
+            
+            if (reason === 'existing_teacher') {
+                this.showToast(`✓ ${selectedTeacher.nombre} ${selectedTeacher.apellido} (continúa enseñando)`, 'success');
+            } else {
+                this.showToast(`Docente seleccionado: ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'success');
+            }
+            
+            // Continue with assignment creation
+            await this.createAssignmentWithTeacher(dropZone, draggedData, selectedTeacher, bloque, dia);
         } catch (error) {
             console.error('Error creating grouped assignment:', error);
             this.showToast('Error de conexión al crear asignación', 'error');
@@ -1171,11 +1162,7 @@ class ScheduleDragDropManager {
     }
 
     async forceCreateGroupedAssignment(dropZone, draggedData, selectedTeacher, bloque, dia) {
-        // Prevent duplicate operations
-        if (!this.startOperation('create')) {
-            return;
-        }
-
+        // Don't start a new operation - we're already within an operation context
         this.showToast('Creando asignación...', 'info');
         
         try {
@@ -1662,13 +1649,11 @@ class ScheduleDragDropManager {
             console.warn('Operation already in progress:', this.operationInProgress.type, 'attempting to start:', type);
             return false;
         }
-        console.log('🚀 Starting operation:', type);
         this.operationInProgress = { type, startTime: Date.now() };
         return true;
     }
 
     endOperation() {
-        console.log('🏁 Ending operation:', this.operationInProgress.type);
         this.operationInProgress = { type: null, startTime: 0 };
     }
     
@@ -1808,6 +1793,99 @@ class ScheduleDragDropManager {
         this.stopAutoScroll();
         document.removeEventListener('wheel', this.handleWheelWhileDragging.bind(this));
         document.removeEventListener('dragover', this.handleDragOverForScroll.bind(this));
+    }
+    
+    /**
+     * Create assignment with selected teacher
+     */
+    async createAssignmentWithTeacher(dropZone, draggedData, selectedTeacher, bloque, dia) {
+        try {
+            this.showToast('Creando asignación...', 'info');
+            
+            const requestData = {
+                action: 'quick_create',
+                id_grupo: this.currentGroupId,
+                id_materia: draggedData.subjectId,
+                id_docente: selectedTeacher.id_docente,
+                id_bloque: bloque,
+                dia: dia
+            };
+            
+            const response = await fetch('/src/controllers/HorarioHandler.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showToast(`Asignación creada: ${draggedData.subjectName} - ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'success');
+                this.updateDropZone(dropZone, data.data);
+                
+                // Clear operation state immediately after successful creation
+                this.endOperation();
+                
+                // Add a small delay to ensure database is updated
+                setTimeout(() => {
+                    this.loadAssignments();
+                    if (typeof filterScheduleGrid === 'function') {
+                        filterScheduleGrid(this.currentGroupId);
+                    }
+                    // Refresh drag events after schedule grid update
+                    this.refreshDragEvents();
+                }, 100);
+            } else {
+                // Show confirmation modal for conflicts
+                if (data.message && data.message.includes('Conflicto detectado')) {
+                    const cleanMessage = data.message.replace('Conflicto detectado: ', '');
+                    
+                    // Try confirmConflict first, fallback to browser confirm
+                    if (typeof confirmConflict === 'function') {
+                        try {
+                            // Add timeout to prevent hanging
+                            const confirmed = await Promise.race([
+                                confirmConflict(cleanMessage, {
+                                    title: 'Conflicto de Horario',
+                                    confirmText: 'Crear de Todas Formas',
+                                    cancelText: 'Cancelar'
+                                }),
+                                new Promise((_, reject) => 
+                                    setTimeout(() => reject(new Error('Modal timeout')), 3000)
+                                )
+                            ]);
+                            
+                            if (confirmed) {
+                                await this.forceCreateGroupedAssignment(dropZone, draggedData, selectedTeacher, bloque, dia);
+                            } else {
+                                this.endOperation();
+                            }
+                        } catch (error) {
+                            // Fallback to browser confirm
+                            const confirmed = confirm(`Conflicto de Horario\n\n${cleanMessage}\n\n¿Desea crear la asignación de todas formas?`);
+                            
+                            if (confirmed) {
+                                await this.forceCreateGroupedAssignment(dropZone, draggedData, selectedTeacher, bloque, dia);
+                            } else {
+                                this.endOperation();
+                            }
+                        }
+                    } else {
+                        this.showToast('Error: ' + (data.message || 'No se pudo crear la asignación'), 'error');
+                        this.endOperation();
+                    }
+                } else {
+                    this.showToast('Error: ' + (data.message || 'No se pudo crear la asignación'), 'error');
+                    this.endOperation();
+                }
+            }
+        } catch (error) {
+            console.error('Error creating assignment:', error);
+            this.showToast('Error de conexión al crear asignación', 'error');
+            this.endOperation();
+        }
     }
 }
 

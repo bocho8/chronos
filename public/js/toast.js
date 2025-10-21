@@ -10,9 +10,7 @@
  */
 
 // Prevent multiple loading - check if already exists
-if (typeof window.ToastManager !== 'undefined' && window.toastManager) {
-    console.log('Toast system already loaded, skipping reinitialization');
-} else {
+if (typeof window.ToastManager === 'undefined' || !window.toastManager) {
 
 (function() {
     'use strict';
@@ -46,7 +44,6 @@ class ToastManager {
     createConfirmModal() {
         if (document.getElementById('confirmModal')) return;
         
-        console.log('Creating confirmation modal...');
         
         const modal = document.createElement('div');
         modal.id = 'confirmModal';
@@ -123,7 +120,6 @@ class ToastManager {
         `;
         
         document.body.appendChild(modal);
-        console.log('Modal created and appended to body');
         
         // Setup event listeners
         this.setupModalListeners();
@@ -443,13 +439,6 @@ class ToastManager {
             const confirmBtn = document.getElementById('confirmModalConfirm');
             const cancelBtn = document.getElementById('confirmModalCancel');
             
-            console.log('Modal elements check:', {
-                modal: !!modal,
-                titleEl: !!titleEl,
-                messageEl: !!messageEl,
-                confirmBtn: !!confirmBtn,
-                cancelBtn: !!cancelBtn
-            });
             
             if (!modal || !titleEl || !messageEl || !confirmBtn || !cancelBtn) {
                 console.error('Modal elements not found');
@@ -463,7 +452,6 @@ class ToastManager {
             confirmBtn.textContent = confirmText;
             cancelBtn.textContent = cancelText;
             
-            console.log('Modal content set:', { title, message, confirmText, cancelText });
             
             // Show modal with proper timing
             modal.classList.remove('hidden');
@@ -476,19 +464,14 @@ class ToastManager {
             // Fade in
             modal.style.opacity = '1';
             
-            console.log('Modal should be visible now');
-            console.log('Modal classes:', modal.className);
-            console.log('Modal style:', modal.style.cssText);
             
             // Setup one-time event listeners
             const handleConfirm = () => {
-                console.log('Confirm clicked');
                 cleanup();
                 resolve(true);
             };
             
             const handleCancel = () => {
-                console.log('Cancel clicked');
                 cleanup();
                 resolve(false);
             };

@@ -517,9 +517,14 @@ class HorarioController {
      * Auto-select best teacher for a subject assignment
      */
     private function autoSelectTeacher() {
-        $data = json_decode(file_get_contents('php://input'), true);
+        error_log("=== autoSelectTeacher method called ===");
+        $rawInput = file_get_contents('php://input');
+        error_log("autoSelectTeacher - Raw input: " . $rawInput);
+        $data = json_decode($rawInput, true);
+        error_log("autoSelectTeacher - Parsed data: " . json_encode($data));
         
         if (!$data) {
+            error_log("autoSelectTeacher - No data received");
             ResponseHelper::error("Datos JSON requeridos");
         }
         
@@ -527,6 +532,7 @@ class HorarioController {
         $groupId = $data['id_grupo'] ?? null;
         $blockId = $data['id_bloque'] ?? null;
         $day = $data['dia'] ?? null;
+        $skipExisting = $data['skip_existing'] ?? false;
         
         if (!$subjectId || !$groupId || !$blockId || !$day) {
             ResponseHelper::error("Parámetros requeridos: id_materia, id_grupo, id_bloque, dia");
@@ -536,12 +542,13 @@ class HorarioController {
             require_once __DIR__ . '/TeacherSelectionService.php';
             $selectionService = new TeacherSelectionService($this->db);
             
-            $result = $selectionService->selectBestTeacher($subjectId, $groupId, $blockId, $day);
+            $result = $selectionService->selectBestTeacher($subjectId, $groupId, $blockId, $day, $skipExisting);
             
             if ($result['success']) {
                 ResponseHelper::success("Docente seleccionado automáticamente", $result);
             } else {
-                ResponseHelper::error($result['message']);
+                // Pass through additional data for frontend handling
+                ResponseHelper::error($result['message'], $result);
             }
             
         } catch (Exception $e) {

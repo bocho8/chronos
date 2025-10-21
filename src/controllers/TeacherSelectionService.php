@@ -25,9 +25,55 @@ class TeacherSelectionService {
      * @param string $day
      * @return array
      */
-    public function selectBestTeacher($subjectId, $groupId, $blockId, $day) {
+    public function selectBestTeacher($subjectId, $groupId, $blockId, $day, $skipExisting = false) {
+        error_log("=== TEACHER SELECTION STARTED ===");
+        error_log("Subject ID: $subjectId, Group ID: $groupId, Block ID: $blockId, Day: $day, Skip Existing: " . ($skipExisting ? 'true' : 'false'));
+        
         try {
-            // Get all teachers who can teach this subject
+            // First, check if there's already a teacher for this subject in this group
+            if (!$skipExisting) {
+                $existingTeacher = $this->getExistingTeacherForSubjectInGroup($subjectId, $groupId);
+                
+                if ($existingTeacher) {
+                    // Check if this teacher is available for the requested slot
+                    $availScore = $this->checkAvailability($existingTeacher['id_docente'], $day, $blockId);
+                    
+                    if ($availScore > 0) {
+                        // Existing teacher is available - check for conflicts
+                        $conflictResult = $this->checkConflicts($existingTeacher['id_docente'], $groupId, $day, $blockId);
+                        $conflictScore = $conflictResult['score'];
+                        
+                        if ($conflictScore > 0) {
+                            // No conflicts - perfect! Use existing teacher
+                            return [
+                                'success' => true,
+                                'selected_teacher' => [
+                                    'id_docente' => $existingTeacher['id_docente'],
+                                    'nombre' => $existingTeacher['nombre'],
+                                    'apellido' => $existingTeacher['apellido']
+                                ],
+                                'reason' => 'existing_teacher',
+                                'message' => 'Manteniendo consistencia: ' . $existingTeacher['nombre'] . ' ' . $existingTeacher['apellido'] . ' ya enseña esta materia en este grupo'
+                            ];
+                        }
+                    }
+                    
+                    // Existing teacher is unavailable - return this info
+                    return [
+                        'success' => false,
+                        'message' => 'El docente actual (' . $existingTeacher['nombre'] . ' ' . $existingTeacher['apellido'] . ') no está disponible en este horario',
+                        'existing_teacher' => [
+                            'id_docente' => $existingTeacher['id_docente'],
+                            'nombre' => $existingTeacher['nombre'],
+                            'apellido' => $existingTeacher['apellido']
+                        ],
+                        'reason' => 'existing_teacher_unavailable',
+                        'can_use_alternative' => true
+                    ];
+                }
+            }
+            
+            // No existing teacher or skipping existing - proceed with normal algorithm
             $teachers = $this->getTeachersForSubject($subjectId);
             
             if (empty($teachers)) {
@@ -37,12 +83,16 @@ class TeacherSelectionService {
                 ];
             }
             
+            
             $scores = [];
             
             foreach ($teachers as $teacher) {
                 // 1. Check availability (CRITICAL - 50% weight)
                 $availScore = $this->checkAvailability($teacher['id_docente'], $day, $blockId);
+                error_log("Teacher {$teacher['nombre']} {$teacher['apellido']} (ID: {$teacher['id_docente']}) - Availability: {$availScore} for {$day} bloque {$blockId}");
+                
                 if ($availScore == 0) {
+                    error_log("Skipping {$teacher['nombre']} {$teacher['apellido']} - not available");
                     continue; // Skip unavailable teachers
                 }
                 
@@ -50,10 +100,17 @@ class TeacherSelectionService {
                 $workloadScore = $this->calculateWorkloadScore($teacher['id_docente']);
                 
                 // 3. Check conflicts (15% weight)
-                $conflictScore = $this->checkConflicts($teacher['id_docente'], $groupId, $day, $blockId);
+                $conflictResult = $this->checkConflicts($teacher['id_docente'], $groupId, $day, $blockId);
+                $conflictScore = $conflictResult['score'];
+                error_log("Teacher {$teacher['nombre']} {$teacher['apellido']} (ID: {$teacher['id_docente']}) - Conflict Score: {$conflictScore} ({$conflictResult['type']}) for {$day} bloque {$blockId}");
+                
                 if ($conflictScore == 0) {
+                    error_log("Skipping {$teacher['nombre']} {$teacher['apellido']} - hard conflict detected");
                     continue; // Skip if hard conflict
                 }
+                
+                // For alternative teacher selection, we allow soft conflicts (different groups)
+                // but still prefer teachers without conflicts
                 
                 // 4. Check preferences/history (5% weight)
                 $prefScore = $this->checkTeachingHistory($teacher['id_docente'], $subjectId, $groupId);
@@ -66,6 +123,8 @@ class TeacherSelectionService {
                     ($prefScore * 0.05)
                 );
                 
+                error_log("Teacher {$teacher['nombre']} {$teacher['apellido']} (ID: {$teacher['id_docente']}) - Final Score: " . round($finalScore, 1) . " (Availability: {$availScore}, Workload: {$workloadScore}, Conflicts: {$conflictScore}, Preference: {$prefScore})");
+                
                 $scores[] = [
                     'teacher_id' => $teacher['id_docente'],
                     'teacher_name' => $teacher['nombre'] . ' ' . $teacher['apellido'],
@@ -75,14 +134,18 @@ class TeacherSelectionService {
                         'workload' => $workloadScore,
                         'conflicts' => $conflictScore,
                         'preference' => $prefScore
-                    ]
+                    ],
+                    'conflict_info' => $conflictResult
                 ];
             }
             
             if (empty($scores)) {
+                $message = $skipExisting ? 
+                    'No hay docentes disponibles para este horario. Todos los docentes tienen conflictos de horario.' : 
+                    'No hay docentes disponibles para este horario';
                 return [
                     'success' => false,
-                    'message' => 'No hay docentes disponibles para este horario'
+                    'message' => $message
                 ];
             }
             
@@ -98,13 +161,14 @@ class TeacherSelectionService {
             });
             
             $selectedTeacher = $topTeachers[array_rand($topTeachers)];
+            error_log("Selected teacher: {$selectedTeacher['teacher_name']} (ID: {$selectedTeacher['teacher_id']}) with score: {$selectedTeacher['final_score']}");
             
             // Get alternatives (top 3 excluding selected)
             $alternatives = array_slice(array_filter($scores, function($s) use ($selectedTeacher) {
                 return $s['teacher_id'] != $selectedTeacher['teacher_id'];
             }), 0, 3);
             
-            return [
+            $result = [
                 'success' => true,
                 'selected_teacher' => [
                     'id_docente' => $selectedTeacher['teacher_id'],
@@ -124,12 +188,25 @@ class TeacherSelectionService {
                 }, $alternatives)
             ];
             
+            // Add conflict information if there are soft conflicts
+            if ($selectedTeacher['conflict_info']['type'] === 'soft') {
+                $result['conflict'] = [
+                    'type' => 'soft',
+                    'message' => 'El docente ya tiene una clase en este horario (' . $selectedTeacher['conflict_info']['details']['materia'] . ' - ' . $selectedTeacher['conflict_info']['details']['grupo'] . ')',
+                    'details' => $selectedTeacher['conflict_info']['details']
+                ];
+            }
+            
+            return $result;
+            
         } catch (Exception $e) {
             error_log("Error in TeacherSelectionService: " . $e->getMessage());
             return [
                 'success' => false,
                 'message' => 'Error interno al seleccionar docente'
             ];
+        } finally {
+            error_log("=== TEACHER SELECTION COMPLETED ===");
         }
     }
     
@@ -152,6 +229,25 @@ class TeacherSelectionService {
     }
     
     /**
+     * Check if there's already a teacher assigned to this subject in this group
+     * Returns teacher ID if found, null otherwise
+     */
+    private function getExistingTeacherForSubjectInGroup($subjectId, $groupId) {
+        $query = "
+            SELECT DISTINCT h.id_docente, u.nombre, u.apellido
+            FROM horario h
+            JOIN docente d ON h.id_docente = d.id_docente
+            JOIN usuario u ON d.id_usuario = u.id_usuario
+            WHERE h.id_materia = ? AND h.id_grupo = ?
+            LIMIT 1
+        ";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$subjectId, $groupId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+    /**
      * Check teacher availability for specific day/time slot
      * Returns: 100 (available), 50 (no record), 0 (unavailable)
      */
@@ -167,7 +263,7 @@ class TeacherSelectionService {
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$result) {
-            return 50; // No record - assume available
+            return 0; // No record - assume NOT available (safer approach)
         }
         
         return $result['disponible'] ? 100 : 0;
@@ -215,35 +311,32 @@ class TeacherSelectionService {
      */
     private function checkConflicts($teacherId, $groupId, $day, $blockId) {
         $query = "
-            SELECT COUNT(*) as conflict_count
-            FROM horario 
-            WHERE id_docente = ? AND dia = ? AND id_bloque = ?
+            SELECT h.id_materia, m.nombre as materia_nombre, h.id_grupo, g.nombre as grupo_nombre
+            FROM horario h
+            JOIN materia m ON h.id_materia = m.id_materia
+            JOIN grupo g ON h.id_grupo = g.id_grupo
+            WHERE h.id_docente = ? AND h.dia = ? AND h.id_bloque = ?
         ";
         
         $stmt = $this->db->prepare($query);
         $stmt->execute([$teacherId, $day, $blockId]);
-        $conflictCount = (int)$stmt->fetch(PDO::FETCH_ASSOC)['conflict_count'];
+        $conflicts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        if ($conflictCount == 0) {
-            return 100; // No conflicts
+        if (empty($conflicts)) {
+            return ['score' => 100, 'type' => 'none', 'details' => null]; // No conflicts
         }
         
-        // Check if it's the same group (hard conflict)
-        $sameGroupQuery = "
-            SELECT COUNT(*) as same_group_count
-            FROM horario 
-            WHERE id_docente = ? AND dia = ? AND id_bloque = ? AND id_grupo = ?
-        ";
-        
-        $sameGroupStmt = $this->db->prepare($sameGroupQuery);
-        $sameGroupStmt->execute([$teacherId, $day, $blockId, $groupId]);
-        $sameGroupCount = (int)$sameGroupStmt->fetch(PDO::FETCH_ASSOC)['same_group_count'];
-        
-        if ($sameGroupCount > 0) {
-            return 0; // Hard conflict - same group
-        }
-        
-        return 50; // Soft conflict - different group
+        // Any conflict at the same time slot should be a hard conflict
+        // A teacher cannot teach two different subjects at the same time
+        $conflict = $conflicts[0];
+        return [
+            'score' => 0, 
+            'type' => 'hard', 
+            'details' => [
+                'materia' => $conflict['materia_nombre'],
+                'grupo' => $conflict['grupo_nombre']
+            ]
+        ]; // Hard conflict - teacher already has a class at this time
     }
     
     /**
