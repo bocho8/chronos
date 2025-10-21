@@ -314,7 +314,7 @@ function getUserInitials($nombre, $apellido) {
         function loadDocenteDisponibilidad() {
             const docenteId = document.getElementById('docenteSelect').value;
             if (docenteId) {
-                window.location.href = `admin-disponibilidad.php?docente=${docenteId}`;
+                window.location.href = `/admin/availability?docente=${docenteId}`;
             }
         }
 
@@ -337,7 +337,7 @@ function getUserInitials($nombre, $apellido) {
             formData.append('dia', dia);
             formData.append('disponible', newState);
             
-            fetch('/src/controllers/horario_handler.php', {
+            fetch('/src/controllers/AdminDisponibilidadHandler.php', {
                 method: 'POST',
                 body: formData
             })
