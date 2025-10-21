@@ -412,6 +412,9 @@ class HorarioController {
                     $hoursAvailable = $maxHours - $hoursAssigned;
                     $isAvailable = $hoursAvailable > 0;
                     
+                    // Debug logging for individual teacher calculation
+                    error_log("Teacher {$docente['nombre']} {$docente['apellido']} for subject {$materia['nombre']}: assigned={$hoursAssigned}, max={$maxHours}, available={$hoursAvailable}, isAvailable=" . ($isAvailable ? 'true' : 'false'));
+                    
                     if ($isAvailable) {
                         $totalAvailableTeachers++;
                         $totalHoursAvailable += $hoursAvailable;
@@ -432,6 +435,9 @@ class HorarioController {
                 
                 // Calculate aggregate availability percentage
                 $availabilityPercentage = count($teachers) > 0 ? round(($totalAvailableTeachers / count($teachers)) * 100) : 0;
+                
+                // Debug logging for availability calculation
+                error_log("Subject {$materia['nombre']}: {$totalAvailableTeachers}/" . count($teachers) . " teachers available, {$totalHoursAvailable} hours available, {$availabilityPercentage}%");
                 
                 $groupedAssignments[] = [
                     'id_materia' => (int)$materia['id_materia'],
