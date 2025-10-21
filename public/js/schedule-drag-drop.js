@@ -226,7 +226,9 @@ class ScheduleDragDropManager {
         console.log('🔄 Loading assignments for group:', this.currentGroupId);
 
         try {
-            const response = await fetch(`/src/controllers/HorarioHandler.php?action=get_available_assignments&grupo_id=${this.currentGroupId}`);
+            // Add cache-busting parameter to ensure fresh data
+            const timestamp = Date.now();
+            const response = await fetch(`/src/controllers/HorarioHandler.php?action=get_available_assignments&grupo_id=${this.currentGroupId}&_t=${timestamp}`);
             const data = await response.json();
             
             console.log('📊 Assignment data received:', data);
@@ -924,7 +926,11 @@ class ScheduleDragDropManager {
                 this.showToast(`Asignación creada: ${draggedData.subjectName} - ${draggedData.teacherName}`, 'success');
                 this.updateDropZone(dropZone, data.data);
                 console.log('🔄 Reloading assignments after creation...');
-                this.loadAssignments();
+                
+                // Add a small delay to ensure database is updated
+                setTimeout(() => {
+                    this.loadAssignments();
+                }, 100);
                 
                 if (typeof filterScheduleGrid === 'function') {
                     filterScheduleGrid(this.currentGroupId);
@@ -1012,11 +1018,13 @@ class ScheduleDragDropManager {
                 this.showToast(`Asignación creada: ${draggedData.subjectName} - ${draggedData.teacherName}`, 'success');
                 this.updateDropZone(dropZone, data.data);
                 
-                // Only call these once after successful creation
-                this.loadAssignments();
-                if (typeof filterScheduleGrid === 'function') {
-                    filterScheduleGrid(this.currentGroupId);
-                }
+                // Add a small delay to ensure database is updated
+                setTimeout(() => {
+                    this.loadAssignments();
+                    if (typeof filterScheduleGrid === 'function') {
+                        filterScheduleGrid(this.currentGroupId);
+                    }
+                }, 100);
                 
             } else {
                 this.showToast('Error: ' + data.message, 'error');
@@ -1085,11 +1093,13 @@ class ScheduleDragDropManager {
                 this.showToast(`Asignación creada: ${draggedData.subjectName} - ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'success');
                 this.updateDropZone(dropZone, data.data);
                 
-                // Refresh assignments and schedule grid
-                this.loadAssignments();
-                if (typeof filterScheduleGrid === 'function') {
-                    filterScheduleGrid(this.currentGroupId);
-                }
+                // Add a small delay to ensure database is updated
+                setTimeout(() => {
+                    this.loadAssignments();
+                    if (typeof filterScheduleGrid === 'function') {
+                        filterScheduleGrid(this.currentGroupId);
+                    }
+                }, 100);
             } else {
                 // Show confirmation modal for conflicts
                 if (data.message && data.message.includes('Conflicto detectado')) {
@@ -1156,11 +1166,13 @@ class ScheduleDragDropManager {
                 this.showToast(`Asignación creada: ${draggedData.subjectName} - ${selectedTeacher.nombre} ${selectedTeacher.apellido}`, 'success');
                 this.updateDropZone(dropZone, data.data);
                 
-                // Refresh assignments and schedule grid
-                this.loadAssignments();
-                if (typeof filterScheduleGrid === 'function') {
-                    filterScheduleGrid(this.currentGroupId);
-                }
+                // Add a small delay to ensure database is updated
+                setTimeout(() => {
+                    this.loadAssignments();
+                    if (typeof filterScheduleGrid === 'function') {
+                        filterScheduleGrid(this.currentGroupId);
+                    }
+                }, 100);
             } else {
                 this.showToast('Error: ' + data.message, 'error');
             }
