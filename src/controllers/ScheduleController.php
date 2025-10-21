@@ -407,8 +407,8 @@ class HorarioController {
                     $hoursStmt->execute([$docente['id_docente'], $materia['id_materia'], $grupoId]);
                     $hoursAssigned = (int)$hoursStmt->fetch(PDO::FETCH_ASSOC)['hours_assigned'];
                     
-                    // Use subject's weekly hours as max, or default to 20
-                    $maxHours = max($materia['horas_semanales'], 20);
+                    // Use subject's weekly hours as max
+                    $maxHours = (int)$materia['horas_semanales'];
                     $hoursAvailable = $maxHours - $hoursAssigned;
                     $isAvailable = $hoursAvailable > 0;
                     
