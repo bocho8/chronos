@@ -52,6 +52,11 @@ class ScheduleDragDropManager {
             this.savePreferences('scheduleSelectedGroup', groupId);
             this.loadAssignments();
         };
+        
+        // Make refresh function available globally
+        window.refreshScheduleDragEvents = () => {
+            this.refreshDragEvents();
+        };
     }
 
     init() {
@@ -455,6 +460,11 @@ class ScheduleDragDropManager {
         const dropZones = document.querySelectorAll('.drop-zone');
         const existingAssignments = document.querySelectorAll('.draggable-existing-assignment');
 
+        console.log('🔧 Setting up drag events:', {
+            draggableElements: draggableElements.length,
+            dropZones: dropZones.length,
+            existingAssignments: existingAssignments.length
+        });
 
         // Setup draggable elements from sidebar
         draggableElements.forEach(element => {
@@ -930,11 +940,14 @@ class ScheduleDragDropManager {
                 // Add a small delay to ensure database is updated
                 setTimeout(() => {
                     this.loadAssignments();
+                    if (typeof filterScheduleGrid === 'function') {
+                        filterScheduleGrid(this.currentGroupId);
+                    }
+                    // Refresh drag events after schedule grid update
+                    this.refreshDragEvents();
+                    // Clear operation state after completion
+                    this.endOperation();
                 }, 100);
-                
-                if (typeof filterScheduleGrid === 'function') {
-                    filterScheduleGrid(this.currentGroupId);
-                }
                 
         } else {
             console.error('Assignment creation failed:', data);
@@ -1024,6 +1037,10 @@ class ScheduleDragDropManager {
                     if (typeof filterScheduleGrid === 'function') {
                         filterScheduleGrid(this.currentGroupId);
                     }
+                    // Refresh drag events after schedule grid update
+                    this.refreshDragEvents();
+                    // Clear operation state after completion
+                    this.endOperation();
                 }, 100);
                 
             } else {
@@ -1099,6 +1116,10 @@ class ScheduleDragDropManager {
                     if (typeof filterScheduleGrid === 'function') {
                         filterScheduleGrid(this.currentGroupId);
                     }
+                    // Refresh drag events after schedule grid update
+                    this.refreshDragEvents();
+                    // Clear operation state after completion
+                    this.endOperation();
                 }, 100);
             } else {
                 // Show confirmation modal for conflicts
@@ -1172,6 +1193,10 @@ class ScheduleDragDropManager {
                     if (typeof filterScheduleGrid === 'function') {
                         filterScheduleGrid(this.currentGroupId);
                     }
+                    // Refresh drag events after schedule grid update
+                    this.refreshDragEvents();
+                    // Clear operation state after completion
+                    this.endOperation();
                 }, 100);
             } else {
                 this.showToast('Error: ' + data.message, 'error');
