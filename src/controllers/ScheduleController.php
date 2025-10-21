@@ -377,17 +377,7 @@ class HorarioController {
             $materias = $materiasStmt->fetchAll(PDO::FETCH_ASSOC);
             error_log("Found " . count($materias) . " subjects for group $grupoId");
             
-            // Get teachers with their user info (nombre, apellido)
-            $docentesQuery = "
-                SELECT d.id_docente, u.nombre, u.apellido, d.horas_asignadas
-                FROM docente d
-                INNER JOIN usuario u ON d.id_usuario = u.id_usuario
-                ORDER BY u.nombre, u.apellido
-            ";
-            $docentesStmt = $this->db->prepare($docentesQuery);
-            $docentesStmt->execute();
-            $docentes = $docentesStmt->fetchAll(PDO::FETCH_ASSOC);
-            error_log("Found " . count($docentes) . " teachers");
+            // Teachers will be fetched per subject based on docente_materia relationships
             
             // Group assignments by subject
             $groupedAssignments = [];
@@ -396,7 +386,22 @@ class HorarioController {
                 $totalAvailableTeachers = 0;
                 $totalHoursAvailable = 0;
                 
-                foreach ($docentes as $docente) {
+                // Get only teachers who are qualified to teach this subject
+                $subjectTeachersQuery = "
+                    SELECT d.id_docente, u.nombre, u.apellido, d.horas_asignadas
+                    FROM docente d
+                    INNER JOIN usuario u ON d.id_usuario = u.id_usuario
+                    INNER JOIN docente_materia dm ON d.id_docente = dm.id_docente
+                    WHERE dm.id_materia = ?
+                    ORDER BY u.nombre, u.apellido
+                ";
+                $subjectTeachersStmt = $this->db->prepare($subjectTeachersQuery);
+                $subjectTeachersStmt->execute([$materia['id_materia']]);
+                $subjectTeachers = $subjectTeachersStmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                error_log("Subject {$materia['nombre']} has " . count($subjectTeachers) . " qualified teachers");
+                
+                foreach ($subjectTeachers as $docente) {
                     // Count hours already assigned for this combination
                     $hoursQuery = "
                         SELECT COUNT(*) as hours_assigned
