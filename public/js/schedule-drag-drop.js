@@ -367,22 +367,22 @@ class ScheduleDragDropManager {
         const remainingCount = sortedTeachers.length - visibleTeachers.length;
         
         return `
-            <div class="draggable-assignment grouped-assignment ${assignment.total_hours_available <= 0 ? 'assignment-disabled' : ''}" 
+            <div class="draggable-assignment grouped-assignment ${assignment.total_hours_available <= 0 ? 'assignment-completed' : ''}" 
                  draggable="${assignment.total_hours_available > 0 ? 'true' : 'false'}"
                  data-subject-id="${assignment.id_materia}"
                  data-subject-name="${assignment.materia_nombre}"
                  data-is-grouped="true"
                  data-auto-selectable="${assignment.is_auto_selectable}"
                  data-is-disabled="${assignment.total_hours_available <= 0}"
-                 title="${assignment.total_hours_available <= 0 ? 'No hay horas disponibles para asignar' : ''}">
+                 title="${assignment.total_hours_available <= 0 ? 'Asignación completa - Todas las horas asignadas' : ''}">
                 
                 <div class="assignment-header">
                     <div class="assignment-subject">${assignment.materia_nombre}</div>
-                    ${assignment.total_hours_available <= 0 ? '<div class="assignment-disabled-badge">Sin horas disponibles</div>' : ''}
+                    ${assignment.total_hours_available <= 0 ? '<div class="assignment-completed-badge">✅ Completo</div>' : ''}
                 </div>
                 
                 <div class="availability-bar">
-                    <div class="availability-fill ${assignment.total_hours_available <= 0 ? 'availability-none' : availabilityClass}" 
+                    <div class="availability-fill ${assignment.total_hours_available <= 0 ? 'availability-complete' : availabilityClass}" 
                          style="width: ${assignment.total_hours_available <= 0 ? '0' : assignment.availability_percentage}%"></div>
                 </div>
                 
@@ -397,9 +397,8 @@ class ScheduleDragDropManager {
                                  data-subject-id="${assignment.id_materia}"
                                  data-subject-name="${assignment.materia_nombre}"
                                  data-score="${teacher.score || 0}"
-                                 title="${teacher.nombre} ${teacher.apellido}&#10;Score: ${teacher.score || 0}&#10;Hours: ${teacher.hours_available}/${teacher.hours_total}h${teacher.hours_available <= 0 ? '&#10;⚠️ Sin horas disponibles' : ''}">
+                                 title="${teacher.nombre} ${teacher.apellido}&#10;Score: ${teacher.score || 0}&#10;Hours: ${teacher.hours_available}/${teacher.hours_total}h${teacher.hours_available <= 0 ? '&#10;✅ Asignación completa' : ''}">
                                 👤 ${teacher.apellido}
-                                ${teacher.hours_available <= 0 ? ' ❌' : ''}
                             </div>
                         `;
                     }).join('')}

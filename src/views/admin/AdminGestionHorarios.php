@@ -548,21 +548,22 @@ try {
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
         }
         
-        /* Disabled Assignment Styles */
-        .assignment-disabled {
-            opacity: 0.5;
+        /* Completed Assignment Styles */
+        .assignment-completed {
+            opacity: 0.85;
             cursor: not-allowed !important;
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+            border: 2px solid #10b981 !important;
             pointer-events: none;
         }
         
-        .assignment-disabled:hover {
+        .assignment-completed:hover {
             transform: none !important;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
         }
         
-        .assignment-disabled-badge {
-            background: #ef4444;
+        .assignment-completed-badge {
+            background: #10b981;
             color: white;
             padding: 2px 6px;
             border-radius: 4px;
@@ -649,8 +650,8 @@ try {
             background: linear-gradient(90deg, #ef4444, #dc2626);
         }
         
-        .availability-fill.availability-none {
-            background: linear-gradient(90deg, #9ca3af, #6b7280);
+        .availability-fill.availability-complete {
+            background: linear-gradient(90deg, #d1fae5, #a7f3d0);
         }
         
         /* Teacher badges container */
@@ -715,9 +716,9 @@ try {
 
         /* Unavailable teacher badge */
         .teacher-badge.unavailable {
-            background: #fee2e2;
-            border-color: #ef4444;
-            color: #991b1b;
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: #6b7280;
             opacity: 0.6;
             cursor: not-allowed;
             text-decoration: line-through;
