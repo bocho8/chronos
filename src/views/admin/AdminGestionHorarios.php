@@ -1378,6 +1378,10 @@ try {
                             // Reset pointer-events on cells after grid refresh
                             hideCellLoadingState();
                         }
+                        // Refresh drag-and-drop sidebar to update availability indicators
+                        if (typeof window.refreshScheduleDragEvents === 'function') {
+                            window.refreshScheduleDragEvents();
+                        }
                     } else {
                         showToast('Error: ' + data.message, 'error');
                     }

@@ -546,6 +546,8 @@ class ScheduleDragDropManager {
         console.log('🔄 Refreshing drag events...');
         // Reset the flag to allow re-setup
         this.dragEventsSetup = false;
+        // Reload assignments to update availability indicators
+        this.loadAssignments();
         this.setupDragEvents();
     }
 
