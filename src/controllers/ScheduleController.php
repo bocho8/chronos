@@ -433,11 +433,12 @@ class HorarioController {
                     ];
                 }
                 
-                // Calculate aggregate availability percentage
-                $availabilityPercentage = count($teachers) > 0 ? round(($totalAvailableTeachers / count($teachers)) * 100) : 0;
+                // Calculate hours-based availability percentage
+                $totalHoursPossible = count($teachers) * $materia['horas_semanales'];
+                $availabilityPercentage = $totalHoursPossible > 0 ? round(($totalHoursAvailable / $totalHoursPossible) * 100) : 0;
                 
                 // Debug logging for availability calculation
-                error_log("Subject {$materia['nombre']}: {$totalAvailableTeachers}/" . count($teachers) . " teachers available, {$totalHoursAvailable} hours available, {$availabilityPercentage}%");
+                error_log("Subject {$materia['nombre']}: {$totalAvailableTeachers}/" . count($teachers) . " teachers available, {$totalHoursAvailable}/{$totalHoursPossible} hours available, {$availabilityPercentage}% (hours-based)");
                 
                 $groupedAssignments[] = [
                     'id_materia' => (int)$materia['id_materia'],
