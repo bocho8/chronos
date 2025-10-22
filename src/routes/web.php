@@ -173,6 +173,20 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->post('/translations/validate-key', 'Admin\TranslationController@validateKey');
         $router->get('/translations/detect-spanish', 'Admin\TranslationController@detectSpanishErrors');
         $router->post('/translations/clear-all-spanish', 'Admin\TranslationController@clearAllSpanish');
+        
+        // Publish Request API Routes
+        $router->post('/api/publish-request/create', function() {
+            require __DIR__ . '/../controllers/PublishRequestHandler.php';
+        });
+        $router->get('/api/publish-request/status', function() {
+            require __DIR__ . '/../controllers/PublishRequestHandler.php';
+        });
+        $router->post('/api/publish-request/approve', function() {
+            require __DIR__ . '/../controllers/PublishRequestHandler.php';
+        });
+        $router->post('/api/publish-request/reject', function() {
+            require __DIR__ . '/../controllers/PublishRequestHandler.php';
+        });
     });
 
     $router->group(['prefix' => '/coordinator', 'middleware' => ['coordinator']], function($router) {

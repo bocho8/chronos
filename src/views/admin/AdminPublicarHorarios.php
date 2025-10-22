@@ -70,14 +70,17 @@ try {
     $horarioModel = new Horario($database->getConnection());
     
     $unpublishedSchedules = $horarioModel->getUnpublishedSchedules();
-    
     $publishedSchedules = $horarioModel->getPublishedSchedules();
+    $pendingRequests = $horarioModel->getPendingPublishRequests();
     
     if ($unpublishedSchedules === false) {
         $unpublishedSchedules = [];
     }
     if ($publishedSchedules === false) {
         $publishedSchedules = [];
+    }
+    if ($pendingRequests === false) {
+        $pendingRequests = [];
     }
     
 } catch (Exception $e) {
@@ -212,46 +215,55 @@ try {
                         </div>
                     <?php endif; ?>
 
-                    <!-- Unpublished Schedules -->
+                    <!-- Pending Publish Requests -->
                     <div class="mb-8">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Horarios Pendientes de Publicación</h3>
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Solicitudes de Publicación Pendientes</h3>
                         
-                        <?php if (empty($unpublishedSchedules)): ?>
+                        <?php if (empty($pendingRequests)): ?>
                             <div class="text-center py-12 bg-white rounded-lg border border-gray-200">
                                 <span class="text-gray-400 text-2xl">•</span>
-                                <p class="mt-2 text-sm text-gray-500">No hay horarios pendientes de publicación</p>
+                                <p class="mt-2 text-sm text-gray-500">No hay solicitudes de publicación pendientes</p>
                             </div>
                         <?php else: ?>
                             <div class="grid gap-4">
-                                <?php foreach ($unpublishedSchedules as $schedule): ?>
+                                <?php foreach ($pendingRequests as $request): ?>
                                     <div class="schedule-card bg-white rounded-lg p-6">
                                         <div class="flex justify-between items-start">
                                             <div class="flex-1">
                                                 <div class="flex items-center mb-2">
                                                     <h4 class="text-lg font-semibold text-gray-900 mr-3">
-                                                        Horario - <?php echo htmlspecialchars($schedule['nombre'] ?? 'Sin nombre'); ?>
+                                                        Solicitud de Publicación
                                                     </h4>
-                                                    <span class="unpublished-badge">Pendiente</span>
+                                                    <span class="unpublished-badge">Pendiente de Aprobación</span>
                                                 </div>
                                                 <p class="text-gray-600 mb-2">
-                                                    <strong>Creado:</strong> <?php echo date('d/m/Y H:i', strtotime($schedule['fecha_creacion'] ?? 'now')); ?>
+                                                    <strong>Solicitado por:</strong> <?php echo htmlspecialchars($request['solicitante_nombre'] . ' ' . $request['solicitante_apellido']); ?>
+                                                </p>
+                                                <p class="text-gray-600 mb-2">
+                                                    <strong>Fecha de solicitud:</strong> <?php echo date('d/m/Y H:i', strtotime($request['fecha_solicitud'])); ?>
                                                 </p>
                                                 <p class="text-gray-600 mb-4">
-                                                    <strong>Descripción:</strong> <?php echo htmlspecialchars($schedule['descripcion'] ?? 'Horario generado automáticamente'); ?>
+                                                    <strong>Descripción:</strong> Solicitud de publicación de todos los horarios del sistema
                                                 </p>
                                             </div>
                                             <div class="flex space-x-3">
                                                 <button 
-                                                    onclick="viewSchedule(<?php echo $schedule['id_horario']; ?>)"
+                                                    onclick="viewSchedulePreview()"
                                                     class="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
-                                                    <span class="text-sm">📋</span>
-                                                    Ver
+                                                    <span class="text-sm">👁️</span>
+                                                    Ver Vista Previa
                                                 </button>
                                                 <button 
-                                                    onclick="publishSchedule(<?php echo $schedule['id_horario']; ?>)"
+                                                    onclick="approveRequest(<?php echo $request['id_solicitud']; ?>)"
                                                     class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                                                    <span class="text-sm">📋</span>
-                                                    Publicar
+                                                    <span class="text-sm">✅</span>
+                                                    <?php _e('approve_publish_request'); ?>
+                                                </button>
+                                                <button 
+                                                    onclick="rejectRequest(<?php echo $request['id_solicitud']; ?>)"
+                                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                                                    <span class="text-sm">❌</span>
+                                                    <?php _e('reject_publish_request'); ?>
                                                 </button>
                                             </div>
                                         </div>
@@ -291,10 +303,10 @@ try {
                                             </div>
                                             <div class="flex space-x-3">
                                                 <button 
-                                                    onclick="viewSchedule(<?php echo $schedule['id_horario']; ?>)"
+                                                    onclick="viewSchedulePreview()"
                                                     class="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
-                                                    <span class="text-sm">📋</span>
-                                                    Ver
+                                                    <span class="text-sm">👁️</span>
+                                                    Ver Vista Previa
                                                 </button>
                                             </div>
                                         </div>
@@ -315,16 +327,63 @@ try {
     </form>
 
     <script>
-        function publishSchedule(scheduleId) {
-            if (confirm('¿Está seguro de que desea publicar este horario? Una vez publicado, será visible para todos los usuarios.')) {
-                document.getElementById('publishScheduleId').value = scheduleId;
-                document.getElementById('publishForm').submit();
+        function approveRequest(requestId) {
+            if (confirm('¿Está seguro de que desea aprobar esta solicitud de publicación? Los horarios serán publicados inmediatamente.')) {
+                fetch('/admin/api/publish-request/approve?action=approve', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        request_id: requestId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('<?php _e('publish_request_approved'); ?>');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Error al aprobar la solicitud');
+                    }
+                })
+                .catch(error => {
+                    alert('Error al aprobar la solicitud');
+                });
             }
         }
 
-        function viewSchedule(scheduleId) {
+        function rejectRequest(requestId) {
+            const reason = prompt('¿Por qué desea rechazar esta solicitud? (opcional):');
+            if (reason !== null) {
+                fetch('/admin/api/publish-request/reject?action=reject', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        request_id: requestId,
+                        reason: reason
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('<?php _e('publish_request_rejected'); ?>');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Error al rechazar la solicitud');
+                    }
+                })
+                .catch(error => {
+                    alert('Error al rechazar la solicitud');
+                });
+            }
+        }
 
-            window.location.href = 'admin-horarios.php?view=' + scheduleId;
+        function viewSchedulePreview() {
+            // Redirect to schedule management page to view current schedules
+            window.location.href = '/admin/gestion-horarios';
         }
 
         function logout() {

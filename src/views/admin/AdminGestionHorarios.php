@@ -37,6 +37,10 @@ try {
     $materias = $horarioModel->getSubjectsWithTeacherCounts();
     $docentes = $horarioModel->getAllDocentes();
     
+    // Get publish request status
+    $publishStatus = $horarioModel->getPublishRequestStatus();
+    $canRequestPublish = AuthHelper::hasRole('COORDINADOR') || AuthHelper::hasRole('ADMIN');
+    
     require_once __DIR__ . '/../../models/Grupo.php';
     $grupoModel = new Grupo($database->getConnection());
     $grupos = $grupoModel->getAllGrupos();
@@ -924,6 +928,23 @@ try {
                                 <button id="viewComparison" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50">
                                     Comparar Grupos
                                 </button>
+                                <?php if ($canRequestPublish): ?>
+                                <?php
+                                $buttonDisabled = $publishStatus === 'pendiente' ? 'disabled' : '';
+                                $buttonText = $publishStatus === 'pendiente' ? 'request_publish_pending' : 'request_publish_schedules';
+                                $buttonClass = $publishStatus === 'pendiente' 
+                                    ? 'px-3 py-1 text-sm bg-gray-400 text-white rounded cursor-not-allowed flex items-center' 
+                                    : 'px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center cursor-pointer';
+                                ?>
+                                <button 
+                                    id="btnRequestPublish" 
+                                    class="<?php echo $buttonClass; ?>"
+                                    <?php echo $buttonDisabled; ?>
+                                    onclick="requestPublish()">
+                                    <span class="mr-1">📢</span>
+                                    <?php _e($buttonText); ?>
+                                </button>
+                                <?php endif; ?>
                             </div>
                             
                             <!-- Filtros adicionales -->
@@ -2568,5 +2589,71 @@ try {
 
     <!-- Toast Container -->
     <div id="toastContainer"></div>
+
+    <script>
+        // Publish Request Functions
+        function requestPublish() {
+            if (!confirm('<?php _e('confirm_request_publish'); ?>')) {
+                return;
+            }
+            
+            fetch('/admin/api/publish-request/create?action=create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('<?php _e('publish_request_success'); ?>', 'success');
+                    updatePublishButton('pendiente');
+                } else {
+                    showToast(data.message || '<?php _e('publish_request_failed'); ?>', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('<?php _e('publish_request_failed'); ?>', 'error');
+            });
+        }
+
+        function updatePublishButton(status) {
+            const btn = document.getElementById('btnRequestPublish');
+            if (!btn) return;
+            
+            if (status === 'pendiente') {
+                btn.disabled = true;
+                btn.className = 'px-3 py-1 text-sm bg-gray-400 text-white rounded cursor-not-allowed flex items-center';
+                btn.querySelector('span:last-child').textContent = '<?php _e('request_publish_pending'); ?>';
+            } else {
+                btn.disabled = false;
+                btn.className = 'px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center cursor-pointer';
+                btn.querySelector('span:last-child').textContent = '<?php _e('request_publish_schedules'); ?>';
+            }
+        }
+
+        // Check for schedule changes and reset button if needed
+        let originalScheduleHash = '<?php echo $horarioModel->getScheduleHash(); ?>';
+        
+        // Monitor for schedule changes (this would be called after any schedule modification)
+        function checkScheduleChanges() {
+            fetch('/admin/api/publish-request/status?action=status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.status !== 'pendiente') {
+                    updatePublishButton(data.status);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking publish status:', error);
+            });
+        }
+
+        // Check status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkScheduleChanges();
+        });
+    </script>
 </body>
 </html>

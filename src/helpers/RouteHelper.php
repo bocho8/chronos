@@ -47,7 +47,7 @@ class RouteHelper
             'schedules' => '/admin/schedules',
             'schedule_management' => '/admin/gestion-horarios',
             'groups' => '/admin/groups',
-            'publish_schedules' => '/admin/schedules', // Will be handled by controller
+            'publish_schedules' => '/admin/schedules',
             'teacher_availability' => '/admin/availability',
             'subject_assignments' => '/admin/assignments',
             'reports' => '/admin/reports',
