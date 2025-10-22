@@ -1,4 +1,9 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
 
 class Materia {
     private $db;
@@ -173,7 +178,7 @@ class Materia {
     /**
      * Verifica si una materia está siendo utilizada en horarios
      */
-    private function materiaInUse($id) {
+    public function materiaInUse($id) {
         try {
             $query = "SELECT COUNT(*) as count FROM horario WHERE id_materia = :id";
             $stmt = $this->db->prepare($query);
@@ -218,6 +223,124 @@ class Materia {
         } catch (PDOException $e) {
             error_log("Error getting all pautas ANEP: " . $e->getMessage());
             return [];
+        }
+    }
+    
+    /**
+     * Crea una nueva pauta ANEP
+     */
+    public function createPautaAnep($data) {
+        try {
+            if (empty($data['nombre'])) {
+                throw new Exception("El nombre de la pauta es requerido");
+            }
+
+            if ($this->pautaAnepExists($data['nombre'])) {
+                throw new Exception("Ya existe una pauta con ese nombre");
+            }
+            
+            $query = "INSERT INTO pauta_anep (nombre, dias_minimos, dias_maximos, condiciones_especiales) 
+                     VALUES (:nombre, :dias_minimos, :dias_maximos, :condiciones_especiales)";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':nombre', $data['nombre']);
+            $stmt->bindValue(':dias_minimos', $data['dias_minimos'] ?? 1, PDO::PARAM_INT);
+            $stmt->bindValue(':dias_maximos', $data['dias_maximos'] ?? 5, PDO::PARAM_INT);
+            $stmt->bindValue(':condiciones_especiales', $data['condiciones_especiales'] ?? null);
+            
+            $stmt->execute();
+            
+            return $this->db->lastInsertId();
+        } catch (PDOException $e) {
+            error_log("Error creating pauta ANEP: " . $e->getMessage());
+            throw new Exception("Error al crear la pauta: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Actualiza una pauta ANEP existente
+     */
+    public function updatePautaAnep($id, $data) {
+        try {
+            if (empty($data['nombre'])) {
+                throw new Exception("El nombre de la pauta es requerido");
+            }
+
+            if ($this->pautaAnepExists($data['nombre'], $id)) {
+                throw new Exception("Ya existe una pauta con ese nombre");
+            }
+            
+            $query = "UPDATE pauta_anep SET 
+                     nombre = :nombre, 
+                     dias_minimos = :dias_minimos, 
+                     dias_maximos = :dias_maximos, 
+                     condiciones_especiales = :condiciones_especiales
+                     WHERE id_pauta_anep = :id_pauta_anep";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':id_pauta_anep', $id, PDO::PARAM_INT);
+            $stmt->bindValue(':nombre', $data['nombre']);
+            $stmt->bindValue(':dias_minimos', $data['dias_minimos'] ?? 1, PDO::PARAM_INT);
+            $stmt->bindValue(':dias_maximos', $data['dias_maximos'] ?? 5, PDO::PARAM_INT);
+            $stmt->bindValue(':condiciones_especiales', $data['condiciones_especiales'] ?? null);
+            
+            $stmt->execute();
+            
+            return true;
+        } catch (PDOException $e) {
+            error_log("Error updating pauta ANEP: " . $e->getMessage());
+            throw new Exception("Error al actualizar la pauta: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Elimina una pauta ANEP
+     */
+    public function deletePautaAnep($id) {
+        try {
+            // Check if pauta is being used by any materia
+            $checkQuery = "SELECT COUNT(*) FROM materia WHERE id_pauta_anep = :id_pauta_anep";
+            $checkStmt = $this->db->prepare($checkQuery);
+            $checkStmt->bindParam(':id_pauta_anep', $id, PDO::PARAM_INT);
+            $checkStmt->execute();
+            
+            if ($checkStmt->fetchColumn() > 0) {
+                throw new Exception("No se puede eliminar la pauta porque está siendo utilizada por una o más materias");
+            }
+            
+            $query = "DELETE FROM pauta_anep WHERE id_pauta_anep = :id_pauta_anep";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_pauta_anep', $id, PDO::PARAM_INT);
+            
+            $stmt->execute();
+            
+            return true;
+        } catch (PDOException $e) {
+            error_log("Error deleting pauta ANEP: " . $e->getMessage());
+            throw new Exception("Error al eliminar la pauta: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Verifica si una pauta ANEP existe
+     */
+    private function pautaAnepExists($nombre, $excludeId = null) {
+        try {
+            $query = "SELECT COUNT(*) FROM pauta_anep WHERE nombre = :nombre";
+            $params = [':nombre' => $nombre];
+            
+            if ($excludeId) {
+                $query .= " AND id_pauta_anep != :exclude_id";
+                $params[':exclude_id'] = $excludeId;
+            }
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($params);
+            
+            return $stmt->fetchColumn() > 0;
+        } catch (PDOException $e) {
+            error_log("Error checking pauta ANEP existence: " . $e->getMessage());
+            return false;
         }
     }
     

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
+
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Docente.php';
@@ -57,6 +63,8 @@ function getTeacherAssignments($teacherId, $assignments) {
     <title><?php _e('app_name'); ?> — <?php _e('teachers_management'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
     <?php echo Sidebar::getStyles(); ?>
+    <script src="/js/multiple-selection.js"></script>
+    <script src="/js/status-labels.js"></script>
   <style type="text/css">
     body {
       overflow-x: hidden;
@@ -117,29 +125,7 @@ function getTeacherAssignments($teacherId, $assignments) {
       z-index: 10000;
     }
     
-    /* Modal styles */
-    .modal-content {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-      z-index: 1000;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    
-    .modal-backdrop {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-    }
+    /* Modal styles - removed conflicting general styles */
 
     #docenteModal {
       position: fixed !important;
@@ -154,6 +140,9 @@ function getTeacherAssignments($teacherId, $assignments) {
       background-color: rgba(0, 0, 0, 0.2) !important;
       backdrop-filter: blur(8px) !important;
       -webkit-backdrop-filter: blur(8px) !important;
+      padding: 1rem !important;
+      width: 100vw !important;
+      height: 100vh !important;
     }
     
     #docenteModal.hidden {
@@ -168,7 +157,14 @@ function getTeacherAssignments($teacherId, $assignments) {
   border-radius: 12px !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
   max-height: 90vh !important;
+  max-width: 500px !important;
+  width: 100% !important;
   overflow-y: auto !important;
+  margin: 0 auto !important;
+  animation: modalSlideIn 0.3s ease-out !important;
+  transform: none !important;
+  top: auto !important;
+  left: auto !important;
 }
 
 #docenteModal button[type="submit"],
@@ -200,6 +196,18 @@ function getTeacherAssignments($teacherId, $assignments) {
     transform: translateY(0) scale(1);
   }
 }
+
+/* Responsive modal behavior */
+@media (max-width: 640px) {
+  #docenteModal {
+    padding: 0.5rem !important;
+  }
+  
+  #docenteModal .modal-content {
+    max-height: 95vh !important;
+    border-radius: 8px !important;
+  }
+}
   </style>
 </head>
 <body class="bg-bg font-sans text-gray-800 leading-relaxed">
@@ -207,19 +215,20 @@ function getTeacherAssignments($teacherId, $assignments) {
         <?php echo $sidebar->render(); ?>
 
     <!-- Main -->
-    <main class="flex-1 flex flex-col">
+    <main class="flex-1 flex flex-col main-content">
       <!-- Header -->
-      <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+      <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
         <!-- Espacio para el botón de menú hamburguesa -->
         <div class="w-8"></div>
         
         <!-- Título centrado -->
-        <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+        <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+        <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
         
         <!-- Contenedor de iconos a la derecha -->
         <div class="flex items-center">
-                    <?php echo $languageSwitcher->render('', 'mr-4'); ?>
-                    <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
+                    <?php echo $languageSwitcher->render('', 'mr-2 md:mr-4'); ?>
+                    <button class="mr-2 md:mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
                         <span class="text-white text-sm">🔔</span>
                     </button>
           
@@ -254,31 +263,110 @@ function getTeacherAssignments($teacherId, $assignments) {
       </header>
 
       <!-- Contenido principal - Centrado -->
-      <section class="flex-1 px-6 py-8">
+      <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
         <div class="max-w-6xl mx-auto">
-          <div class="mb-8">
-            <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('teachers_management'); ?></h2>
-            <p class="text-muted mb-6 text-base"><?php _e('teachers_management_description'); ?></p>
+          <div class="mb-6 md:mb-8">
+            <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('teachers_management'); ?></h2>
+            <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('teachers_management_description'); ?></p>
           </div>
 
-          <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
+          <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8" data-default-labels='["Estados", "Disponibilidad"]'>
             <!-- Header de la tabla -->
-            <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-medium text-darktext"><?php _e('teachers'); ?></h3>
-              <div class="flex gap-2">
-                <button onclick="showAddDocenteModal()" class="py-2 px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-sm bg-white text-gray-700 hover:bg-gray-50 flex items-center">
-                  <span class="mr-1 text-sm">+</span>
-                  <?php _e('add_teacher'); ?>
-                </button>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-3 md:p-4 border-b border-gray-200 bg-gray-50 gap-3 md:gap-0">
+              <div class="flex items-center">
+                <div class="select-all-container">
+                  <input type="checkbox" id="selectAll" class="item-checkbox">
+                  <label for="selectAll" class="text-sm md:text-base"><?php _e('select_all'); ?></label>
+                </div>
+                <h3 class="font-medium text-darktext ml-3 md:ml-4 text-sm md:text-base"><?php _e('teachers'); ?></h3>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <div class="relative w-full sm:w-auto">
+                  <input type="text" id="searchInput" placeholder="<?php _e('search_teachers'); ?>" 
+                         class="w-full py-2 px-3 md:px-4 pr-10 border border-gray-300 rounded text-xs md:text-sm focus:ring-darkblue focus:border-darkblue"
+                         onkeyup="searchDocentes(this.value)">
+                  <span class="text-gray-400 text-2xl">•</span>
+                </div>
+                <div class="flex gap-2">
+                  <button class="py-2 px-3 md:px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-white text-gray-700 hover:bg-gray-50">
+                    <?php _e('export'); ?>
+                  </button>
+                  <button onclick="showAddDocenteModal()" class="py-2 px-3 md:px-4 border-none rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-darkblue text-white hover:bg-navy flex items-center">
+                    <span class="mr-1 text-sm">+</span>
+                    <?php _e('add_teacher'); ?>
+                  </button>
+                </div>
               </div>
             </div>
 
+            <!-- Bulk Actions Bar -->
+            <div id="bulkActions" class="bulk-actions hidden">
+              <div class="flex items-center justify-between">
+                <div class="selection-info">
+                  <span data-selection-count>0</span> <?php _e('selected_items'); ?>
+                </div>
+                <div class="action-buttons">
+                  <button data-bulk-action="export" class="btn-export">
+                    <?php _e('bulk_export'); ?>
+                  </button>
+                  <button data-bulk-action="delete" class="btn-delete">
+                    <?php _e('bulk_delete'); ?>
+                  </button>
+                </div>
+              </div>
+              <!-- Statistics Container -->
+              <div id="statisticsContainer"></div>
+            </div>
+
             <!-- Lista de docentes -->
-            <div class="divide-y divide-gray-200">
+            <div id="docentesList" class="divide-y divide-gray-200">
               <?php if (!empty($docentes)): ?>
                 <?php foreach ($docentes as $docente): ?>
-                  <article class="flex items-center justify-between p-4 transition-colors hover:bg-lightbg">
+                  <?php 
+                    $teacherAssignments = getTeacherAssignments($docente['id_docente'], $assignments);
+                    $hasAssignments = count($teacherAssignments) > 0;
+                    $assignmentCount = count($teacherAssignments);
+                  ?>
+                  <article class="docente-item item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                           data-nombre="<?php echo htmlspecialchars(strtolower($docente['nombre'] . ' ' . $docente['apellido'])); ?>"
+                           data-apellido="<?php echo htmlspecialchars(strtolower($docente['apellido'])); ?>"
+                           data-email="<?php echo htmlspecialchars(strtolower($docente['email'])); ?>"
+                           data-cedula="<?php echo htmlspecialchars($docente['cedula']); ?>"
+                           data-item-id="<?php echo $docente['id_docente']; ?>"
+                           data-original-text=""
+                           data-available-labels="<?php 
+                               $labels = [];
+                               $labels[] = 'Email: ' . htmlspecialchars($docente['email']);
+                               $labels[] = 'CI: ' . htmlspecialchars($docente['cedula']);
+                               if ($hasAssignments) {
+                                   $labels[] = 'Materias: ' . $assignmentCount . ' asignadas';
+                                   $labels[] = 'Estado: Con asignaciones';
+                               } else {
+                                   $labels[] = 'Estado: Sin asignaciones';
+                               }
+                               if ($docente['porcentaje_margen'] !== null) {
+                                   $labels[] = 'Margen: ' . number_format($docente['porcentaje_margen'], 1) . '%';
+                               }
+                               $labels[] = 'Horas: ' . ($docente['horas_asignadas'] ?? 0) . 'h asignadas';
+                               echo implode('|', $labels);
+                           ?>"
+                           data-label-mapping="<?php 
+                               $mapping = [];
+                               $mapping['Estados'] = $hasAssignments ? 'Estado: Con asignaciones' : 'Estado: Sin asignaciones';
+                               $mapping['Información'] = 'Email: ' . htmlspecialchars($docente['email']) . ' • CI: ' . htmlspecialchars($docente['cedula']);
+                               if ($hasAssignments) {
+                                   $mapping['Materias'] = 'Materias: ' . $assignmentCount . ' asignadas';
+                               }
+                               if ($docente['porcentaje_margen'] !== null) {
+                                   $mapping['Disponibilidad'] = 'Margen: ' . number_format($docente['porcentaje_margen'], 1) . '%';
+                               }
+                               $mapping['Carga'] = 'Horas: ' . ($docente['horas_asignadas'] ?? 0) . 'h asignadas';
+                               echo htmlspecialchars(json_encode($mapping));
+                           ?>">
                     <div class="flex items-center">
+                      <div class="checkbox-container">
+                        <input type="checkbox" class="item-checkbox" data-item-id="<?php echo $docente['id_docente']; ?>">
+                      </div>
                       <div class="avatar w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
                         <?php echo getUserInitials($docente['nombre'], $docente['apellido']); ?>
                       </div>
@@ -322,7 +410,7 @@ function getTeacherAssignments($teacherId, $assignments) {
 
   <!-- Modal para agregar/editar docente -->
   <div id="docenteModal" class="hidden">
-    <div class="modal-content p-8 w-full max-w-md mx-auto">
+    <div class="modal-content p-8">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_teacher'); ?></h3>
                 <button onclick="closeDocenteModal()" class="text-gray-400 hover:text-gray-600">
@@ -844,6 +932,76 @@ function getTeacherAssignments($teacherId, $assignments) {
                 });
             }
         }
+
+        function searchDocentes(searchTerm) {
+            const docentes = document.querySelectorAll('.docente-item');
+            const searchLower = searchTerm.toLowerCase().trim();
+            
+            if (searchLower === '') {
+                docentes.forEach(docente => {
+                    docente.style.display = 'flex';
+                });
+                return;
+            }
+
+            docentes.forEach(docente => {
+                const nombre = docente.dataset.nombre || '';
+                const apellido = docente.dataset.apellido || '';
+                const email = docente.dataset.email || '';
+                const cedula = docente.dataset.cedula || '';
+                
+                if (nombre.includes(searchLower) || apellido.includes(searchLower) || 
+                    email.includes(searchLower) || cedula.includes(searchLower)) {
+                    docente.style.display = 'flex';
+                } else {
+                    docente.style.display = 'none';
+                }
+            });
+
+            const visibleDocentes = Array.from(docentes).filter(docente => docente.style.display !== 'none');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            
+            if (visibleDocentes.length === 0 && searchLower !== '') {
+                if (!noResultsMessage) {
+                    const docentesList = document.getElementById('docentesList');
+                    const messageDiv = document.createElement('div');
+                    messageDiv.id = 'noResultsMessage';
+                    messageDiv.className = 'p-8 text-center';
+                    messageDiv.innerHTML = `
+                        <div class="text-gray-500 text-lg mb-2">No se encontraron docentes que coincidan con "${searchTerm}"</div>
+                        <div class="text-gray-400 text-sm">Intente con un término de búsqueda diferente</div>
+                    `;
+                    docentesList.appendChild(messageDiv);
+                }
+            } else if (noResultsMessage) {
+                noResultsMessage.remove();
+            }
+        }
+
+        // Initialize multiple selection and status labels
+        document.addEventListener('DOMContentLoaded', function() {
+            const multipleSelection = new MultipleSelection({
+                container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
+                itemSelector: '.item-row',
+                checkboxSelector: '.item-checkbox',
+                selectAllSelector: '#selectAll',
+                bulkActionsSelector: '#bulkActions',
+                entityType: 'docentes',
+                onSelectionChange: function(selectedItems) {
+                    // Handle selection change
+                },
+                onBulkAction: function(action, selectedIds) {
+                    // Handle bulk actions
+                }
+            });
+
+            const statusLabels = new StatusLabels({
+                container: document.querySelector('.bg-white.rounded-lg.shadow-sm'),
+                itemSelector: '.item-row',
+                metaSelector: '.meta .text-muted',
+                entityType: 'docentes'
+            });
+        });
     </script>
 </body>
 </html>

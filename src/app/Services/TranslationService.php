@@ -1,4 +1,9 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
 
 namespace App\Services;
 
@@ -66,13 +71,21 @@ class TranslationService
         }
 
         $allKeys = $this->getAllKeys();
-        $existingKeys = array_keys($this->translations[$language]);
         
         if (empty($allKeys)) {
             return 0;
         }
 
-        return round((count($existingKeys) / count($allKeys)) * 100, 2);
+        $completedKeys = 0;
+        foreach ($allKeys as $key) {
+            $value = $this->translations[$language][$key] ?? '';
+            // Count as completed only if the value exists and is not empty
+            if (!empty($value) && trim($value) !== '') {
+                $completedKeys++;
+            }
+        }
+
+        return round(($completedKeys / count($allKeys)) * 100, 2);
     }
 
     /**
@@ -234,10 +247,19 @@ class TranslationService
     public function getStatistics()
     {
         $stats = [];
+        $allKeys = $this->getAllKeys();
         
         foreach ($this->languages as $lang) {
+            $completedKeys = 0;
+            foreach ($allKeys as $key) {
+                $value = $this->translations[$lang][$key] ?? '';
+                if (!empty($value) && trim($value) !== '') {
+                    $completedKeys++;
+                }
+            }
+            
             $stats[$lang] = [
-                'total_keys' => count($this->translations[$lang]),
+                'total_keys' => $completedKeys, // Only count non-empty keys
                 'completion_percentage' => $this->getCompletionPercentage($lang),
                 'missing_keys' => count($this->getMissingKeys($lang)),
                 'duplicates' => count($this->findDuplicates($lang))
@@ -310,5 +332,117 @@ class TranslationService
     public function reload()
     {
         $this->loadAllTranslations();
+    }
+
+    /**
+     * Detect Spanish text in non-Spanish fields (EN/IT)
+     * Returns array of keys where EN or IT fields match ES field exactly
+     */
+    public function detectSpanishInNonSpanishFields()
+    {
+        $spanishErrors = [];
+        $allTranslations = $this->getAllTranslations();
+
+        foreach ($allTranslations as $key => $translation) {
+            $esValue = $translation['es'] ?? '';
+            $enValue = $translation['en'] ?? '';
+            $itValue = $translation['it'] ?? '';
+
+            // Only check if Spanish field is not empty
+            if (empty($esValue)) {
+                continue;
+            }
+
+            $errors = [];
+
+            // Check if English field matches Spanish field exactly
+            if ($enValue === $esValue) {
+                $errors[] = 'en';
+            }
+
+            // Check if Italian field matches Spanish field exactly
+            if ($itValue === $esValue) {
+                $errors[] = 'it';
+            }
+
+            // If we found any Spanish errors, add to results
+            if (!empty($errors)) {
+                $spanishErrors[$key] = $errors;
+            }
+        }
+
+        return $spanishErrors;
+    }
+
+    /**
+     * Clear all Spanish errors in one bulk operation
+     * Returns array with count and details of cleared items
+     */
+    public function clearAllSpanishErrors()
+    {
+        // Detect all Spanish errors first
+        $spanishErrors = $this->detectSpanishInNonSpanishFields();
+        
+        if (empty($spanishErrors)) {
+            return [
+                'success' => true,
+                'count' => 0,
+                'cleared' => [],
+                'message' => 'No Spanish errors found to clear'
+            ];
+        }
+
+        // Create backup before making changes
+        $this->createBackup('es');
+        $this->createBackup('en');
+        $this->createBackup('it');
+
+        $clearedItems = [];
+        $clearedCount = 0;
+
+        try {
+            // Process each language file
+            foreach (['en', 'it'] as $language) {
+                $hasChanges = false;
+                
+                foreach ($spanishErrors as $key => $errorFields) {
+                    if (in_array($language, $errorFields)) {
+                        // Clear the field (set to empty)
+                        $this->translations[$language][$key] = '';
+                        $hasChanges = true;
+                        $clearedCount++;
+                        
+                        if (!isset($clearedItems[$key])) {
+                            $clearedItems[$key] = [];
+                        }
+                        $clearedItems[$key][] = $language;
+                    }
+                }
+
+                // Save the language file if there were changes
+                if ($hasChanges) {
+                    if (!$this->saveTranslations($language)) {
+                        throw new \Exception("Failed to save {$language} translations");
+                    }
+                }
+            }
+
+            return [
+                'success' => true,
+                'count' => $clearedCount,
+                'cleared' => $clearedItems,
+                'message' => "Successfully cleared Spanish text from {$clearedCount} field(s)"
+            ];
+
+        } catch (\Exception $e) {
+            // If there was an error, we could implement rollback here
+            // For now, just return the error
+            return [
+                'success' => false,
+                'count' => 0,
+                'cleared' => [],
+                'message' => 'Error clearing Spanish errors: ' . $e->getMessage()
+            ];
+        }
     }
 }

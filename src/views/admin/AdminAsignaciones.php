@@ -1,4 +1,10 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
+
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -149,16 +155,17 @@ function getUserInitials($nombre, $apellido) {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col">
+        <main class="flex-1 flex flex-col main-content">
             <!-- Header -->
-            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
                 <div class="w-8"></div>
                 
-                <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
                 
                 <div class="flex items-center">
-                    <?php echo $languageSwitcher->render('', 'mr-4'); ?>
-                    <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
+                    <?php echo $languageSwitcher->render('', 'mr-2 md:mr-4'); ?>
+                    <button class="mr-2 md:mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
                         <span class="text-white text-sm">🔔</span>
                     </button>
                     
@@ -191,19 +198,19 @@ function getUserInitials($nombre, $apellido) {
             </header>
 
             <!-- Contenido principal -->
-            <section class="flex-1 px-6 py-8">
+            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-6xl mx-auto">
-                    <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('subject_assignments'); ?></h2>
-                        <p class="text-muted mb-6 text-base"><?php _e('subject_assignments_description'); ?></p>
+                    <div class="mb-6 md:mb-8">
+                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('subject_assignments'); ?></h2>
+                        <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('subject_assignments_description'); ?></p>
                     </div>
 
                     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
                         <!-- Header de la tabla -->
-                        <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
-                            <h3 class="font-medium text-darktext"><?php _e('current_assignments'); ?></h3>
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center p-3 md:p-4 border-b border-gray-200 bg-gray-50 gap-3 md:gap-0">
+                            <h3 class="font-medium text-darktext text-sm md:text-base"><?php _e('current_assignments'); ?></h3>
                             <div class="flex gap-2">
-                                <button onclick="openAsignacionModal()" class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
+                                <button onclick="openAsignacionModal()" class="py-2 px-3 md:px-4 border-none rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-darkblue text-white hover:bg-navy flex items-center">
                                     <span class="mr-1 text-sm">+</span>
                                     <?php _e('assign_subject'); ?>
                                 </button>

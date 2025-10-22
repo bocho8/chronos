@@ -1,5 +1,11 @@
 <?php
 /**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
+
+/**
  * Grupo Model
  * Modelo para gestionar grupos del sistema
  */
@@ -254,6 +260,107 @@ class Grupo {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("Error searching grupos: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Asigna una materia a un grupo
+     */
+    public function assignSubjectToGroup($id_grupo, $id_materia, $horas_semanales = 1) {
+        try {
+            $query = "INSERT INTO grupo_materia (id_grupo, id_materia, horas_semanales) VALUES (:id_grupo, :id_materia, :horas_semanales)";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_grupo', $id_grupo, PDO::PARAM_INT);
+            $stmt->bindParam(':id_materia', $id_materia, PDO::PARAM_INT);
+            $stmt->bindParam(':horas_semanales', $horas_semanales, PDO::PARAM_INT);
+            
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error assigning subject to group: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Remueve una materia de un grupo
+     */
+    public function removeSubjectFromGroup($id_grupo, $id_materia) {
+        try {
+            $query = "DELETE FROM grupo_materia WHERE id_grupo = :id_grupo AND id_materia = :id_materia";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_grupo', $id_grupo, PDO::PARAM_INT);
+            $stmt->bindParam(':id_materia', $id_materia, PDO::PARAM_INT);
+            
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error removing subject from group: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Obtiene las materias asignadas a un grupo
+     */
+    public function getSubjectsForGroup($id_grupo) {
+        try {
+            $query = "SELECT m.*, gm.horas_semanales, gm.fecha_asignacion, p.nombre as pauta_anep_nombre
+                     FROM materia m 
+                     INNER JOIN grupo_materia gm ON m.id_materia = gm.id_materia 
+                     LEFT JOIN pauta_anep p ON m.id_pauta_anep = p.id_pauta_anep
+                     WHERE gm.id_grupo = :id_grupo 
+                     ORDER BY m.nombre";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_grupo', $id_grupo, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting subjects for group: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Obtiene los grupos asignados a una materia
+     */
+    public function getGroupsForSubject($id_materia) {
+        try {
+            $query = "SELECT g.*, gm.horas_semanales, gm.fecha_asignacion
+                     FROM grupo g 
+                     INNER JOIN grupo_materia gm ON g.id_grupo = gm.id_grupo 
+                     WHERE gm.id_materia = :id_materia 
+                     ORDER BY g.nivel, g.nombre";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_materia', $id_materia, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting groups for subject: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Obtiene todos los grupos con sus materias asignadas
+     */
+    public function getAllGroupsWithSubjects() {
+        try {
+            $query = "SELECT g.*, 
+                            STRING_AGG(m.nombre, ', ' ORDER BY m.nombre) as materias_asignadas,
+                            COUNT(gm.id_materia) as total_materias
+                     FROM grupo g 
+                     LEFT JOIN grupo_materia gm ON g.id_grupo = gm.id_grupo 
+                     LEFT JOIN materia m ON gm.id_materia = m.id_materia 
+                     GROUP BY g.id_grupo, g.nombre, g.nivel
+                     ORDER BY g.nivel, g.nombre";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting all groups with subjects: " . $e->getMessage());
             return false;
         }
     }

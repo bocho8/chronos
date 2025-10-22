@@ -1,5 +1,11 @@
 <?php
 /**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
+
+/**
  * Dashboard del Docente
  * Panel de control para gestión de clases y horarios
  */
@@ -157,15 +163,16 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col">
-            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+        <main class="flex-1 flex flex-col main-content">
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
                 <div class="w-8"></div>
                 
-                <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_teacher'); ?>)</div>
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_teacher'); ?>)</div>
+                <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
                 
                 <div class="flex items-center">
-                    <?php echo $languageSwitcher->render('', 'mr-4'); ?>
-                    <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
+                    <?php echo $languageSwitcher->render('', 'mr-2 md:mr-4'); ?>
+                    <button class="mr-2 md:mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
                         <span class="text-white text-sm">🔔</span>
                     </button>
                     
@@ -197,11 +204,11 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
                 </div>
             </header>
 
-            <section class="flex-1 px-6 py-8">
+            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-7xl mx-auto">
-                    <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('teacher_dashboard'); ?></h2>
-                        <p class="text-muted mb-6 text-base"><?php _e('teacher_dashboard_description'); ?></p>
+                    <div class="mb-6 md:mb-8">
+                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('teacher_dashboard'); ?></h2>
+                        <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('teacher_dashboard_description'); ?></p>
                         
                         <?php if ($isAdminAccessingTeacherView): ?>
                             <div class="mb-6 p-4 rounded-lg bg-blue-50 text-blue-800 border border-blue-200">

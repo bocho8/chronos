@@ -1,5 +1,11 @@
 <?php
 /**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
+
+/**
  * Módulo de Asignación de Docentes para el director
  */
 
@@ -37,31 +43,35 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <body class="bg-gray-100 font-sans text-gray-800">
 
     <div class="flex h-screen">
-        <aside class="w-64 bg-white shadow-lg flex flex-col items-center">
+        <aside class="w-56 md:w-64 bg-white shadow-lg flex flex-col items-center">
             
-            <div class="flex items-center space-x-2 w-full pl-6 bg-blue-900 text-white h-20">
-                <img src="assets/images/LogoScuola.png" alt="Logo" class="h-10 w-10">
-                <span class="text-xl font-bold leading-tight">Scuola Italiana<br>di Montevideo</span>
+            <div class="flex items-center space-x-2 w-full pl-4 md:pl-6 bg-blue-900 text-white h-16 md:h-20">
+                <img src="assets/images/LogoScuola.png" alt="Logo" class="h-6 md:h-8 w-auto">
+                <span class="text-lg md:text-xl font-bold leading-tight hidden sm:block">Scuola Italiana<br>di Montevideo</span>
+                <span class="text-sm font-bold sm:hidden">SIM</span>
             </div>
             
-            <nav class="w-full p-6">
+            <nav class="w-full p-4 md:p-6">
                 <ul>
-                    <li class="mb-4">
-                        <a href="dashboard.php" class="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded-md 
+                    <li class="mb-3 md:mb-4">
+                        <a href="dashboard.php" class="flex items-center p-2 text-sm md:text-base text-gray-600 hover:bg-gray-200 rounded-md 
                             <?php echo ($current_page == 'dashboard.php' || $current_page == 'index.php') ? 'bg-blue-100 text-blue-800 font-semibold' : ''; ?>">
-                            Inicio
+                            <span class="hidden md:inline">Inicio</span>
+                            <span class="md:hidden">🏠</span>
                         </a>
                     </li>
-                    <li class="mb-4">
-                        <a href="director-horarios.php" class="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded-md 
+                    <li class="mb-3 md:mb-4">
+                        <a href="director-horarios.php" class="flex items-center p-2 text-sm md:text-base text-gray-600 hover:bg-gray-200 rounded-md 
                             <?php echo ($current_page == 'director-horarios.php') ? 'bg-blue-100 text-blue-800 font-semibold' : ''; ?>">
-                            Horarios Semanales
+                            <span class="hidden md:inline">Horarios Semanales</span>
+                            <span class="md:hidden">📅</span>
                         </a>
                     </li>
-                    <li class="mb-4">
-                        <a href="director-asignacion.php" class="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded-md
+                    <li class="mb-3 md:mb-4">
+                        <a href="director-asignacion.php" class="flex items-center p-2 text-sm md:text-base text-gray-600 hover:bg-gray-200 rounded-md
                             <?php echo ($current_page == 'director-asignacion.php') ? 'bg-blue-100 text-blue-800 font-semibold' : ''; ?>">
-                            Asignación Docentes
+                            <span class="hidden md:inline">Asignación Docentes</span>
+                            <span class="md:hidden">👥</span>
                         </a>
                     </li>
                 </ul>
@@ -69,23 +79,23 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </aside>
 
         <div class="flex-1 flex flex-col">
-            <header class="flex justify-center items-center px-8 shadow-md bg-blue-900 h-20">
-                <h1 class="text-3xl font-bold text-white">Bienvenido (Director)</h1>
-                <button class="absolute right-8 text-white hover:text-gray-300 h-full flex items-center"> 
+            <header class="flex justify-center items-center px-4 md:px-8 shadow-md bg-blue-900 h-16 md:h-20">
+                <h1 class="text-xl md:text-3xl font-bold text-white">Bienvenido (Director)</h1>
+                <button class="absolute right-4 md:right-8 text-white hover:text-gray-300 h-full flex items-center"> 
                     <span class="text-sm">📋</span>
                 </button>
             </header>
-            <main class="flex-1 p-8 overflow-y-auto">
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto">
                 <div class="max-w-6xl mx-auto">
-                    <h2 class="text-4xl font-bold text-gray-800 mb-2 text-center">Módulo de Asignación de Docentes</h2>
-                    <p class="text-gray-500 mb-8 text-center">Asigna grupos y materias a los docentes utilizando drag & drop</p>
+                    <h2 class="text-2xl md:text-4xl font-bold text-gray-800 mb-2 text-center">Módulo de Asignación de Docentes</h2>
+                    <p class="text-gray-500 mb-6 md:mb-8 text-center text-sm md:text-base">Asigna grupos y materias a los docentes utilizando drag & drop</p>
                     
-                    <div class="flex justify-center space-x-4 mb-12">
-                        <button class="px-6 py-2 bg-blue-900 text-white font-medium rounded-md hover:bg-blue-800">Docentes</button>
-                        <button class="px-6 py-2 bg-gray-200 text-gray-800 font-medium rounded-md hover:bg-gray-300">Carga Horaria</button>
+                    <div class="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4 mb-8 md:mb-12">
+                        <button class="px-4 md:px-6 py-2 bg-blue-900 text-white font-medium rounded-md hover:bg-blue-800 text-sm md:text-base">Docentes</button>
+                        <button class="px-4 md:px-6 py-2 bg-gray-200 text-gray-800 font-medium rounded-md hover:bg-gray-300 text-sm md:text-base">Carga Horaria</button>
                     </div>
 
-                    <h3 class="text-3xl font-bold text-gray-800 mb-8 text-center">Listado de Docentes</h3>
+                    <h3 class="text-xl md:text-3xl font-bold text-gray-800 mb-6 md:mb-8 text-center">Listado de Docentes</h3>
                     <div class="flex justify-center space-x-12 mb-16">
                         
                         <div class="flex flex-col items-center text-center">

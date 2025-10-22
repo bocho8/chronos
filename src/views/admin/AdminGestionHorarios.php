@@ -1,4 +1,10 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
+
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -27,19 +33,19 @@ try {
     $database = new Database($dbConfig);
     
     $horarioModel = new Horario($database->getConnection());
-    $horarios = $horarioModel->getAllHorarios();
     $bloques = $horarioModel->getAllBloques();
-    $materias = $horarioModel->getAllMaterias();
+    $materias = $horarioModel->getSubjectsWithTeacherCounts();
     $docentes = $horarioModel->getAllDocentes();
+    
+    // Get publish request status
+    $publishStatus = $horarioModel->getPublishRequestStatus();
+    $canRequestPublish = AuthHelper::hasRole('COORDINADOR') || AuthHelper::hasRole('ADMIN');
     
     require_once __DIR__ . '/../../models/Grupo.php';
     $grupoModel = new Grupo($database->getConnection());
     $grupos = $grupoModel->getAllGrupos();
 
-    if ($horarios === false) {
-        $horarios = [];
-    }
-    
+    // Initialize empty schedule grid - schedules will be loaded via AJAX
     $scheduleGrid = [];
     $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
     
@@ -51,18 +57,8 @@ try {
         }
     }
     
-    foreach ($horarios as $horario) {
-        $dia = $horario['dia'];
-        $id_bloque = (int)$horario['id_bloque'];
-        
-        $scheduleGrid[$dia][$id_bloque] = $horario;
-    }
-    
-    error_log("Schedule grid filled successfully. LUNES[1] = " . ($scheduleGrid['LUNES'][1] ? 'EXISTS' : 'NULL'));
     
 } catch (Exception $e) {
-    error_log("Error cargando horarios: " . $e->getMessage());
-    $horarios = [];
     $bloques = [];
     $grupos = [];
     $materias = [];
@@ -76,13 +72,17 @@ try {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title><?php _e('app_name'); ?> — <?php _e('admin_panel'); ?> · <?php _e('schedule_management'); ?></title>
-    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/styles.css?v=<?php echo time(); ?>">
     <?php echo Sidebar::getStyles(); ?>
     <style type="text/css">
         body {
             overflow-x: hidden;
         }
+        
         .sidebar-link {
             position: relative;
             transition: all 0.3s;
@@ -142,6 +142,28 @@ try {
             cursor: pointer;
             transition: all 0.2s;
             min-width: 100px;
+            vertical-align: top;
+        }
+        
+        /* Time column styling to maintain proper alignment */
+        tbody tr td:first-child {
+            background-color: #34495e !important;
+            color: white !important;
+            font-weight: 600 !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+            width: 128px;
+            white-space: nowrap;
+        }
+        
+        /* Ensure table cells are properly aligned */
+        table.table-fixed {
+            table-layout: fixed;
+        }
+        
+        table.table-fixed th,
+        table.table-fixed td {
+            border-collapse: collapse;
         }
         .horario-cell:hover {
             opacity: 0.9;
@@ -149,15 +171,29 @@ try {
         }
         @media (max-width: 768px) {
             .horario-cell {
-                min-width: 80px;
-                font-size: 0.75rem;
-                padding: 6px 4px;
+                min-width: 70px;
+                font-size: 0.7rem;
+                padding: 4px 2px;
+            }
+            .sidebar-content {
+                max-height: 200px;
+                overflow-y: auto;
+            }
+        }
+        @media (max-width: 640px) {
+            .horario-cell {
+                min-width: 60px;
+                font-size: 0.65rem;
+                padding: 2px 1px;
+            }
+            .sidebar-content {
+                max-height: 150px;
             }
         }
         @media (max-width: 480px) {
             .horario-cell {
-                min-width: 60px;
-                font-size: 0.65rem;
+                min-width: 50px;
+                font-size: 0.6rem;
             }
         }
 
@@ -170,6 +206,583 @@ try {
         .conflict-warning .bg-blue-100 {
             background-color: #fecaca !important;
             color: #dc2626 !important;
+            border: 1px solid #fca5a5 !important;
+        }
+        
+        .conflict-indicator {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        /* Group-centric schedule management styles */
+        .group-selector-primary {
+            border: 2px solid #3b82f6;
+            background-color: #eff6ff;
+        }
+        
+        .schedule-cell-disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        .schedule-cell-conflict {
+            border: 2px solid #f59e0b;
+            background-color: #fef3c7;
+        }
+        
+        .schedule-cell-comparison {
+            border: 2px solid #10b981;
+        }
+        
+        .view-button-active {
+            transform: scale(1.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .error-input {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+        }
+        
+        /* Drag & Drop Sidebar Styles */
+        .sidebar-collapsed #sidebarContent {
+            display: none !important;
+        }
+        
+        /* Ensure sidebar is visible by default */
+        #sidebarContent {
+            display: block;
+        }
+        
+        /* Alternative selector for debugging */
+        .bg-white.rounded-lg.shadow-sm.border.border-lightborder.mb-6.sidebar-collapsed #sidebarContent {
+            display: none !important;
+        }
+        
+        .draggable-assignment {
+            cursor: grab;
+            transition: all 0.2s ease;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 10px;
+            background: white;
+            margin-bottom: 8px;
+            position: relative;
+        }
+        
+        .draggable-assignment:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-color: #3b82f6;
+        }
+        
+        .draggable-assignment:active {
+            cursor: grabbing;
+            transform: scale(0.98);
+        }
+        
+        .draggable-assignment.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+        
+        /* Grouped card specific styles - override and extend base */
+        .draggable-assignment.grouped-assignment {
+            padding: 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            position: relative; /* Ensure stacking context */
+            z-index: 1; /* Base z-index */
+        }
+        
+        /* Elevate card on hover to ensure expanded list appears on top */
+        .grouped-assignment:hover {
+            z-index: 100; /* Higher than other cards */
+        }
+        
+        /* Ensure proper internal spacing for grouped cards */
+        .grouped-assignment .assignment-header,
+        .grouped-assignment .assignment-stats,
+        .grouped-assignment .availability-bar,
+        .grouped-assignment .assignment-teachers-collapsed {
+            margin-bottom: 8px;
+        }
+        
+        .grouped-assignment .assignment-teachers-collapsed {
+            margin-bottom: 0; /* Last element - no margin */
+        }
+        
+        .draggable-existing-assignment.dragging {
+            opacity: 0.7;
+            transform: scale(1.05) rotate(2deg);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            border: 2px solid #3b82f6;
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
+            z-index: 1000;
+            position: relative;
+        }
+        
+        .assignment-availability {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .availability-available {
+            background-color: #10b981;
+        }
+        
+        .availability-partial {
+            background-color: #f59e0b;
+        }
+        
+        .availability-unavailable {
+            background-color: #ef4444;
+        }
+        
+        .assignment-subject {
+            font-weight: 600;
+            color: #111827;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        
+        .assignment-teacher {
+            color: #6b7280;
+            font-size: 12px;
+        }
+        
+        .assignment-hours {
+            color: #9ca3af;
+            font-size: 11px;
+            margin-top: 2px;
+        }
+        
+        /* Drop Zone Styles */
+        .drop-zone {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .drop-zone.drag-over {
+            background-color: #dbeafe !important;
+            border-color: #3b82f6 !important;
+            transform: scale(1.02);
+        }
+        
+        .drop-zone.drag-over-invalid {
+            background-color: #fef2f2 !important;
+            border-color: #ef4444 !important;
+            transform: scale(1.02);
+        }
+        
+        .drop-zone.drag-over-move {
+            background-color: #f0f9ff !important;
+            border-color: #0ea5e9 !important;
+            transform: scale(1.02);
+        }
+        
+        .drop-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 2px dashed #3b82f6;
+            border-radius: 4px;
+            background: rgba(59, 130, 246, 0.1);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: #3b82f6;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .drop-zone.drag-over .drop-indicator {
+            display: flex;
+        }
+        
+        .drop-zone.drag-over-invalid .drop-indicator {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        
+        .drop-zone.drag-over-move .drop-indicator {
+            border-color: #0ea5e9;
+            background: rgba(14, 165, 233, 0.1);
+            color: #0ea5e9;
+        }
+        
+        /* Loading States */
+        .assignment-loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .assignment-loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            margin: -8px 0 0 -8px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .draggable-assignment {
+                padding: 6px 8px;
+            }
+            
+            .assignment-subject {
+                font-size: 13px;
+            }
+            
+            .assignment-teacher {
+                font-size: 11px;
+            }
+        }
+        
+        /* Teacher availability highlighting during drag */
+        .availability-highlight-valid {
+            background-color: #d1fae5 !important; /* light green */
+            border: 3px solid #10b981 !important; /* green border */
+            box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.5), 0 0 8px rgba(16, 185, 129, 0.3) !important;
+            position: relative !important;
+        }
+
+        .availability-highlight-valid::before {
+            content: "✓" !important;
+            position: absolute !important;
+            top: 2px !important;
+            right: 2px !important;
+            color: #10b981 !important;
+            font-weight: bold !important;
+            font-size: 12px !important;
+            z-index: 10 !important;
+        }
+
+        .availability-highlight-invalid {
+            background-color: #fee2e2 !important; /* light red */
+            border: 3px solid #ef4444 !important; /* red border */
+            box-shadow: inset 0 0 12px rgba(239, 68, 68, 0.5), 0 0 8px rgba(239, 68, 68, 0.3) !important;
+            opacity: 0.8 !important;
+            cursor: not-allowed !important;
+            position: relative !important;
+        }
+
+        .availability-highlight-invalid::before {
+            content: "✗" !important;
+            position: absolute !important;
+            top: 2px !important;
+            right: 2px !important;
+            color: #ef4444 !important;
+            font-weight: bold !important;
+            font-size: 12px !important;
+            z-index: 10 !important;
+        }
+
+        /* Ensure highlights are visible during drag and hover */
+        .drop-zone.availability-highlight-valid.drag-over {
+            background-color: #a7f3d0 !important; /* darker green on hover */
+            border-color: #059669 !important;
+            box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.7), 0 0 12px rgba(16, 185, 129, 0.5) !important;
+        }
+
+        .drop-zone.availability-highlight-invalid.drag-over {
+            background-color: #fca5a5 !important; /* darker red on hover */
+            border-color: #dc2626 !important;
+            box-shadow: inset 0 0 12px rgba(239, 68, 68, 0.7), 0 0 12px rgba(239, 68, 68, 0.5) !important;
+        }
+
+        /* Override any conflicting drag-over styles to preserve availability highlighting */
+        .drop-zone.availability-highlight-valid {
+            background-color: #d1fae5 !important; /* light green */
+            border: 3px solid #10b981 !important; /* green border */
+            box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.5), 0 0 8px rgba(16, 185, 129, 0.3) !important;
+        }
+
+        .drop-zone.availability-highlight-invalid {
+            background-color: #fee2e2 !important; /* light red */
+            border: 3px solid #ef4444 !important; /* red border */
+            box-shadow: inset 0 0 12px rgba(239, 68, 68, 0.5), 0 0 8px rgba(239, 68, 68, 0.3) !important;
+            opacity: 0.8 !important;
+            cursor: not-allowed !important;
+        }
+        
+        /* Compact Grouped Assignment Cards */
+        .grouped-assignment {
+            position: relative;
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .grouped-assignment:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: #3b82f6;
+        }
+        
+        .grouped-assignment.dragging {
+            opacity: 0.7;
+            transform: rotate(3deg) scale(1.05);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Completed Assignment Styles */
+        .assignment-completed {
+            opacity: 0.85;
+            cursor: not-allowed !important;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+            border: 2px solid #10b981 !important;
+            pointer-events: none;
+        }
+        
+        .assignment-completed:hover {
+            transform: none !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+        }
+        
+        .assignment-completed-badge {
+            background: #10b981;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .assignment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 8px; /* Add gap to prevent overlap */
+        }
+        
+        .assignment-subject {
+            font-weight: 600;
+            color: #111827;
+            font-size: 14px;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap; /* Prevent text wrapping into badge */
+        }
+        
+        .assignment-auto-badge {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            flex-shrink: 0; /* Prevent badge from shrinking */
+        }
+        
+        .assignment-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 11px;
+            color: #6b7280;
+            gap: 8px; /* Add spacing between stats */
+        }
+        
+        .teacher-count, .hours-available {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap; /* Prevent wrapping */
+        }
+        
+        .availability-bar {
+            width: 100%;
+            height: 8px; /* Increase from 6px for better visibility */
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            position: relative; /* Ensure fill renders correctly */
+        }
+        
+        .availability-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+            min-width: 2px; /* Ensure some visibility even at low percentages */
+        }
+        
+        .availability-fill.availability-high {
+            background: linear-gradient(90deg, #10b981, #059669);
+        }
+        
+        .availability-fill.availability-medium {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+        }
+        
+        .availability-fill.availability-low {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+        }
+        
+        .availability-fill.availability-complete {
+            background: linear-gradient(90deg, #d1fae5, #a7f3d0);
+        }
+        
+        /* Teacher badges container */
+        .teacher-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        /* Individual teacher badge */
+        .teacher-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 500;
+            border: 1px solid;
+            cursor: grab;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        /* Score-based colors for available teachers */
+        .teacher-badge.available.score-excellent {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .teacher-badge.available.score-good {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            border-color: #3b82f6;
+            color: #1e3a8a;
+        }
+
+        .teacher-badge.available.score-fair {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-color: #f59e0b;
+            color: #78350f;
+        }
+
+        .teacher-badge.available.score-low {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border-color: #ef4444;
+            color: #7f1d1d;
+        }
+
+        /* Hover effects */
+        .teacher-badge.available:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Dragging state */
+        .teacher-badge.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        /* Unavailable teacher badge */
+        .teacher-badge.unavailable {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: #6b7280;
+            opacity: 0.6;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .teacher-badge[draggable="false"] {
+            cursor: not-allowed;
+        }
+
+        /* More teachers indicator */
+        .teacher-badge-more {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 500;
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px dashed #d1d5db;
+            cursor: default;
+        }
+        
+        /* Remove old teacher list styles */
+        .assignment-teachers-collapsed,
+        .assignment-teachers-expanded,
+        .teacher-item {
+            display: none !important;
+        }
+        
+        /* Ensure proper card spacing in assignments list */
+        #assignmentsList {
+            display: flex;
+            flex-direction: column;
+            gap: 8px; /* Spacing between cards */
+        }
+        
+        /* Remove margin-bottom from last card since we're using gap */
+        #assignmentsList .draggable-assignment:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* Mobile Responsive for Compact Cards */
+        @media (max-width: 768px) {
+            .grouped-assignment {
+                padding: 8px;
+            }
+            
+            .assignment-subject {
+                font-size: 13px;
+            }
+            
+            .assignment-stats {
+                font-size: 10px;
+            }
+            
+            .assignment-teachers-collapsed {
+                font-size: 10px;
+                max-height: 24px;
+            }
         }
         
     </style>
@@ -178,19 +791,20 @@ try {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col">
+        <main class="flex-1 flex flex-col main-content">
             <!-- Header -->
-            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
                 <!-- Espacio para el botón de menú hamburguesa -->
                 <div class="w-8"></div>
                 
                 <!-- Título centrado -->
-                <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
                 
                 <!-- Contenedor de iconos a la derecha -->
                 <div class="flex items-center">
-                    <?php echo $languageSwitcher->render('', 'mr-4'); ?>
-                    <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
+                    <?php echo $languageSwitcher->render('', 'mr-2 md:mr-4'); ?>
+                    <button class="mr-2 md:mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
                         <span class="text-white text-sm">🔔</span>
                     </button>
                     
@@ -225,44 +839,119 @@ try {
             </header>
 
             <!-- Contenido principal - Centrado -->
-            <section class="flex-1 px-6 py-8">
-                <div class="max-w-6xl mx-auto">
-                            <div class="mb-8">
-                                <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('schedule_management'); ?></h2>
-                                <p class="text-muted mb-6 text-base"><?php _e('schedule_management_description'); ?></p>
+            <section class="flex-1 px-3 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
+                <div class="max-w-7xl mx-auto">
+                    <!-- Header de la página -->
+                    <div class="mb-6 md:mb-8">
+                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('schedule_management'); ?></h2>
+                        <p class="text-muted text-sm md:text-base"><?php _e('schedule_management_description'); ?></p>
+                    </div>
+                    
+                    <!-- Selector de Grupo Principal -->
+                    <div class="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-4 md:mb-6 border border-lightborder">
+                        <div class="max-w-md">
+                            <label for="filter_grupo" class="block text-base md:text-lg font-semibold text-darktext mb-2 md:mb-3">
+                                Seleccione un Grupo <span class="text-red-500">*</span>
+                            </label>
+                            <select id="filter_grupo" class="w-full px-3 md:px-4 py-2 md:py-3 border border-lightborder rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue text-sm md:text-base font-medium" required>
+                                <?php if (!empty($grupos)): ?>
+                                    <?php foreach ($grupos as $index => $grupo): ?>
+                                        <option value="<?php echo $grupo['id_grupo']; ?>" <?php echo $index === 0 ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($grupo['nombre'] . ' - ' . $grupo['nivel']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <option value="">No hay grupos disponibles</option>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Drag & Drop Sidebar -->
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder mb-4 md:mb-6">
+                        <div class="flex items-center justify-between p-3 md:p-4 border-b border-lightborder">
+                            <h3 class="font-medium text-darktext text-sm md:text-base"><?php _e('assignments'); ?></h3>
+                            <button id="sidebarToggle" class="p-2 rounded-md hover:bg-gray-100 transition-colors" title="Toggle Sidebar">
+                                <span class="text-lg">≡</span>
+                            </button>
+                        </div>
+                        
+                        <div id="sidebarContent" class="p-3 md:p-4">
+                            <!-- Search and Filters -->
+                            <div class="mb-4">
+                                <div class="relative mb-3">
+                                    <input type="text" id="sidebarSearch" placeholder="Buscar materia o docente..." 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-darkblue focus:border-darkblue">
+                                </div>
                                 
-                            </div>
-                            
-                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
-                        <!-- Header de la tabla -->
-                        <div class="p-4 border-b border-gray-200 bg-gray-50">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="font-medium text-darktext"><?php _e('schedules'); ?></h3>
-                                <div class="flex gap-2">
-                                    <button onclick="openHorarioModal()" class="py-2 px-4 border-none rounded cursor-pointer font-medium transition-all text-sm bg-darkblue text-white hover:bg-navy flex items-center">
-                                        <span class="mr-1 text-sm">+</span>
-                                        <?php _e('add_schedule'); ?>
+                                <div class="flex gap-2 mb-3">
+                                    <button id="filterAll" class="px-3 py-1 text-xs bg-darkblue text-white rounded hover:bg-blue-800">
+                                        Todos
+                                    </button>
+                                    <button id="filterAvailable" class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50">
+                                        Disponibles
+                                    </button>
+                                    <button id="filterBySubject" class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50">
+                                        Por Materia
                                     </button>
                                 </div>
                             </div>
                             
-                            <!-- Filtros -->
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label for="filter_grupo" class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Grupo</label>
-                                    <select id="filter_grupo" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue text-sm">
-                                        <option value="">Todos los grupos</option>
-                                        <?php foreach ($grupos as $grupo): ?>
-                                            <option value="<?php echo $grupo['id_grupo']; ?>">
-                                                <?php echo htmlspecialchars($grupo['nombre'] . ' - ' . $grupo['nivel']); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
+                            <!-- Assignments List -->
+                            <div id="assignmentsList" class="space-y-2 max-h-96 overflow-y-auto">
+                                <div class="text-center text-gray-500 text-sm py-8">
+                                    Seleccione un grupo para ver las asignaciones disponibles
                                 </div>
-                                
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Panel de Horarios -->
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
+                        <!-- Header del panel -->
+                        <div class="p-4 md:p-6 border-b border-lightborder bg-gray-50">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-medium text-darktext"><?php _e('schedules'); ?></h3>
+                                <div class="text-sm text-muted">
+                                    <?php _e('click_available_slot'); ?>
+                                </div>
+                            </div>
+                            
+                            <!-- Controles de vista -->
+                            <div class="flex gap-2 mb-4">
+                                <button id="viewNormal" class="px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800">
+                                    Vista Normal
+                                </button>
+                                <button id="viewConflicts" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50">
+                                    Ver Conflictos
+                                </button>
+                                <button id="viewComparison" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50">
+                                    Comparar Grupos
+                                </button>
+                                <?php if ($canRequestPublish): ?>
+                                <?php
+                                $buttonDisabled = $publishStatus === 'pendiente' ? 'disabled' : '';
+                                $buttonText = $publishStatus === 'pendiente' ? 'request_publish_pending' : 'request_publish_schedules';
+                                $buttonClass = $publishStatus === 'pendiente' 
+                                    ? 'px-3 py-1 text-sm bg-gray-400 text-white rounded cursor-not-allowed flex items-center' 
+                                    : 'px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center cursor-pointer';
+                                ?>
+                                <button 
+                                    id="btnRequestPublish" 
+                                    class="<?php echo $buttonClass; ?>"
+                                    <?php echo $buttonDisabled; ?>
+                                    onclick="requestPublish()">
+                                    <span class="mr-1">📢</span>
+                                    <?php _e($buttonText); ?>
+                                </button>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <!-- Filtros adicionales -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label for="filter_materia" class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Materia</label>
-                                    <select id="filter_materia" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue text-sm">
+                                    <select id="filter_materia" class="w-full px-3 py-2 border border-lightborder rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue text-sm">
                                         <option value="">Todas las materias</option>
                                         <?php foreach ($materias as $materia): ?>
                                             <option value="<?php echo $materia['id_materia']; ?>">
@@ -274,7 +963,7 @@ try {
                                 
                                 <div>
                                     <label for="filter_docente" class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Docente</label>
-                                    <select id="filter_docente" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue text-sm">
+                                    <select id="filter_docente" class="w-full px-3 py-2 border border-lightborder rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue text-sm">
                                         <option value="">Todos los docentes</option>
                                         <?php foreach ($docentes as $docente): ?>
                                             <option value="<?php echo $docente['id_docente']; ?>">
@@ -282,71 +971,54 @@ try {
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
-                            </div>
-                        </div>
-                        
-                            <div class="flex justify-between items-center mt-4">
-                                <div class="flex gap-2">
-                                    <button onclick="clearFilters()" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50">
-                                        Limpiar filtros
-                                    </button>
-                                    <span id="filterResults" class="text-sm text-gray-500"></span>
                                 </div>
                             </div>
+                            
+                            <div class="flex justify-between items-center mt-4">
+                                <button onclick="clearFilters()" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50">
+                                    Limpiar filtros
+                                </button>
+                                <span id="filterResults" class="text-sm text-gray-500"></span>
+                            </div>
                         </div>
                         
-                        <div class="overflow-x-auto">
-                            <table class="w-full border-collapse">
+                        <!-- Tabla de horarios -->
+                        <div class="overflow-x-auto p-2 md:p-4 lg:p-6">
+                            <table class="w-full border-collapse table-fixed rounded-lg overflow-hidden min-w-[600px]">
                                 <thead>
                                     <tr>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('time'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('monday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('tuesday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('wednesday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('thursday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('friday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 w-24 md:w-32 rounded-tl-lg text-xs md:text-sm"><?php _e('time'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('monday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('tuesday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('wednesday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('thursday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 rounded-tr-lg text-xs md:text-sm"><?php _e('friday'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php 
                                     $dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
-                                    foreach ($bloques as $bloque): 
+                                    $totalBloques = count($bloques);
+                                    foreach ($bloques as $index => $bloque): 
+                                        $isLastRow = ($index === $totalBloques - 1);
                                     ?>
                                         <tr>
-                                            <th class="bg-[#34495e] text-white p-2 text-center font-semibold border border-gray-300">
+                                            <td class="bg-[#34495e] text-white p-1 md:p-2 text-center font-semibold border border-gray-300 w-24 md:w-32 <?php echo $isLastRow ? 'rounded-bl-lg' : ''; ?> text-xs md:text-sm">
                                                 <?php echo date('H:i', strtotime($bloque['hora_inicio'])) . ' – ' . date('H:i', strtotime($bloque['hora_fin'])); ?>
-                                            </th>
-                                <?php foreach ($dias as $dia): ?>
-                                                <td class="horario-cell text-center font-medium p-2 border border-gray-300 cursor-pointer hover:bg-gray-50" 
-                                         data-bloque="<?php echo $bloque['id_bloque']; ?>" 
-                                                    data-dia="<?php echo $dia; ?>">
-                                        <?php 
-                                        $assignment = $scheduleGrid[$dia][(int)$bloque['id_bloque']] ?? null;
-                                        if ($assignment): ?>
-                                                        <div class="bg-blue-100 text-blue-800 p-1 rounded text-xs" 
-                                                             data-grupo-id="<?php echo $assignment['id_grupo']; ?>"
-                                                             data-materia-id="<?php echo $assignment['id_materia']; ?>"
-                                                             data-docente-id="<?php echo $assignment['id_docente']; ?>">
-                                                            <div class="font-semibold"><?php echo htmlspecialchars($assignment['grupo_nombre']); ?></div>
-                                                            <div><?php echo htmlspecialchars($assignment['materia_nombre']); ?></div>
-                                                            <div class="text-xs"><?php echo htmlspecialchars($assignment['docente_nombre'] . ' ' . $assignment['docente_apellido']); ?></div>
-                                                            <div class="mt-1">
-                                                                <button onclick="event.stopPropagation(); editHorario(<?php echo $assignment['id_horario']; ?>)" 
-                                                                        class="text-blue-600 hover:text-blue-800 text-xs mr-1">
-                                                                    <?php _e('edit'); ?>
-                                                </button>
-                                                                <button onclick="event.stopPropagation(); deleteHorario(<?php echo $assignment['id_horario']; ?>)" 
-                                                                        class="text-red-600 hover:text-red-800 text-xs">
-                                                                    <?php _e('delete'); ?>
-                                                </button>
-                                                            </div>
-                                            </div>
-                                        <?php else: ?>
-                                                            <div class="text-gray-400 text-xs cursor-pointer hover:text-gray-600 transition-colors" onclick="openScheduleModal(<?php echo $bloque['id_bloque']; ?>, '<?php echo $dia; ?>')">
-                                                <?php _e('available'); ?>
-                                            </div>
-                                        <?php endif; ?>
-                                                </td>
+                                            </td>
+                                <?php foreach ($dias as $diaIndex => $dia): ?>
+                                            <td class="horario-cell drop-zone text-center font-medium p-1 md:p-2 border border-gray-300 cursor-pointer hover:bg-gray-50 min-h-[50px] md:min-h-[60px] <?php echo ($isLastRow && $diaIndex === count($dias) - 1) ? 'rounded-br-lg' : ''; ?>" 
+                                                data-bloque="<?php echo $bloque['id_bloque']; ?>" 
+                                                data-dia="<?php echo $dia; ?>"
+                                                data-occupied="false"
+                                                onclick="openScheduleModal(<?php echo $bloque['id_bloque']; ?>, '<?php echo $dia; ?>')">
+                                                <div class="drop-indicator">
+                                                    <span class="text-xs">Drop here</span>
+                                                </div>
+                                                <div class="text-gray-400 text-xs hover:text-gray-600 transition-colors">
+                                                    <?php _e('available'); ?>
+                                                </div>
+                                            </td>
                                 <?php endforeach; ?>
                                         </tr>
                             <?php endforeach; ?>
@@ -359,49 +1031,276 @@ try {
         </main>
     </div>
 
-    <script src="/js/toast.js"></script>
+
+    <script src="/js/toast.js?v=<?php echo time(); ?>"></script>
+    <script src="/js/schedule-drag-drop.js?v=<?php echo time(); ?>"></script>
+    <script>
+        // Cache bust: <?php echo time(); ?> - Random: <?php echo rand(1000, 9999); ?>
+        
+        
+        // Loading state helper functions
+        function showCellLoadingState(bloqueId, dia) {
+            const cell = document.querySelector(`[data-bloque="${bloqueId}"][data-dia="${dia}"]`);
+            if (cell) {
+                cell.innerHTML = '<div class="text-gray-400 text-xs">Cargando...</div>';
+                cell.style.pointerEvents = 'none';
+            }
+        }
+        
+        function hideCellLoadingState() {
+            // Reset pointer-events on all cells to ensure they're clickable
+            const cells = document.querySelectorAll('.horario-cell');
+            cells.forEach(cell => {
+                cell.style.pointerEvents = '';
+            });
+        }
+        
+        function showButtonLoadingState(button) {
+            if (button) {
+                button.disabled = true;
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+                const originalText = button.textContent;
+                button.setAttribute('data-original-text', originalText);
+                button.textContent = 'Cargando...';
+            }
+        }
+        
+        function hideButtonLoadingState(button) {
+            if (button) {
+                button.disabled = false;
+                button.classList.remove('opacity-50', 'cursor-not-allowed');
+                const originalText = button.getAttribute('data-original-text');
+                if (originalText) {
+                    button.textContent = originalText;
+                    button.removeAttribute('data-original-text');
+                }
+            }
+        }
+
+        // Global function to avoid any scoping issues
+        window.handleScheduleFormSubmission = function(e) {
+            e.preventDefault();
+            
+            const form = document.getElementById('horarioForm');
+            if (!form) {
+                return;
+            }
+            
+            const submitButton = form.querySelector('button[type="button"][onclick*="handleScheduleFormSubmission"]');
+            showButtonLoadingState(submitButton);
+            
+            const url = '/src/controllers/HorarioHandler.php';
+            
+            const requestData = {
+                action: window.isEditMode ? 'update' : 'create',
+                id: document.getElementById('horario_id').value,
+                id_bloque: document.getElementById('horario_id_bloque').value,
+                dia: document.getElementById('horario_dia').value,
+                id_grupo: document.getElementById('id_grupo').value,
+                id_materia: document.getElementById('id_materia').value,
+                id_docente: document.getElementById('id_docente').value
+            };
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    closeHorarioModal();
+                    // Refresh grid instead of page reload
+                    if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
+                        filterScheduleGrid(selectedGroupId);
+                        // Reset pointer-events on cells after grid refresh
+                        hideCellLoadingState();
+                    }
+                } else {
+                    showToast('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error processing request', 'error');
+            })
+            .finally(() => {
+                hideButtonLoadingState(submitButton);
+            });
+        };
+        // Ensure showToast is available globally
+        if (typeof showToast === 'undefined') {
+            function showToast(message, type = 'info', options = {}) {
+                if (typeof window.toastManager !== 'undefined') {
+                    return window.toastManager.show(message, type, options);
+                } else {
+                    console.error('Toast system not available:', message);
+                    alert(message); // Fallback to alert
+                }
+            }
+        }
+    </script>
     <script>
         let isEditMode = false;
+        window.isEditMode = false;
         let currentBloque = null;
         let currentDia = null;
+        let currentViewMode = localStorage.getItem('scheduleViewMode') || 'conflicts';
+        let selectedGroupId = null;
+        let allSchedules = []; // Will be populated when schedules are loaded
 
         function openHorarioModal() {
             isEditMode = false;
-            document.getElementById('horarioModalTitle').textContent = '<?php _e('add_schedule'); ?>';
+            window.isEditMode = false;
+            document.getElementById('horarioModalTitle').textContent = '<?php _e('add_class_to_slot'); ?>';
             document.getElementById('horarioForm').reset();
             document.getElementById('horario_id').value = '';
             
-            document.getElementById('grupo_search').value = '';
-            document.getElementById('materia_search').value = '';
-            document.getElementById('docente_search').value = '';
+            // Clear search fields that still exist
+            const materiaSearch = document.getElementById('materia_search');
+            const docenteSearch = document.getElementById('docente_search');
+            if (materiaSearch) materiaSearch.value = '';
+            if (docenteSearch) docenteSearch.value = '';
             
-            resetSelectOptions('id_grupo');
+            // Hide teacher selection and info message
+            document.getElementById('teacher_selection_container').style.display = 'none';
+            document.getElementById('teacher_info_message').classList.add('hidden');
+            
+            // Reset select options that still exist
             resetSelectOptions('id_materia');
             resetSelectOptions('id_docente');
             
             clearErrors();
             document.getElementById('horarioModal').classList.remove('hidden');
+            
+            // Focus on first visible field (subject selector)
             setTimeout(() => {
-                document.getElementById('grupo_search').focus();
+                const materiaSelect = document.getElementById('id_materia');
+                if (materiaSelect) materiaSelect.focus();
             }, 100);
         }
 
         function openScheduleModal(idBloque, dia) {
+            // Validate that a group is selected
+            if (!selectedGroupId) {
+                showToast('Debe seleccionar un grupo primero', 'error');
+                return;
+            }
             currentBloque = idBloque;
             currentDia = dia;
             
             document.getElementById('horario_id_bloque').value = idBloque;
             document.getElementById('horario_dia').value = dia;
+            document.getElementById('id_grupo').value = selectedGroupId;
+            
+            // Map Spanish day names to translation keys
+            const dayTranslations = {
+                'LUNES': '<?php _e('monday'); ?>',
+                'MARTES': '<?php _e('tuesday'); ?>',
+                'MIERCOLES': '<?php _e('wednesday'); ?>',
+                'JUEVES': '<?php _e('thursday'); ?>',
+                'VIERNES': '<?php _e('friday'); ?>'
+            };
                 
                 const bloques = <?php echo json_encode($bloques); ?>;
                 const bloque = bloques.find(b => b.id_bloque == idBloque);
                 
                 if (bloque) {
+                const translatedDay = dayTranslations[dia] || dia;
+                const startTime = new Date('1970-01-01T' + bloque.hora_inicio).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                const endTime = new Date('1970-01-01T' + bloque.hora_fin).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                
                     document.getElementById('scheduleInfo').innerHTML = 
-                        `<strong><?php _e('schedule_time'); ?>:</strong> ${dia} ${bloque.hora_inicio.substring(0,5)} - ${bloque.hora_fin.substring(0,5)}`;
+                    `<strong><?php _e('schedule_time'); ?>:</strong> ${translatedDay} ${startTime} - ${endTime}`;
             }
             
             openHorarioModal();
+        }
+
+        function handleSubjectChange() {
+            const subjectId = document.getElementById('id_materia').value;
+            const teacherContainer = document.getElementById('teacher_selection_container');
+            const teacherSelect = document.getElementById('id_docente');
+            const teacherInfoMessage = document.getElementById('teacher_info_message');
+            const teacherInfoText = document.getElementById('teacher_info_text');
+            
+            if (!subjectId) {
+                teacherContainer.style.display = 'none';
+                teacherInfoMessage.classList.add('hidden');
+                return;
+            }
+            
+            // Check if subject has teachers assigned
+            const selectedOption = document.querySelector(`#id_materia option[value="${subjectId}"]`);
+            const teacherCount = parseInt(selectedOption.getAttribute('data-teacher-count')) || 0;
+            
+            if (teacherCount === 0) {
+                teacherContainer.style.display = 'none';
+                teacherInfoMessage.classList.remove('hidden');
+                teacherInfoText.textContent = 'Esta materia no tiene docentes asignados. Debe asignar docentes a la materia primero.';
+                teacherInfoMessage.className = 'bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-800';
+                return;
+            }
+            
+            // Fetch teachers for this subject
+            fetch(`/src/controllers/HorarioHandler.php?action=get_teachers_by_subject&id_materia=${subjectId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data.length > 0) {
+                        // Auto-select first teacher alphabetically
+                        teacherSelect.value = data.data[0].id_docente;
+                        
+                        if (data.data.length > 1) {
+                            // Show selector for manual choice
+                            populateTeacherSelect(data.data);
+                            teacherContainer.style.display = 'block';
+                            teacherInfoMessage.classList.add('hidden');
+                        } else {
+                            // Hide selector, single teacher auto-assigned
+                            teacherContainer.style.display = 'none';
+                            teacherInfoMessage.classList.remove('hidden');
+                            teacherInfoText.textContent = `Docente seleccionado automáticamente: ${data.data[0].nombre} ${data.data[0].apellido}`;
+                            teacherInfoMessage.className = 'bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800';
+                        }
+                    } else {
+                        // No teachers assigned - show error
+                        teacherContainer.style.display = 'none';
+                        teacherInfoMessage.classList.remove('hidden');
+                        teacherInfoText.textContent = 'No hay docentes asignados a esta materia';
+                        teacherInfoMessage.className = 'bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-800';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error cargando docentes de la materia', 'error');
+                });
+        }
+
+        function populateTeacherSelect(teachers) {
+            const teacherSelect = document.getElementById('id_docente');
+            const docenteSearch = document.getElementById('docente_search');
+            
+            // Clear existing options except the first one
+            while (teacherSelect.children.length > 1) {
+                teacherSelect.removeChild(teacherSelect.lastChild);
+            }
+            
+            // Add teacher options
+            teachers.forEach(teacher => {
+                const option = document.createElement('option');
+                option.value = teacher.id_docente;
+                option.textContent = `${teacher.nombre} ${teacher.apellido}`;
+                option.setAttribute('data-search', `${teacher.nombre.toLowerCase()} ${teacher.apellido.toLowerCase()}`);
+                teacherSelect.appendChild(option);
+            });
+            
+            // Reset search
+            docenteSearch.value = '';
         }
 
         function closeHorarioModal() {
@@ -413,12 +1312,13 @@ try {
         
         function editHorario(id) {
             isEditMode = true;
+            window.isEditMode = true;
             document.getElementById('horarioModalTitle').textContent = '<?php _e('edit_schedule'); ?>';
             const formData = new FormData();
             formData.append('action', 'get');
             formData.append('id', id);
             
-            fetch('/src/controllers/horario_handler.php', {
+            fetch('/src/controllers/HorarioHandler.php', {
                 method: 'POST',
                 body: formData
             })
@@ -433,10 +1333,25 @@ try {
                     document.getElementById('id_materia').value = schedule.id_materia;
                     document.getElementById('id_docente').value = schedule.id_docente;
                     
+                    // Switch to the group of the schedule being edited
+                    const groupFilter = document.getElementById('filter_grupo');
+                    if (groupFilter) {
+                        groupFilter.value = schedule.id_grupo;
+                        selectedGroupId = schedule.id_grupo;
+                        filterScheduleGrid(schedule.id_grupo);
+                    }
+                    
                     const scheduleInfo = document.getElementById('scheduleInfo');
                     scheduleInfo.innerHTML = `
                         <strong><?php _e('schedule_time'); ?>:</strong> ${schedule.dia} ${schedule.hora_inicio.substring(0,5)} - ${schedule.hora_fin.substring(0,5)}
                     `;
+                    
+                    // Show teacher selection container for editing
+                    document.getElementById('teacher_selection_container').style.display = 'block';
+                    document.getElementById('teacher_info_message').classList.add('hidden');
+                    
+                    // Trigger subject change to populate teachers
+                    handleSubjectChange();
                     
                     clearErrors();
                     document.getElementById('horarioModal').classList.remove('hidden');
@@ -457,11 +1372,21 @@ try {
         function deleteHorario(id) {
             const confirmMessage = `¿Está seguro de que desea eliminar esta asignación de horario?`;
             if (confirm(confirmMessage)) {
+                // Find the cell that contains this schedule to show loading state
+                const scheduleElement = document.querySelector(`[data-horario-id="${id}"]`);
+                let cellElement = null;
+                if (scheduleElement) {
+                    cellElement = scheduleElement.closest('.horario-cell');
+                    if (cellElement) {
+                        showCellLoadingState(cellElement.dataset.bloque, cellElement.dataset.dia);
+                    }
+                }
+                
                 const formData = new FormData();
                 formData.append('action', 'delete');
                 formData.append('id', id);
                 
-                fetch('/src/controllers/horario_handler.php', {
+                fetch('/src/controllers/HorarioHandler.php', {
                     method: 'POST',
                     body: formData
                 })
@@ -469,7 +1394,16 @@ try {
                 .then(data => {
                     if (data.success) {
                         showToast('Horario eliminado exitosamente', 'success');
-                        setTimeout(() => location.reload(), 1000);
+                        // Refresh grid instead of page reload
+                        if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
+                            filterScheduleGrid(selectedGroupId);
+                            // Reset pointer-events on cells after grid refresh
+                            hideCellLoadingState();
+                        }
+                        // Refresh drag-and-drop sidebar to update availability indicators
+                        if (typeof window.refreshScheduleDragEvents === 'function') {
+                            window.refreshScheduleDragEvents();
+                        }
                     } else {
                         showToast('Error: ' + data.message, 'error');
                     }
@@ -481,34 +1415,37 @@ try {
             }
         }
         
-        function handleHorarioFormSubmit(e) {
+        function handleScheduleFormSubmission(e) {
             e.preventDefault();
             
             if (!validateHorarioForm()) {
                 showToast('<?php _e('please_correct_errors'); ?>', 'error');
-                    return;
-                }
+                return;
+            }
+            
+            const form = document.getElementById('horarioForm');
+            const submitButton = form.querySelector('button[type="button"][onclick*="handleScheduleFormSubmission"]');
+            showButtonLoadingState(submitButton);
                 
-            const url = isEditMode 
-                ? `/admin/schedules/${document.getElementById('horario_id').value}`
-                : '/admin/schedules';
-            const method = isEditMode ? 'PUT' : 'POST';
+            const url = '/src/controllers/HorarioHandler.php';
+            const method = 'POST';
             
             let requestBody;
             let contentType;
             
-            if (isEditMode) {
-                const formData = new FormData(e.target);
-                const urlEncodedData = new URLSearchParams();
-                for (let [key, value] of formData.entries()) {
-                    urlEncodedData.append(key, value);
-                }
-                requestBody = urlEncodedData.toString();
-                contentType = 'application/x-www-form-urlencoded';
-                } else {
-                requestBody = new FormData(e.target);
-                contentType = null;
-            }
+            // Create a completely new request object
+            const requestData = {
+                action: isEditMode ? 'update' : 'create',
+                id: document.getElementById('horario_id').value,
+                id_bloque: document.getElementById('horario_id_bloque').value,
+                dia: document.getElementById('horario_dia').value,
+                id_grupo: document.getElementById('id_grupo').value,
+                id_materia: document.getElementById('id_materia').value,
+                id_docente: document.getElementById('id_docente').value
+            };
+            
+            requestBody = JSON.stringify(requestData);
+            contentType = 'application/json';
             
             const fetchOptions = {
                 method: method,
@@ -522,12 +1459,22 @@ try {
             }
             
             fetch(url, fetchOptions)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     showToast(data.message, 'success');
                     closeHorarioModal();
-                    setTimeout(() => location.reload(), 1000);
+                    // Refresh grid instead of page reload
+                    if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
+                        filterScheduleGrid(selectedGroupId);
+                        // Reset pointer-events on cells after grid refresh
+                        hideCellLoadingState();
+                    }
                 } else {
                     if (data.data && typeof data.data === 'object') {
                         Object.keys(data.data).forEach(field => {
@@ -541,6 +1488,9 @@ try {
             .catch(error => {
                 console.error('Error:', error);
                 showToast('<?php _e('error_processing_request'); ?>', 'error');
+            })
+            .finally(() => {
+                hideButtonLoadingState(submitButton);
             });
         }
         
@@ -570,12 +1520,35 @@ try {
             if (!materia) {
                 showFieldError('id_materia', '<?php _e('subject_required'); ?>');
                 isValid = false;
+            } else {
+                // Check if subject has teachers assigned
+                const selectedOption = document.querySelector(`#id_materia option[value="${materia}"]`);
+                const teacherCount = parseInt(selectedOption.getAttribute('data-teacher-count')) || 0;
+                
+                if (teacherCount === 0) {
+                    showFieldError('id_materia', 'Esta materia no tiene docentes asignados. Debe asignar docentes a la materia primero.');
+                    isValid = false;
+                }
             }
             
             const docente = document.getElementById('id_docente').value;
             if (!docente) {
                 showFieldError('id_docente', '<?php _e('teacher_required'); ?>');
                 isValid = false;
+            }
+            
+            // Check for conflicts if all required fields are filled
+            if (grupo && materia && docente) {
+                const bloqueId = document.getElementById('horario_id_bloque').value;
+                const dia = document.getElementById('horario_dia').value;
+                
+                if (bloqueId && dia) {
+                    const conflicts = checkScheduleConflicts(grupo, materia, docente, bloqueId, dia);
+                    if (conflicts.length > 0) {
+                        showToast(`Conflictos detectados: ${conflicts.map(c => c.message).join('; ')}`, 'error');
+                        isValid = false;
+                    }
+                }
             }
             
             return isValid;
@@ -605,11 +1578,111 @@ try {
         }
 
         function detectConflicts() {
-
             clearConflictWarnings();
             
+            // Fetch all schedules for comprehensive conflict detection
+            fetchAllSchedulesForConflicts();
+        }
+        
+        function fetchAllSchedulesForConflicts() {
+            fetch('/src/controllers/HorarioHandler.php?action=list')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        detectConflictsWithAllSchedules(data.data);
+                    } else {
+                        console.error('Error fetching all schedules for conflict detection:', data.message);
+                        // Fallback to current group only
+                        detectConflictsCurrentGroup();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching all schedules:', error);
+                    // Fallback to current group only
+                    detectConflictsCurrentGroup();
+                });
+        }
+        
+        function detectConflictsWithAllSchedules(allSchedules) {
+            const cells = document.querySelectorAll('.horario-cell');
+            const currentGroupAssignments = [];
+            let totalConflicts = 0;
+
+            // Get current group assignments from DOM
+            cells.forEach(cell => {
+                const assignment = cell.querySelector('.bg-blue-100');
+                if (assignment) {
+                    const grupoId = assignment.getAttribute('data-grupo-id');
+                    const materiaId = assignment.getAttribute('data-materia-id');
+                    const docenteId = assignment.getAttribute('data-docente-id');
+                    const bloqueId = cell.getAttribute('data-bloque');
+                    const dia = cell.getAttribute('data-dia');
+                    
+                    currentGroupAssignments.push({
+                        element: cell,
+                        assignment: assignment,
+                        grupoId: grupoId,
+                        materiaId: materiaId,
+                        docenteId: docenteId,
+                        bloqueId: bloqueId,
+                        dia: dia
+                    });
+                }
+            });
+            
+            // Check each current group assignment against all schedules
+            currentGroupAssignments.forEach(assignment => {
+                const conflicts = findConflictsWithAllSchedules(assignment, allSchedules);
+                if (conflicts.length > 0) {
+                    markAsConflict(assignment, conflicts);
+                    totalConflicts += conflicts.length;
+                }
+            });
+            
+            // Show conflict summary
+            showConflictSummary(totalConflicts);
+            
+            // Re-setup button events after conflict detection
+            reSetupAllButtonEvents();
+        }
+        
+        function showConflictSummary(conflictCount) {
+            let summaryElement = document.getElementById('conflictSummary');
+            
+            if (conflictCount > 0) {
+                if (!summaryElement) {
+                    // Create conflict summary element
+                    summaryElement = document.createElement('div');
+                    summaryElement.id = 'conflictSummary';
+                    summaryElement.className = 'bg-red-50 border border-red-200 rounded-md p-3 mb-4 text-red-800';
+                    
+                    // Insert after the view controls
+                    const viewControls = document.querySelector('.flex.gap-2.mb-4');
+                    if (viewControls) {
+                        viewControls.parentNode.insertBefore(summaryElement, viewControls.nextSibling);
+                    }
+                }
+                
+                summaryElement.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="mr-2 text-lg">⚠️</span>
+                        <div>
+                            <div class="font-semibold">Se detectaron ${conflictCount} conflicto${conflictCount > 1 ? 's' : ''}</div>
+                            <div class="text-sm">Revisa las asignaciones marcadas en rojo para resolver los conflictos</div>
+                        </div>
+                    </div>
+                `;
+                summaryElement.style.display = 'block';
+            } else if (summaryElement) {
+                summaryElement.style.display = 'none';
+            }
+        }
+        
+        function detectConflictsCurrentGroup() {
+            // Fallback: only check conflicts within current group
             const cells = document.querySelectorAll('.horario-cell');
             const assignments = [];
+            let totalConflicts = 0;
 
             cells.forEach(cell => {
                 const assignment = cell.querySelector('.bg-blue-100');
@@ -636,8 +1709,51 @@ try {
                 const conflicts = findConflicts(assignment, assignments);
                 if (conflicts.length > 0) {
                     markAsConflict(assignment, conflicts);
+                    totalConflicts += conflicts.length;
                 }
             });
+            
+            // Show conflict summary
+            showConflictSummary(totalConflicts);
+            
+            // Re-setup button events after conflict detection
+            reSetupAllButtonEvents();
+        }
+        
+        function findConflictsWithAllSchedules(currentAssignment, allSchedules) {
+            const conflicts = [];
+            const currentHorarioId = currentAssignment.assignment.getAttribute('data-horario-id');
+            
+            allSchedules.forEach(schedule => {
+                // Skip the same assignment
+                if (schedule.id_horario == currentHorarioId) {
+                    return;
+                }
+                
+                // Check for teacher conflicts (same teacher, same time slot)
+                if (currentAssignment.docenteId == schedule.id_docente && 
+                    currentAssignment.bloqueId == schedule.id_bloque && 
+                    currentAssignment.dia === schedule.dia) {
+                    conflicts.push({
+                        type: 'docente',
+                        message: `El docente ${schedule.docente_nombre} ${schedule.docente_apellido} ya tiene una clase en este horario (${schedule.grupo_nombre})`,
+                        conflictingSchedule: schedule
+                    });
+                }
+                
+                // Check for group conflicts (same group, same time slot)
+                if (currentAssignment.grupoId == schedule.id_grupo && 
+                    currentAssignment.bloqueId == schedule.id_bloque && 
+                    currentAssignment.dia === schedule.dia) {
+                    conflicts.push({
+                        type: 'grupo',
+                        message: `El grupo ${schedule.grupo_nombre} ya tiene una clase en este horario (${schedule.materia_nombre})`,
+                        conflictingSchedule: schedule
+                    });
+                }
+            });
+            
+            return conflicts;
         }
         
         function findConflicts(currentAssignment, allAssignments) {
@@ -672,12 +1788,52 @@ try {
         
         function markAsConflict(assignment, conflicts) {
             assignment.element.classList.add('conflict-warning');
+            assignment.assignment.classList.add('conflict-warning');
+            
+            // Remove any existing conflict indicators
+            const existingIndicators = assignment.assignment.querySelectorAll('.conflict-indicator');
+            existingIndicators.forEach(indicator => indicator.remove());
             
             const conflictIndicator = document.createElement('div');
-            conflictIndicator.className = 'text-red-600 text-xs font-bold mt-1';
+            conflictIndicator.className = 'conflict-indicator text-red-600 text-xs font-bold mt-1 bg-red-50 p-1 rounded border border-red-200';
             conflictIndicator.innerHTML = `⚠️ ${conflicts.map(c => c.message).join(' | ')}`;
             
             assignment.assignment.appendChild(conflictIndicator);
+            
+            // Re-setup button events for this specific assignment after adding conflict indicator
+            // This ensures buttons work even after DOM modifications
+            const editButton = assignment.assignment.querySelector('.edit-schedule-btn');
+            const deleteButton = assignment.assignment.querySelector('.delete-schedule-btn');
+            
+            if (editButton) {
+                const horarioId = editButton.getAttribute('data-horario-id');
+                if (horarioId) {
+                    // Remove any existing event listeners by cloning the button
+                    const newEditButton = editButton.cloneNode(true);
+                    editButton.parentNode.replaceChild(newEditButton, editButton);
+                    
+                    // Add fresh event listener
+                    newEditButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        editHorario(horarioId);
+                    });
+                }
+            }
+            
+            if (deleteButton) {
+                const horarioId = deleteButton.getAttribute('data-horario-id');
+                if (horarioId) {
+                    // Remove any existing event listeners by cloning the button
+                    const newDeleteButton = deleteButton.cloneNode(true);
+                    deleteButton.parentNode.replaceChild(newDeleteButton, deleteButton);
+                    
+                    // Add fresh event listener
+                    newDeleteButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteHorario(horarioId);
+                    });
+                }
+            }
         }
         
         function clearConflictWarnings() {
@@ -685,11 +1841,54 @@ try {
             conflictCells.forEach(cell => {
                 cell.classList.remove('conflict-warning');
                 
-                const conflictIndicators = cell.querySelectorAll('.text-red-600.text-xs.font-bold');
+                // Clear conflict indicators
+                const conflictIndicators = cell.querySelectorAll('.conflict-indicator');
                 conflictIndicators.forEach(indicator => {
                     indicator.remove();
                 });
             });
+            
+            // Also clear conflict warnings from assignment divs
+            const conflictAssignments = document.querySelectorAll('.bg-blue-100.conflict-warning');
+            conflictAssignments.forEach(assignment => {
+                assignment.classList.remove('conflict-warning');
+                const conflictIndicators = assignment.querySelectorAll('.conflict-indicator');
+                conflictIndicators.forEach(indicator => {
+                    indicator.remove();
+                });
+            });
+        }
+        
+        function checkScheduleConflicts(groupId, materiaId, docenteId, bloqueId, dia) {
+            const conflicts = [];
+            
+            // Check for teacher conflicts (same teacher, same time slot)
+            allSchedules.forEach(schedule => {
+                if (schedule.id_docente == docenteId && 
+                    schedule.id_bloque == bloqueId && 
+                    schedule.dia === dia) {
+                    conflicts.push({
+                        type: 'teacher',
+                        message: `El docente ${schedule.docente_nombre} ${schedule.docente_apellido} ya tiene una clase en este horario (${schedule.grupo_nombre})`,
+                        conflictingSchedule: schedule
+                    });
+                }
+            });
+            
+            // Check for group conflicts (same group, same time slot)
+            allSchedules.forEach(schedule => {
+                if (schedule.id_grupo == groupId && 
+                    schedule.id_bloque == bloqueId && 
+                    schedule.dia === dia) {
+                    conflicts.push({
+                        type: 'group',
+                        message: `El grupo ${schedule.grupo_nombre} ya tiene una clase en este horario (${schedule.materia_nombre})`,
+                        conflictingSchedule: schedule
+                    });
+                }
+            });
+            
+            return conflicts;
         }
 
         function setupFilterFunctionality() {
@@ -769,11 +1968,8 @@ try {
                     }
                 });
                 
-                if (selectedGrupo || selectedMateria || selectedDocente) {
-                    filterResults.textContent = `Mostrando ${visibleCount} de ${totalCount} asignaciones`;
-                } else {
-                    filterResults.textContent = '';
-                }
+                // Update filter results using the new function
+                updateFilterResults();
             }
             
             if (filterGrupo) filterGrupo.addEventListener('change', applyFilters);
@@ -782,47 +1978,21 @@ try {
         }
         
         function clearFilters() {
-            document.getElementById('filter_grupo').value = '';
+            // Don't clear the group filter as it's required
             document.getElementById('filter_materia').value = '';
             document.getElementById('filter_docente').value = '';
-            document.getElementById('filterResults').textContent = '';
             
-            const cells = document.querySelectorAll('.horario-cell');
-            cells.forEach(cell => {
-                cell.style.display = 'table-cell';
-                const assignment = cell.querySelector('.bg-blue-100');
-                if (assignment) {
-                    assignment.style.display = 'block';
-                }
-            });
+            // Re-apply the current group filter
+            if (selectedGroupId) {
+                filterScheduleGrid(selectedGroupId);
+            } else {
+                // Update filter results even if no group is selected
+                updateFilterResults();
+            }
         }
 
         function setupSearchFunctionality() {
-
-            const grupoSearch = document.getElementById('grupo_search');
-            const grupoSelect = document.getElementById('id_grupo');
-            
-            if (grupoSearch && grupoSelect) {
-                grupoSearch.addEventListener('input', function() {
-                    const searchTerm = this.value.toLowerCase();
-                    const options = grupoSelect.querySelectorAll('option');
-                    
-                    options.forEach(option => {
-                        if (option.value === '') {
-                            option.style.display = 'block';
-                            return;
-                        }
-                        
-                        const searchData = option.getAttribute('data-search') || '';
-                        if (searchData.includes(searchTerm)) {
-                            option.style.display = 'block';
-            } else {
-                            option.style.display = 'none';
-                        }
-                    });
-                });
-            }
-
+            // materia_search still exists
             const materiaSearch = document.getElementById('materia_search');
             const materiaSelect = document.getElementById('id_materia');
             
@@ -834,9 +2004,9 @@ try {
                     options.forEach(option => {
                         if (option.value === '') {
                             option.style.display = 'block';
-                return;
-            }
-            
+                            return;
+                        }
+                        
                         const searchData = option.getAttribute('data-search') || '';
                         if (searchData.includes(searchTerm)) {
                             option.style.display = 'block';
@@ -847,6 +2017,7 @@ try {
                 });
             }
 
+            // docente_search still exists
             const docenteSearch = document.getElementById('docente_search');
             const docenteSelect = document.getElementById('id_docente');
             
@@ -858,9 +2029,9 @@ try {
                     options.forEach(option => {
                         if (option.value === '') {
                             option.style.display = 'block';
-                return;
-            }
-            
+                            return;
+                        }
+                        
                         const searchData = option.getAttribute('data-search') || '';
                         if (searchData.includes(searchTerm)) {
                             option.style.display = 'block';
@@ -872,10 +2043,403 @@ try {
             }
         }
 
+        // Store original assignment content for restoration
+        const originalAssignmentContent = new Map();
+
+        // Schedule grid filtering functions
+        function filterScheduleGrid(groupId) {
+            selectedGroupId = groupId;
+            
+            // Update hidden group field in modal
+            const hiddenGroupField = document.getElementById('id_grupo');
+            if (hiddenGroupField) {
+                hiddenGroupField.value = groupId;
+            }
+            
+            // Fetch schedules for the selected group from server
+            fetchSchedulesForGroup(groupId);
+        }
+        
+        function fetchSchedulesForGroup(groupId) {
+            // Show loading state
+            showLoadingState();
+            
+            // Fetch schedules for the specific group
+            fetch(`/src/controllers/HorarioHandler.php?action=list_by_grupo&id_grupo=${groupId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update the schedule grid with fresh data
+                        updateScheduleGrid(data.data, groupId);
+                    } else {
+                        showToast('Error cargando horarios: ' + data.message, 'error');
+                        // Fallback to empty grid
+                        updateScheduleGrid([], groupId);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching schedules:', error);
+                    showToast('Error cargando horarios del grupo', 'error');
+                    // Fallback to empty grid
+                    updateScheduleGrid([], groupId);
+                });
+        }
+        
+        function showLoadingState() {
+            const cells = document.querySelectorAll('.horario-cell');
+            cells.forEach(cell => {
+                cell.innerHTML = '<div class="text-gray-400 text-xs">Cargando...</div>';
+                cell.onclick = null;
+            });
+        }
+        
+        function updateScheduleGrid(schedules, groupId) {
+            // Update the global allSchedules array for conflict detection
+            allSchedules = schedules;
+            
+            // Create a map of schedules by day and block for quick lookup
+            const scheduleMap = {};
+            schedules.forEach(schedule => {
+                const key = `${schedule.dia}_${schedule.id_bloque}`;
+                scheduleMap[key] = schedule;
+            });
+            
+            // Get all schedule cells
+            const cells = document.querySelectorAll('.horario-cell');
+            
+            cells.forEach((cell, index) => {
+                const dia = cell.getAttribute('data-dia');
+                const bloque = cell.getAttribute('data-bloque');
+                const key = `${dia}_${bloque}`;
+                
+                // Reset cell display
+                cell.style.display = 'table-cell';
+                cell.style.opacity = '1';
+                
+                const schedule = scheduleMap[key];
+                
+                if (schedule) {
+                    // This cell has a schedule for the selected group
+                    cell.dataset.occupied = 'true';
+                    cell.innerHTML = `
+                        <div class="bg-blue-100 text-blue-800 p-1 rounded text-xs draggable-existing-assignment cursor-move" 
+                             draggable="true"
+                             data-grupo-id="${schedule.id_grupo}"
+                             data-materia-id="${schedule.id_materia}"
+                             data-docente-id="${schedule.id_docente}"
+                             data-horario-id="${schedule.id_horario}"
+                             data-assignment-id="${schedule.id_horario}"
+                             data-subject-id="${schedule.id_materia}"
+                             data-teacher-id="${schedule.id_docente}"
+                             data-subject-name="${schedule.materia_nombre}"
+                             data-teacher-name="${schedule.docente_nombre} ${schedule.docente_apellido}">
+                            <div class="font-semibold">${schedule.grupo_nombre}</div>
+                            <div>${schedule.materia_nombre}</div>
+                            <div class="text-xs">${schedule.docente_nombre} ${schedule.docente_apellido}</div>
+                            <div class="mt-1">
+                                <button class="edit-schedule-btn text-blue-600 hover:text-blue-800 text-xs mr-1" 
+                                        data-horario-id="${schedule.id_horario}">
+                                    <?php _e('edit'); ?>
+                                </button>
+                                <button class="delete-schedule-btn text-red-600 hover:text-red-800 text-xs" 
+                                        data-horario-id="${schedule.id_horario}">
+                                    <?php _e('delete'); ?>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    cell.onclick = null; // Remove click handler for assigned slots
+                } else {
+                    // This cell is available for the selected group
+                    cell.dataset.occupied = 'false';
+                    cell.innerHTML = '<div class="text-gray-400 text-xs hover:text-gray-600 transition-colors"><?php _e("available"); ?></div>';
+                    cell.onclick = function() {
+                        openScheduleModal(bloque, dia);
+                    };
+                }
+            });
+            
+            // Update filter results counter
+            updateFilterResults();
+            
+            // Apply view mode after grid is updated
+            if (currentViewMode === 'conflicts') {
+                detectConflicts();
+                // Note: reSetupAllButtonEvents() is called inside detectConflicts after it completes
+            } else if (currentViewMode === 'comparison') {
+                renderComparisonView();
+            }
+            
+            // Refresh drag and drop events for new schedule entries
+            if (window.scheduleDragDropManager) {
+                window.scheduleDragDropManager.refreshDragEvents();
+            }
+            
+            // Re-setup button events after grid update
+            // This ensures buttons work after AJAX operations
+            reSetupAllButtonEvents();
+            
+            // Debug: Test if buttons are actually clickable
+            setTimeout(() => {
+                const editButtons = document.querySelectorAll('.edit-schedule-btn');
+                const deleteButtons = document.querySelectorAll('.delete-schedule-btn');
+            }, 100);
+        }
+        
+        // Function to re-setup button events for all schedule assignments
+        function reSetupAllButtonEvents() {
+            const editButtons = document.querySelectorAll('.edit-schedule-btn');
+            const deleteButtons = document.querySelectorAll('.delete-schedule-btn');
+            
+            // Remove existing event listeners to avoid duplicates
+            editButtons.forEach((button) => {
+                button.replaceWith(button.cloneNode(true));
+            });
+            deleteButtons.forEach((button) => {
+                button.replaceWith(button.cloneNode(true));
+            });
+            
+            // Re-query after cloning to get fresh elements
+            const freshEditButtons = document.querySelectorAll('.edit-schedule-btn');
+            const freshDeleteButtons = document.querySelectorAll('.delete-schedule-btn');
+            
+            freshEditButtons.forEach((button, index) => {
+                const horarioId = button.getAttribute('data-horario-id');
+                
+                if (horarioId) {
+                    // Remove any existing onclick attributes
+                    button.removeAttribute('onclick');
+                    
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        editHorario(horarioId);
+                    });
+                }
+            });
+            
+            freshDeleteButtons.forEach((button, index) => {
+                const horarioId = button.getAttribute('data-horario-id');
+                
+                if (horarioId) {
+                    // Remove any existing onclick attributes
+                    button.removeAttribute('onclick');
+                    
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteHorario(horarioId);
+                    });
+                }
+            });
+        }
+        
+        
+        function updateFilterResults() {
+            const filterResults = document.getElementById('filterResults');
+            const filterMateria = document.getElementById('filter_materia');
+            const filterDocente = document.getElementById('filter_docente');
+            
+            if (!filterResults) return;
+            
+            const selectedMateria = filterMateria ? filterMateria.value : '';
+            const selectedDocente = filterDocente ? filterDocente.value : '';
+            
+            let visibleCount = 0;
+            let totalCount = 0;
+            
+            const cells = document.querySelectorAll('.horario-cell');
+            
+            cells.forEach((cell, index) => {
+                const assignment = cell.querySelector('.bg-blue-100');
+                let assignmentShouldShow = true;
+
+                if (assignment) {
+                    totalCount++;
+                    
+                    const materiaId = assignment.getAttribute('data-materia-id');
+                    const docenteId = assignment.getAttribute('data-docente-id');
+                    
+                    if (selectedMateria && materiaId !== selectedMateria) {
+                        assignmentShouldShow = false;
+                    }
+                    
+                    if (selectedDocente && docenteId !== selectedDocente) {
+                        assignmentShouldShow = false;
+                    }
+                    
+                    if (assignmentShouldShow) {
+                        visibleCount++;
+                    }
+                }
+            });
+            
+            if (selectedMateria || selectedDocente) {
+                filterResults.textContent = `Mostrando ${visibleCount} de ${totalCount} asignaciones`;
+            } else {
+                filterResults.textContent = totalCount > 0 ? `Total: ${totalCount} asignaciones` : '';
+            }
+        }
+        
+        
+        // View mode functions
+        function showNormalView() {
+            currentViewMode = 'normal';
+            localStorage.setItem('scheduleViewMode', 'normal');
+            updateViewButtons();
+            
+            // Clear conflict warnings and summary
+            clearConflictWarnings();
+            const summaryElement = document.getElementById('conflictSummary');
+            if (summaryElement) {
+                summaryElement.style.display = 'none';
+            }
+            
+            if (selectedGroupId) {
+                fetchSchedulesForGroup(selectedGroupId);
+            }
+        }
+        
+        function showConflictView() {
+            currentViewMode = 'conflicts';
+            localStorage.setItem('scheduleViewMode', 'conflicts');
+            updateViewButtons();
+            if (selectedGroupId) {
+                fetchSchedulesForGroup(selectedGroupId);
+            }
+        }
+        
+        function showComparisonView() {
+            currentViewMode = 'comparison';
+            localStorage.setItem('scheduleViewMode', 'comparison');
+            updateViewButtons();
+            if (selectedGroupId) {
+                fetchSchedulesForGroup(selectedGroupId);
+            }
+        }
+        
+        function updateViewButtons() {
+            const normalBtn = document.getElementById('viewNormal');
+            const conflictsBtn = document.getElementById('viewConflicts');
+            const comparisonBtn = document.getElementById('viewComparison');
+            
+            // Reset all buttons
+            [normalBtn, conflictsBtn, comparisonBtn].forEach(btn => {
+                btn.className = 'px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50';
+            });
+            
+            // Highlight active button - all use the same blue styling
+            if (currentViewMode === 'normal') {
+                normalBtn.className = 'px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800';
+            } else if (currentViewMode === 'conflicts') {
+                conflictsBtn.className = 'px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800';
+            } else if (currentViewMode === 'comparison') {
+                comparisonBtn.className = 'px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800';
+            }
+        }
+        
+        function renderComparisonView() {
+            // Color code different groups
+            const cells = document.querySelectorAll('.horario-cell');
+            const groupColors = {
+                1: 'bg-blue-100 border-blue-300',
+                2: 'bg-green-100 border-green-300',
+                3: 'bg-yellow-100 border-yellow-300',
+                4: 'bg-purple-100 border-purple-300',
+                5: 'bg-pink-100 border-pink-300'
+            };
+            
+            cells.forEach(cell => {
+                const assignment = cell.querySelector('.bg-blue-100');
+                if (assignment) {
+                    const groupId = cell.getAttribute('data-grupo-id');
+                    const colorClass = groupColors[groupId] || 'bg-gray-100 border-gray-300';
+                    
+                    // Remove existing color classes
+                    assignment.className = assignment.className.replace(/bg-\w+-\d+|border-\w+-\d+/g, '');
+                    // Add new color classes
+                    assignment.className += ' ' + colorClass;
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize group filter
+            const groupFilter = document.getElementById('filter_grupo');
+            if (groupFilter) {
+                // Check if there's a saved group preference
+                const savedGroup = localStorage.getItem('scheduleSelectedGroup');
+                let initialGroupId = null;
+                
+                if (savedGroup && groupFilter.querySelector(`option[value="${savedGroup}"]`)) {
+                    // Use saved group preference
+                    initialGroupId = savedGroup;
+                    groupFilter.value = savedGroup;
+                } else if (groupFilter.options.length > 0) {
+                    // Fallback to first group if no saved preference
+                    initialGroupId = groupFilter.options[0].value;
+                }
+                
+                if (initialGroupId) {
+                    selectedGroupId = initialGroupId;
+                    filterScheduleGrid(initialGroupId);
+                    // Notify drag and drop manager of the group selection
+                    if (window.setScheduleGroupId) {
+                        window.setScheduleGroupId(initialGroupId);
+                    }
+                }
+                
+                // Add change listener for group selection
+                groupFilter.addEventListener('change', function() {
+                    selectedGroupId = this.value;
+                    if (selectedGroupId) {
+                        filterScheduleGrid(selectedGroupId);
+                        // Notify drag and drop manager of the group change
+                        if (window.setScheduleGroupId) {
+                            window.setScheduleGroupId(selectedGroupId);
+                        }
+                    }
+                });
+            }
+            
             setupSearchFunctionality();
             
             setupFilterFunctionality();
+            
+            // Add event listener for subject change
+            const materiaSelect = document.getElementById('id_materia');
+            if (materiaSelect) {
+                materiaSelect.addEventListener('change', handleSubjectChange);
+            }
+            
+            
+            // Add view mode button listeners
+            const viewNormalBtn = document.getElementById('viewNormal');
+            const viewConflictsBtn = document.getElementById('viewConflicts');
+            const viewComparisonBtn = document.getElementById('viewComparison');
+            
+            if (viewNormalBtn) {
+                viewNormalBtn.addEventListener('click', showNormalView);
+            }
+            if (viewConflictsBtn) {
+                viewConflictsBtn.addEventListener('click', showConflictView);
+            }
+            if (viewComparisonBtn) {
+                viewComparisonBtn.addEventListener('click', showComparisonView);
+            }
+
+            // Apply the saved/default view mode (conflicts)
+            if (currentViewMode === 'comparison') {
+                // Set comparison button as active
+                document.getElementById('viewComparison').className = 'px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800';
+                document.getElementById('viewNormal').className = 'px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50';
+                document.getElementById('viewConflicts').className = 'px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50';
+            } else if (currentViewMode === 'conflicts') {
+                // Set conflicts button as active (this is the default)
+                document.getElementById('viewConflicts').className = 'px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800';
+                document.getElementById('viewNormal').className = 'px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50';
+                document.getElementById('viewComparison').className = 'px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50';
+            } else {
+                // normal view button styling already set by default in HTML
+            }
 
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
 
@@ -930,12 +2494,16 @@ try {
                     }
                 });
             }
+            
+            // Make sure functions are accessible globally
+            window.editHorario = editHorario;
+            window.deleteHorario = deleteHorario;
         });
     </script>
 
     <!-- Modal para agregar/editar horario -->
-    <div id="horarioModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md mx-auto">
+    <div id="horarioModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+        <div class="bg-white rounded-lg shadow-lg p-6 md:p-8 w-full max-w-md">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="horarioModalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_schedule'); ?></h3>
                 <button onclick="closeHorarioModal()" class="text-gray-400 hover:text-gray-600">
@@ -943,29 +2511,13 @@ try {
                 </button>
             </div>
             
-            <form id="horarioForm" onsubmit="handleHorarioFormSubmit(event)" class="space-y-4">
+            <form id="horarioForm" class="space-y-4">
                 <input type="hidden" id="horario_id" name="id">
                 <input type="hidden" id="horario_id_bloque" name="id_bloque">
                 <input type="hidden" id="horario_dia" name="dia">
                 
-                <div>
-                    <label for="id_grupo" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('group'); ?> <span class="text-red-500">*</span></label>
-                    <div class="relative">
-                        <input type="text" id="grupo_search" placeholder="Buscar grupo..." 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm mb-2">
-                        <select id="id_grupo" name="id_grupo" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
-                                aria-describedby="id_grupoError">
-                            <option value=""><?php _e('select_group'); ?></option>
-                            <?php foreach ($grupos as $grupo): ?>
-                                <option value="<?php echo $grupo['id_grupo']; ?>" data-search="<?php echo strtolower(htmlspecialchars($grupo['nombre'] . ' ' . $grupo['nivel'])); ?>">
-                                    <?php echo htmlspecialchars($grupo['nombre'] . ' - ' . $grupo['nivel']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <p id="id_grupoError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
-                </div>
+                <!-- Hidden group field - populated from filter selection -->
+                <input type="hidden" id="id_grupo" name="id_grupo" required>
                 
                 <div>
                     <label for="id_materia" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('subject'); ?> <span class="text-red-500">*</span></label>
@@ -977,8 +2529,15 @@ try {
                                 aria-describedby="id_materiaError">
                             <option value=""><?php _e('select_subject'); ?></option>
                             <?php foreach ($materias as $materia): ?>
-                                <option value="<?php echo $materia['id_materia']; ?>" data-search="<?php echo strtolower(htmlspecialchars($materia['nombre'])); ?>">
+                                <option value="<?php echo $materia['id_materia']; ?>" 
+                                        data-search="<?php echo strtolower(htmlspecialchars($materia['nombre'])); ?>"
+                                        data-teacher-count="<?php echo $materia['teacher_count']; ?>">
                                     <?php echo htmlspecialchars($materia['nombre']); ?>
+                                    <?php if ($materia['teacher_count'] == 0): ?>
+                                        [Sin docentes]
+                                    <?php else: ?>
+                                        [<?php echo $materia['teacher_count']; ?> docente<?php echo $materia['teacher_count'] > 1 ? 's' : ''; ?>]
+                                    <?php endif; ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -986,7 +2545,7 @@ try {
                     <p id="id_materiaError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
-                <div>
+                <div id="teacher_selection_container" style="display: none;">
                     <label for="id_docente" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('teacher'); ?> <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <input type="text" id="docente_search" placeholder="Buscar docente..." 
@@ -1005,6 +2564,13 @@ try {
                     <p id="id_docenteError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
                 </div>
                 
+                <div id="teacher_info_message" class="hidden bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
+                    <div class="flex items-center">
+                        <span class="mr-2">ℹ️</span>
+                        <span id="teacher_info_text">Docente seleccionado automáticamente</span>
+                    </div>
+                </div>
+                
                 <div id="scheduleInfo" class="bg-gray-50 p-3 rounded text-sm text-gray-600"></div>
 
                 <div class="flex justify-end space-x-3 pt-4">
@@ -1012,7 +2578,7 @@ try {
                             class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
                         <?php _e('cancel'); ?>
                     </button>
-                    <button type="submit" 
+                    <button type="button" onclick="handleScheduleFormSubmission(event)" 
                             class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkblue hover:bg-navy focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-darkblue">
                         <?php _e('save'); ?>
                     </button>
@@ -1023,5 +2589,79 @@ try {
 
     <!-- Toast Container -->
     <div id="toastContainer"></div>
+
+    <script>
+        // Publish Request Functions
+        function requestPublish() {
+            if (!confirm('<?php _e('confirm_request_publish'); ?>')) {
+                return;
+            }
+            
+            fetch('/admin/api/publish-request/create?action=create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('<?php _e('publish_request_success'); ?>', 'success');
+                    updatePublishButton('pendiente');
+                } else {
+                    showToast(data.message || '<?php _e('publish_request_failed'); ?>', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('<?php _e('publish_request_failed'); ?>', 'error');
+            });
+        }
+
+        function updatePublishButton(status) {
+            const btn = document.getElementById('btnRequestPublish');
+            if (!btn) return;
+            
+            if (status === 'pendiente') {
+                btn.disabled = true;
+                btn.className = 'px-3 py-1 text-sm bg-gray-400 text-white rounded cursor-not-allowed flex items-center';
+                // Update the text node after the span
+                const textNode = btn.childNodes[2]; // The text node after the span
+                if (textNode) {
+                    textNode.textContent = ' <?php _e('request_publish_pending'); ?>';
+                }
+            } else {
+                btn.disabled = false;
+                btn.className = 'px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center cursor-pointer';
+                // Update the text node after the span
+                const textNode = btn.childNodes[2]; // The text node after the span
+                if (textNode) {
+                    textNode.textContent = ' <?php _e('request_publish_schedules'); ?>';
+                }
+            }
+        }
+
+        // Check for schedule changes and reset button if needed
+        let originalScheduleHash = '<?php echo $horarioModel->getScheduleHash(); ?>';
+        
+        // Monitor for schedule changes (this would be called after any schedule modification)
+        function checkScheduleChanges() {
+            fetch('/admin/api/publish-request/status?action=status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.status !== 'pendiente') {
+                    updatePublishButton(data.status);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking publish status:', error);
+            });
+        }
+
+        // Check status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkScheduleChanges();
+        });
+    </script>
 </body>
 </html>

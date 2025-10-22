@@ -1,4 +1,10 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
+
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -69,52 +75,52 @@ $overloadedCount = count(array_filter($processedTeachers, function($t) { return 
         <?php include __DIR__ . '/../../components/Sidebar.php'; ?>
         
         <!-- Contenido principal -->
-        <main class="flex-1 px-6 py-6">
+        <main class="flex-1 px-4 md:px-6 py-4 md:py-6">
             <div class="max-w-6xl mx-auto">
                 <!-- Header -->
-                <div class="mb-6">
-                    <h1 class="text-2xl font-bold text-gray-900">Carga Horaria por Docente</h1>
-                    <p class="text-gray-600">Análisis de distribución de horas y materias</p>
+                <div class="mb-4 md:mb-6">
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-900">Carga Horaria por Docente</h1>
+                    <p class="text-sm md:text-base text-gray-600">Análisis de distribución de horas y materias</p>
                 </div>
                 
                 <!-- Controles -->
-                <div class="bg-white rounded-lg shadow border p-4 mb-6">
-                    <div class="flex justify-between items-center">
-                        <div class="flex gap-3">
+                <div class="bg-white rounded-lg shadow border p-3 md:p-4 mb-4 md:mb-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+                        <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                             <input type="text" 
                                    id="searchInput" 
                                    placeholder="Buscar docente, materia o grupo..."
-                                   class="px-3 py-2 border border-gray-300 rounded-md text-sm w-80">
-                            <select id="filterSelect" class="px-3 py-2 border border-gray-300 rounded-md text-sm">
+                                   class="px-3 py-2 border border-gray-300 rounded-md text-xs md:text-sm w-full sm:w-80">
+                            <select id="filterSelect" class="px-3 py-2 border border-gray-300 rounded-md text-xs md:text-sm w-full sm:w-auto">
                                 <option value="all">Todos</option>
                                 <option value="overloaded">Sobrecargados</option>
                                 <option value="underloaded">Poca Carga</option>
                                 <option value="optimal">Carga Óptima</option>
                             </select>
                         </div>
-                        <button id="exportBtn" class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">
-                            <i class="fas fa-download mr-2"></i>Exportar
+                        <button id="exportBtn" class="px-3 md:px-4 py-2 bg-green-600 text-white rounded-md text-xs md:text-sm hover:bg-green-700 w-full sm:w-auto">
+                            <i class="fas fa-download mr-1 md:mr-2"></i>Exportar
                         </button>
                     </div>
                 </div>
                 
                 <!-- Estadísticas -->
-                <div class="grid grid-cols-4 gap-4 mb-6">
-                    <div class="bg-blue-50 p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold text-blue-600"><?php echo $totalTeachers; ?></div>
-                        <div class="text-sm text-blue-700">Total Docentes</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+                    <div class="bg-blue-50 p-3 md:p-4 rounded-lg text-center">
+                        <div class="text-xl md:text-2xl font-bold text-blue-600"><?php echo $totalTeachers; ?></div>
+                        <div class="text-xs md:text-sm text-blue-700">Total Docentes</div>
                     </div>
-                    <div class="bg-green-50 p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold text-green-600"><?php echo $totalHours; ?></div>
-                        <div class="text-sm text-green-700">Horas Totales</div>
+                    <div class="bg-green-50 p-3 md:p-4 rounded-lg text-center">
+                        <div class="text-xl md:text-2xl font-bold text-green-600"><?php echo $totalHours; ?></div>
+                        <div class="text-xs md:text-sm text-green-700">Horas Totales</div>
                     </div>
-                    <div class="bg-purple-50 p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold text-purple-600"><?php echo $averageHours; ?></div>
-                        <div class="text-sm text-purple-700">Promedio</div>
+                    <div class="bg-purple-50 p-3 md:p-4 rounded-lg text-center">
+                        <div class="text-xl md:text-2xl font-bold text-purple-600"><?php echo $averageHours; ?></div>
+                        <div class="text-xs md:text-sm text-purple-700">Promedio</div>
                     </div>
-                    <div class="bg-red-50 p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold text-red-600"><?php echo $overloadedCount; ?></div>
-                        <div class="text-sm text-red-700">Sobrecarga</div>
+                    <div class="bg-red-50 p-3 md:p-4 rounded-lg text-center">
+                        <div class="text-xl md:text-2xl font-bold text-red-600"><?php echo $overloadedCount; ?></div>
+                        <div class="text-xs md:text-sm text-red-700">Sobrecarga</div>
                     </div>
                 </div>
                 

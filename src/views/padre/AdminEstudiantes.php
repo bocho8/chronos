@@ -1,4 +1,10 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
+
 require_once __DIR__ . '/../../config/session.php'; 
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -6,6 +12,7 @@ require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
+require_once __DIR__ . '/../../models/Padre.php';
 
 initSecureSession();
 
@@ -29,8 +36,18 @@ try {
     $database = new Database($dbConfig);
     
     $horarioModel = new Horario($database->getConnection());
+    $padreModel = new Padre($database->getConnection());
     
-    $grupos = $horarioModel->getAllGrupos();
+    // Get current user's padre ID
+    $currentUser = AuthHelper::getCurrentUser();
+    $id_padre = $padreModel->getPadreIdByUsuarioId($currentUser['id_usuario']);
+    
+    if (!$id_padre) {
+        throw new Exception("Parent profile not found");
+    }
+    
+    // Get only groups assigned to this parent
+    $grupos = $padreModel->getGroupsForParent($id_padre);
     
     $searchTerm = $_GET['search'] ?? '';
     $selectedGrupo = $_GET['grupo'] ?? '';
@@ -42,10 +59,11 @@ try {
                          g.nivel as tipo,
                          COUNT(DISTINCT h.id_horario) as total_horarios
                   FROM grupo g 
+                  INNER JOIN padre_grupo pg ON g.id_grupo = pg.id_grupo
                   LEFT JOIN horario h ON g.id_grupo = h.id_grupo 
-                  WHERE 1=1";
+                  WHERE pg.id_padre = :id_padre";
         
-        $params = [];
+        $params = ['id_padre' => $id_padre];
         
         if (!empty($searchTerm)) {
             $query .= " AND g.nombre ILIKE :search";
@@ -70,11 +88,14 @@ try {
                          g.nivel as tipo,
                          COUNT(DISTINCT h.id_horario) as total_horarios
                   FROM grupo g 
+                  INNER JOIN padre_grupo pg ON g.id_grupo = pg.id_grupo
                   LEFT JOIN horario h ON g.id_grupo = h.id_grupo 
+                  WHERE pg.id_padre = :id_padre
                   GROUP BY g.id_grupo, g.nombre, g.nivel 
                   ORDER BY g.nivel, g.nombre";
         
         $stmt = $database->getConnection()->prepare($query);
+        $stmt->bindParam(':id_padre', $id_padre, PDO::PARAM_INT);
         $stmt->execute();
         $estudiantes = $stmt->fetchAll();
     }
@@ -103,7 +124,10 @@ try {
             <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
                 <div class="w-8"></div>
                 
-                <div class="text-white text-xl font-semibold text-center">
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block">
+                    <?php _e('students_management'); ?>
+                </div>
+                <div class="text-white text-sm font-semibold text-center sm:hidden">
                     <?php _e('students_management'); ?>
                 </div>
                 

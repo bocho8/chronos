@@ -1,4 +1,9 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
 
 require_once __DIR__ . '/../app/Core/Router.php';
 require_once __DIR__ . '/../app/Middleware/AuthMiddleware.php';
@@ -10,6 +15,7 @@ require_once __DIR__ . '/../app/Controllers/Admin/AssignmentController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/SubjectController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/GroupController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/UserController.php';
+require_once __DIR__ . '/../app/Controllers/Admin/CoordinatorController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/TranslationController.php';
 
 use App\Core\Router;
@@ -110,6 +116,18 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->get('/gestion-horarios', function() {
             require __DIR__ . '/../views/admin/AdminGestionHorarios.php';
         });
+        
+        $router->get('/view-schedules', function() {
+            require __DIR__ . '/../views/admin/AdminScheduleViewer.php';
+        });
+        
+        $router->get('/test-schedule-viewer', function() {
+            require __DIR__ . '/../views/admin/TestScheduleViewer.php';
+        });
+        
+        $router->get('/simple-test', function() {
+            require __DIR__ . '/../views/admin/SimpleTest.php';
+        });
 
         $router->get('/users', 'Admin\UserController@index');
         $router->get('/users/create', 'Admin\UserController@create');
@@ -118,6 +136,15 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->get('/users/{id}/edit', 'Admin\UserController@edit');
         $router->put('/users/{id}', 'Admin\UserController@update');
         $router->delete('/users/{id}', 'Admin\UserController@destroy');
+
+        // Coordinator Management Routes
+        $router->get('/coordinators', 'Admin\CoordinatorController@index');
+        $router->get('/coordinators/create', 'Admin\CoordinatorController@create');
+        $router->post('/coordinators', 'Admin\CoordinatorController@store');
+        $router->get('/coordinators/{id}', 'Admin\CoordinatorController@show');
+        $router->get('/coordinators/{id}/edit', 'Admin\CoordinatorController@edit');
+        $router->put('/coordinators/{id}', 'Admin\CoordinatorController@update');
+        $router->delete('/coordinators/{id}', 'Admin\CoordinatorController@destroy');
 
 
         $router->get('/reports', function() {
@@ -136,6 +163,7 @@ $router->group(['middleware' => ['auth']], function($router) {
             require __DIR__ . '/../controllers/HorarioHandler.php';
         });
         $router->post('/api/users', 'Admin\UserController@handleRequest');
+        $router->post('/api/coordinators', 'Admin\CoordinatorController@handleRequest');
 
         // Translation Management Routes
         $router->get('/translations', 'Admin\TranslationController@index');
@@ -155,6 +183,22 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->get('/translations/statistics', 'Admin\TranslationController@getStatistics');
         $router->post('/translations/fill-missing', 'Admin\TranslationController@fillMissing');
         $router->post('/translations/validate-key', 'Admin\TranslationController@validateKey');
+        $router->get('/translations/detect-spanish', 'Admin\TranslationController@detectSpanishErrors');
+        $router->post('/translations/clear-all-spanish', 'Admin\TranslationController@clearAllSpanish');
+        
+        // Publish Request API Routes
+        $router->post('/api/publish-request/create', function() {
+            require __DIR__ . '/../controllers/PublishRequestHandler.php';
+        });
+        $router->get('/api/publish-request/status', function() {
+            require __DIR__ . '/../controllers/PublishRequestHandler.php';
+        });
+        $router->post('/api/publish-request/approve', function() {
+            require __DIR__ . '/../controllers/PublishRequestHandler.php';
+        });
+        $router->post('/api/publish-request/reject', function() {
+            require __DIR__ . '/../controllers/PublishRequestHandler.php';
+        });
     });
 
     $router->group(['prefix' => '/coordinator', 'middleware' => ['coordinator']], function($router) {

@@ -1,4 +1,9 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
 
 class Coordinador {
     private $db;
@@ -55,7 +60,7 @@ class Coordinador {
     /**
      * Crear nuevo coordinador
      */
-    public function createCoordinador($coordinadorData) {
+    public function createCoordinator($coordinadorData) {
         try {
             $this->db->beginTransaction();
 
@@ -106,7 +111,7 @@ class Coordinador {
     /**
      * Actualizar coordinador
      */
-    public function updateCoordinador($id, $coordinadorData) {
+    public function updateCoordinator($id, $coordinadorData) {
         try {
             $this->db->beginTransaction();
 
@@ -165,7 +170,7 @@ class Coordinador {
     /**
      * Eliminar coordinador
      */
-    public function deleteCoordinador($id) {
+    public function deleteCoordinator($id) {
         try {
             $this->db->beginTransaction();
 

@@ -1,3 +1,10 @@
+<?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -15,31 +22,32 @@
 <body class="bg-gray-100">
 
     <div class="flex h-screen">
-        <aside class="w-64 bg-white flex flex-col shadow-lg">
+        <aside class="w-56 md:w-64 bg-white flex flex-col shadow-lg">
             <div class="h-16 flex items-center justify-center bg-[#002366] border-b border-blue-950">
                 <div class="flex items-center space-x-2">
-                    <img src="/assets/images/LogoScuola.png" alt="Logo" class="h-8 w-auto">
-                    <h1 class="text-lg font-bold text-white">Scuola Italiana</h1>
+                    <img src="/assets/images/LogoScuola.png" alt="Logo" class="h-6 md:h-8 w-auto">
+                    <h1 class="text-sm md:text-lg font-bold text-white hidden sm:block">Scuola Italiana</h1>
+                    <h1 class="text-xs font-bold text-white sm:hidden">SIM</h1>
                 </div>
             </div>
-            <nav class="flex-1 px-4 py-4">
-                <ul class="space-y-2">
+            <nav class="flex-1 px-3 md:px-4 py-3 md:py-4">
+                <ul class="space-y-1 md:space-y-2">
                     <li>
-                        <a href="dashboard.php" class="flex items-center p-2 text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
+                        <a href="dashboard.php" class="flex items-center p-2 text-sm md:text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
                             <span class="text-sm">📋</span>
-                            <span class="ml-3">Inicio</span>
+                            <span class="ml-2 md:ml-3 hidden sm:inline">Inicio</span>
                         </a>
                     </li>
                     <li>
-                        <a href="coordinador-docentes.php" class="flex items-center p-2 text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
+                        <a href="coordinador-docentes.php" class="flex items-center p-2 text-sm md:text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
                             <span class="text-sm">📋</span>
-                            <span class="ml-3">Docentes</span>
+                            <span class="ml-2 md:ml-3 hidden sm:inline">Docentes</span>
                         </a>
                     </li>
                     <li>
-                        <a href="coordinador-calendario.php" class="flex items-center p-2 text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
+                        <a href="coordinador-calendario.php" class="flex items-center p-2 text-sm md:text-base font-normal text-gray-600 rounded-lg hover:bg-gray-100">
                             <span class="text-sm">📋</span>
-                            <span class="ml-3">Calendario</span>
+                            <span class="ml-2 md:ml-3 hidden sm:inline">Calendario</span>
                         </a>
                     </li>
                 </ul>
@@ -58,9 +66,9 @@
                 </div>
             </header>
 
-            <main class="flex-1 p-8 overflow-y-auto flex flex-col items-center">
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto flex flex-col items-center">
                 <div class="max-w-4xl w-full text-center">
-                    <h2 class="text-2xl font-semibold text-gray-700 mb-6">Seleccione sus horas disponibles.</h2>
+                    <h2 class="text-xl md:text-2xl font-semibold text-gray-700 mb-4 md:mb-6">Seleccione sus horas disponibles.</h2>
                     
                     <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
                         <table class="w-full border-collapse">

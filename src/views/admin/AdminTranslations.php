@@ -1,4 +1,10 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
+
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -92,16 +98,17 @@ if (!AuthHelper::checkSessionTimeout()) {
             background-color: #fef3c7;
             color: #d97706;
         }
-        .progress-bar {
-            height: 0.5rem;
-            background-color: #e5e7eb;
-            border-radius: 0.25rem;
-            overflow: hidden;
+        .status-spanish-error {
+            background-color: #fed7aa;
+            color: #c2410c;
         }
-        .progress-fill {
-            height: 100%;
-            background-color: #3b82f6;
-            transition: width 0.3s ease;
+        .spanish-error {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+        .spanish-error-cell {
+            background-color: #fef3c7;
+            border: 2px solid #f59e0b;
         }
         .search-container {
             position: sticky;
@@ -118,14 +125,15 @@ if (!AuthHelper::checkSessionTimeout()) {
         <?php echo $sidebar->render(); ?>
 
         <!-- Main -->
-        <main class="flex-1 flex flex-col">
+        <main class="flex-1 flex flex-col main-content">
             <!-- Header -->
-            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
                 <!-- Espacio para el botón de menú hamburguesa -->
                 <div class="w-8"></div>
                 
                 <!-- Título centrado -->
-                <div class="text-white text-xl font-semibold text-center"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
                 
                 <!-- Contenedor de iconos a la derecha -->
                 <div class="flex items-center">
@@ -165,11 +173,11 @@ if (!AuthHelper::checkSessionTimeout()) {
             </header>
 
             <!-- Contenido principal -->
-            <section class="flex-1 px-6 py-8">
+            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-6xl mx-auto">
-                    <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('translations_management'); ?></h2>
-                        <p class="text-muted mb-6 text-base"><?php _e('translations_management_description'); ?></p>
+                    <div class="mb-6 md:mb-8">
+                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('translations_management'); ?></h2>
+                        <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('translations_management_description'); ?></p>
                         
                         <!-- Export Buttons -->
                         <div class="flex items-center space-x-3 mb-6">
@@ -178,6 +186,10 @@ if (!AuthHelper::checkSessionTimeout()) {
                             </button>
                             <button onclick="exportTranslations('csv')" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
                                 <?php _e('export_csv'); ?>
+                            </button>
+                            <div class="flex-1"></div>
+                            <button onclick="openAddKeyModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                                + Add Key
                             </button>
                         </div>
                     </div>
@@ -240,10 +252,8 @@ if (!AuthHelper::checkSessionTimeout()) {
                                         <option value="complete"><?php _e('complete'); ?></option>
                                         <option value="missing"><?php _e('missing'); ?></option>
                                         <option value="partial"><?php _e('partial'); ?></option>
+                                        <option value="spanish-error">Spanish Errors</option>
                                     </select>
-                                    <button onclick="fillMissingTranslations()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
-                                        <?php _e('fill_missing'); ?>
-                                    </button>
                                     <button onclick="refreshTranslations()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
                                         <?php _e('refresh'); ?>
                                     </button>
@@ -289,11 +299,23 @@ if (!AuthHelper::checkSessionTimeout()) {
         </main>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
-            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span><?php _e('loading'); ?>...</span>
+
+    <!-- Add Key Modal -->
+    <div id="addKeyModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Add Translation Key</h3>
+                <button onclick="closeAddKeyModal()" class="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <div class="space-y-3">
+                <label for="addKeyInput" class="block text-sm font-medium text-gray-700">Key name</label>
+                <input id="addKeyInput" type="text" placeholder="new_key_name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <p id="addKeyError" class="text-sm text-red-600 hidden"></p>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+                <button onclick="closeAddKeyModal()" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"><?php _e('cancel'); ?></button>
+                <button onclick="submitAddKey()" id="addKeySubmit" class="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">Create</button>
+            </div>
         </div>
     </div>
 
@@ -304,6 +326,7 @@ if (!AuthHelper::checkSessionTimeout()) {
         let translations = {};
         let filteredTranslations = {};
         let editingKey = null;
+        let spanishErrors = {};
 
         // Logout functionality
         document.getElementById('logoutButton').addEventListener('click', function() {
@@ -321,10 +344,17 @@ if (!AuthHelper::checkSessionTimeout()) {
         function setupEventListeners() {
             document.getElementById('searchInput').addEventListener('input', filterTranslations);
             document.getElementById('statusFilter').addEventListener('change', filterTranslations);
+            // Modal Enter key
+            document.addEventListener('keydown', function(e) {
+                const modal = document.getElementById('addKeyModal');
+                if (!modal.classList.contains('hidden') && e.key === 'Enter') {
+                    e.preventDefault();
+                    submitAddKey();
+                }
+            });
         }
 
         async function loadTranslations() {
-            showLoading();
             try {
                 const response = await fetch('/admin/translations/all');
                 const data = await response.json();
@@ -339,8 +369,97 @@ if (!AuthHelper::checkSessionTimeout()) {
             } catch (error) {
                 console.error('Error loading translations:', error); // Debug log
                 showToast('Error loading translations: ' + error.message, 'error');
+            }
+        }
+
+        // Add Key Modal controls
+        function openAddKeyModal() {
+            const modal = document.getElementById('addKeyModal');
+            const input = document.getElementById('addKeyInput');
+            const err = document.getElementById('addKeyError');
+            err.classList.add('hidden');
+            err.textContent = '';
+            input.value = '';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => input.focus(), 0);
+        }
+
+        function closeAddKeyModal() {
+            const modal = document.getElementById('addKeyModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function submitAddKey() {
+            const input = document.getElementById('addKeyInput');
+            const err = document.getElementById('addKeyError');
+            const submitBtn = document.getElementById('addKeySubmit');
+            let key = (input.value || '').trim();
+
+            // Basic checks
+            if (!key) {
+                err.textContent = 'Key is required';
+                err.classList.remove('hidden');
+                return;
+            }
+
+            // Client-side format check to avoid unnecessary request
+            const formatRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+            if (!formatRegex.test(key)) {
+                err.textContent = 'Invalid key format. Use letters, numbers, underscores; cannot start with number.';
+                err.classList.remove('hidden');
+                return;
+            }
+
+            // Check duplicates from loaded data
+            if (translations[key]) {
+                err.textContent = 'Key already exists';
+                err.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Creating...';
+
+                // Server-side format validation (authoritative)
+                const validateRes = await fetch('/admin/translations/validate-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key })
+                });
+                const validateData = await validateRes.json();
+                if (!validateData.success || !validateData.data || !validateData.data.valid) {
+                    err.textContent = 'Key format is invalid';
+                    err.classList.remove('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create';
+                    return;
+                }
+
+                // Create empty Spanish entry
+                const createRes = await fetch('/admin/translations/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: key, language: 'es', value: '' })
+                });
+                const createData = await createRes.json();
+
+                if (createData.success) {
+                    closeAddKeyModal();
+                    showToast('Key created');
+                    await loadTranslations();
+                } else {
+                    err.textContent = 'Failed to create key: ' + (createData.message || 'Unknown error');
+                    err.classList.remove('hidden');
+                }
+            } catch (e) {
+                err.textContent = 'Error: ' + e.message;
+                err.classList.remove('hidden');
             } finally {
-                hideLoading();
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create';
             }
         }
 
@@ -362,7 +481,17 @@ if (!AuthHelper::checkSessionTimeout()) {
             row.className = 'hover:bg-gray-50';
             
             const status = getTranslationStatus(translation);
+            const spanishErrors = getSpanishErrorStatus(translation);
             const statusClass = getStatusClass(status);
+
+            // Check if this row has Spanish errors
+            const hasSpanishErrors = spanishErrors && spanishErrors.length > 0;
+            const finalStatus = hasSpanishErrors ? 'Spanish Error' : status;
+            const finalStatusClass = hasSpanishErrors ? 'status-spanish-error' : statusClass;
+
+            // Determine which cells have Spanish errors
+            const enHasSpanish = spanishErrors && spanishErrors.includes('en');
+            const itHasSpanish = spanishErrors && spanishErrors.includes('it');
 
             row.innerHTML = `
                 <td class="px-4 py-3 font-mono text-sm text-gray-900">
@@ -377,7 +506,7 @@ if (!AuthHelper::checkSessionTimeout()) {
                            onblur="saveTranslation('${key}', 'es', this.value)"
                            onkeypress="handleKeyPress(event, '${key}', 'es', this.value)">
                 </td>
-                <td class="px-4 py-3 translation-cell">
+                <td class="px-4 py-3 translation-cell ${enHasSpanish ? 'spanish-error-cell' : ''}">
                     <input type="text" 
                            class="translation-input" 
                            value="${escapeHtml(translation.en || '')}" 
@@ -385,8 +514,9 @@ if (!AuthHelper::checkSessionTimeout()) {
                            data-lang="en"
                            onblur="saveTranslation('${key}', 'en', this.value)"
                            onkeypress="handleKeyPress(event, '${key}', 'en', this.value)">
+                    ${enHasSpanish ? '<span class="text-orange-600 text-xs font-semibold">⚠️ Spanish</span>' : ''}
                 </td>
-                <td class="px-4 py-3 translation-cell">
+                <td class="px-4 py-3 translation-cell ${itHasSpanish ? 'spanish-error-cell' : ''}">
                     <input type="text" 
                            class="translation-input" 
                            value="${escapeHtml(translation.it || '')}" 
@@ -394,11 +524,18 @@ if (!AuthHelper::checkSessionTimeout()) {
                            data-lang="it"
                            onblur="saveTranslation('${key}', 'it', this.value)"
                            onkeypress="handleKeyPress(event, '${key}', 'it', this.value)">
+                    ${itHasSpanish ? '<span class="text-orange-600 text-xs font-semibold">⚠️ Spanish</span>' : ''}
                 </td>
                 <td class="px-4 py-3">
-                    <span class="status-badge ${statusClass}">${status}</span>
+                    <span class="status-badge ${finalStatusClass}">${finalStatus}</span>
                 </td>
                 <td class="px-4 py-3">
+                    ${hasSpanishErrors ? 
+                        `<button onclick="clearSpanishFromRow('${key}')" 
+                                class="text-orange-600 hover:text-orange-800 text-sm mr-2">
+                            Clear Spanish
+                        </button>` : ''
+                    }
                     <button onclick="deleteTranslation('${key}')" 
                             class="text-red-600 hover:text-red-800 text-sm">
                         <?php _e('delete'); ?>
@@ -409,6 +546,11 @@ if (!AuthHelper::checkSessionTimeout()) {
             // Add missing translation highlighting
             if (status === 'Missing' || status === 'Partial') {
                 row.classList.add('missing-translation');
+            }
+
+            // Add Spanish error highlighting
+            if (hasSpanishErrors) {
+                row.classList.add('spanish-error');
             }
 
             return row;
@@ -424,11 +566,27 @@ if (!AuthHelper::checkSessionTimeout()) {
             return 'Partial';
         }
 
+        function getSpanishErrorStatus(translation) {
+            const esValue = translation.es || '';
+            const enValue = translation.en || '';
+            const itValue = translation.it || '';
+
+            if (!esValue || esValue.trim() === '') return false;
+
+            const errors = [];
+            // Check if field matches Spanish exactly
+            if (enValue === esValue) errors.push('en');
+            if (itValue === esValue) errors.push('it');
+
+            return errors.length > 0 ? errors : false;
+        }
+
         function getStatusClass(status) {
             switch (status) {
                 case 'Complete': return 'status-complete';
                 case 'Missing': return 'status-missing';
                 case 'Partial': return 'status-partial';
+                case 'Spanish Error': return 'status-spanish-error';
                 default: return '';
             }
         }
@@ -450,10 +608,15 @@ if (!AuthHelper::checkSessionTimeout()) {
                                     (translation.it && translation.it.toLowerCase().includes(searchTerm));
 
                 // Check status filter
+                const spanishErrors = getSpanishErrorStatus(translation);
+                const hasSpanishErrors = spanishErrors && spanishErrors.length > 0;
+                const finalStatus = hasSpanishErrors ? 'Spanish Error' : status;
+                
                 const matchesStatus = !statusFilter || 
-                                    (statusFilter === 'complete' && status === 'Complete') ||
-                                    (statusFilter === 'missing' && status === 'Missing') ||
-                                    (statusFilter === 'partial' && status === 'Partial');
+                                    (statusFilter === 'complete' && finalStatus === 'Complete') ||
+                                    (statusFilter === 'missing' && finalStatus === 'Missing') ||
+                                    (statusFilter === 'partial' && finalStatus === 'Partial') ||
+                                    (statusFilter === 'spanish-error' && finalStatus === 'Spanish Error');
 
                 if (matchesSearch && matchesStatus) {
                     filteredTranslations[key] = translation;
@@ -512,7 +675,6 @@ if (!AuthHelper::checkSessionTimeout()) {
                 return;
             }
 
-            showLoading();
             try {
                 // Fill English
                 const enResponse = await fetch('/admin/translations/fill-missing', {
@@ -549,8 +711,6 @@ if (!AuthHelper::checkSessionTimeout()) {
                 }
             } catch (error) {
                 showToast('Error filling missing translations: ' + error.message, 'error');
-            } finally {
-                hideLoading();
             }
         }
 
@@ -604,13 +764,6 @@ if (!AuthHelper::checkSessionTimeout()) {
             }
         }
 
-        function showLoading() {
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').classList.add('hidden');
-        }
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
@@ -633,6 +786,90 @@ if (!AuthHelper::checkSessionTimeout()) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        async function detectSpanishErrors() {
+            try {
+                const response = await fetch('/admin/translations/detect-spanish');
+                const data = await response.json();
+                
+                if (data.success) {
+                    spanishErrors = data.data.errors;
+                    showToast(`Detected ${data.data.count} Spanish errors`, 'info');
+                    renderTranslations(); // Re-render to show highlighted errors
+                } else {
+                    showToast('Error detecting Spanish errors: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showToast('Error detecting Spanish errors: ' + error.message, 'error');
+            }
+        }
+
+        async function clearSpanishFromRow(key) {
+            if (!confirm('Are you sure you want to clear Spanish text from this row?')) {
+                return;
+            }
+
+            try {
+                const translation = translations[key];
+                const esValue = translation.es || '';
+                const updates = {};
+
+                // Clear EN field if it matches Spanish
+                if (translation.en === esValue) {
+                    updates.en = '';
+                }
+
+                // Clear IT field if it matches Spanish
+                if (translation.it === esValue) {
+                    updates.it = '';
+                }
+
+                // Update each field that needs clearing
+                for (const [lang, value] of Object.entries(updates)) {
+                    await saveTranslation(key, lang, value);
+                }
+
+                showToast('Spanish text cleared successfully', 'success');
+                renderTranslations(); // Re-render to update display
+            } catch (error) {
+                showToast('Error clearing Spanish text: ' + error.message, 'error');
+            }
+        }
+
+        async function clearAllSpanishErrors() {
+            try {
+                // Show loading indicator
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Clearing...';
+                button.disabled = true;
+
+                // Call the bulk clear endpoint
+                const response = await fetch('/admin/translations/clear-all-spanish', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    // Reload translations to get updated data
+                    await loadTranslations();
+                } else {
+                    showToast('Error clearing Spanish text: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showToast('Error clearing Spanish text: ' + error.message, 'error');
+            } finally {
+                // Restore button state
+                const button = event.target;
+                button.textContent = 'Clear All Spanish';
+                button.disabled = false;
+            }
         }
     </script>
 </body>

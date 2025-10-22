@@ -56,3 +56,16 @@ docker compose down -v
 ## 📚 Documentación
 
 - [Esquema de base de datos](docs/database/database_schema.sql)
+
+## 📄 Licencia
+
+Este proyecto está licenciado bajo la **Business Source License (BSL) 1.1**.
+
+### Uso permitido
+- ✅ **Uso no productivo**: Puedes ver, usar, modificar y distribuir el código para fines de desarrollo, pruebas y educación
+- ✅ **Uso en producción**: Requiere una licencia comercial de Agustín Roizen
+
+### Conversión a código abierto
+La licencia se convertirá automáticamente a **Apache License, Version 2.0** tres años después de la primera distribución pública de cada versión, proporcionando un camino claro hacia la disponibilidad completa de código abierto.
+
+Para más información, consulta el archivo [LICENSE](LICENSE) en la raíz del proyecto.

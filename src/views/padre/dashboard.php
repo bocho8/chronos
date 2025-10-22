@@ -1,4 +1,10 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
+
 require_once __DIR__ . '/../../config/session.php'; 
 require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
@@ -98,17 +104,18 @@ $schedule_rows = generate_weekly_schedule($sampleHorarios, $bloques);
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col">
-            <header class="bg-darkblue px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
+        <main class="flex-1 flex flex-col main-content">
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
                 <div class="w-8"></div>
                 
-                <div class="text-white text-xl font-semibold text-center">
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block">
                     <?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_parent'); ?>)
                 </div>
+                <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
                 
                 <div class="flex items-center">
-                    <?php echo $languageSwitcher->render('', 'mr-4'); ?>
-                    <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
+                    <?php echo $languageSwitcher->render('', 'mr-2 md:mr-4'); ?>
+                    <button class="mr-2 md:mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
                         <img src="/assets/images/icons/bell.png" class="h-6 w-6" alt="<?php _e('notifications'); ?>" />
                     </button>
                     
@@ -140,15 +147,15 @@ $schedule_rows = generate_weekly_schedule($sampleHorarios, $bloques);
                 </div>
             </header>
 
-            <section class="flex-1 px-6 py-8">
+            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-7xl mx-auto">
-                    <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('parent_dashboard'); ?></h2>
-                        <p class="text-muted mb-6 text-base">Aquí puedes monitorear el progreso académico de tu hijo.</p>
+                    <div class="mb-6 md:mb-8">
+                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('parent_dashboard'); ?></h2>
+                        <p class="text-muted mb-4 md:mb-6 text-sm md:text-base">Aquí puedes monitorear el progreso académico de tu hijo.</p>
                     </div>
 
-                    <div class="bg-white rounded-xl shadow-lg p-6 mb-10 border border-gray-100">
-                        <h3 class="text-2xl font-semibold text-gray-800 mb-6">
+                    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-8 md:mb-10 border border-gray-100">
+                        <h3 class="text-lg md:text-2xl font-semibold text-gray-800 mb-4 md:mb-6">
                             Calendario Semanal
                         </h3>
 

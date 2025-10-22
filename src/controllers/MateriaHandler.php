@@ -1,4 +1,9 @@
 <?php
+/**
+ * Copyright (c) 2025 Agustín Roizen.
+ * Distributed under the Business Source License 1.1
+ * (See accompanying file LICENSE or copy at https://github.com/bocho8/chronos/blob/main/LICENSE)
+ */
 
 error_reporting(0);
 ini_set('display_errors', 0);
@@ -12,10 +17,17 @@ require_once __DIR__ . '/../helpers/ResponseHelper.php';
 initSecureSession();
 $translation = Translation::getInstance();
 
-AuthHelper::requireRole('ADMIN');
+// Check authentication for AJAX requests
+if (!AuthHelper::isLoggedIn()) {
+    ResponseHelper::error('No autenticado. Por favor, inicie sesión primero.', null, 401);
+}
+
+if (!AuthHelper::hasRole('ADMIN')) {
+    ResponseHelper::error('Acceso denegado. Se requiere rol de administrador.', null, 403);
+}
 
 if (!AuthHelper::checkSessionTimeout()) {
-    ResponseHelper::error('Sesión expirada', null, 401);
+    ResponseHelper::error('Sesión expirada. Por favor, inicie sesión nuevamente.', null, 401);
 }
 
 try {
