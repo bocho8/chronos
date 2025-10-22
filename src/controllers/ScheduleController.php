@@ -121,6 +121,17 @@ class HorarioController {
         try {
             $this->db->beginTransaction();
             
+            // Check for conflicts (unless force override)
+            $forceOverride = $data['force_override'] ?? false;
+            
+            if (!$forceOverride) {
+                $conflicts = $this->checkConflicts($data);
+                if (!empty($conflicts)) {
+                    $this->db->rollback();
+                    ResponseHelper::error("Conflicto detectado: " . implode(', ', $conflicts));
+                }
+            }
+            
             $id = $this->horarioModel->createHorario($data);
             if (!$id) {
                 throw new Exception("Error al crear el horario");
@@ -147,6 +158,17 @@ class HorarioController {
         
         try {
             $this->db->beginTransaction();
+            
+            // Check for conflicts (unless force override)
+            $forceOverride = $data['force_override'] ?? false;
+            
+            if (!$forceOverride) {
+                $conflicts = $this->checkConflicts($data, $id);
+                if (!empty($conflicts)) {
+                    $this->db->rollback();
+                    ResponseHelper::error("Conflicto detectado: " . implode(', ', $conflicts));
+                }
+            }
             
             $success = $this->horarioModel->updateHorario($id, $data);
             if (!$success) {
@@ -318,6 +340,11 @@ class HorarioController {
         
         if (!empty($data['dia'])) {
             $validated['dia'] = strtoupper($data['dia']);
+        }
+        
+        // Preserve force_override parameter
+        if (isset($data['force_override'])) {
+            $validated['force_override'] = $data['force_override'];
         }
         
         return $validated;
@@ -657,6 +684,7 @@ class HorarioController {
         $idHorario = $data['id_horario'] ?? null;
         $newBloque = $data['new_bloque'] ?? null;
         $newDia = $data['new_dia'] ?? null;
+        $forceOverride = $data['force_override'] ?? false;
         
         if (!$idHorario || !$newBloque || !$newDia) {
             ResponseHelper::error("ID de horario, nuevo bloque y nuevo día son requeridos");
@@ -671,29 +699,38 @@ class HorarioController {
                 throw new Exception("Horario no encontrado");
             }
             
-            // Check for conflicts with new position
-            $conflictData = [
+            // Check for conflicts with new position (unless force override)
+            if (!$forceOverride) {
+                $conflictData = [
+                    'id_grupo' => $current['id_grupo'],
+                    'id_docente' => $current['id_docente'],
+                    'id_materia' => $current['id_materia'],
+                    'id_bloque' => $newBloque,
+                    'dia' => $newDia
+                ];
+                
+                $conflicts = $this->checkConflicts($conflictData, $idHorario);
+                if (!empty($conflicts)) {
+                    $this->db->rollback();
+                    ResponseHelper::error("Conflicto detectado: " . implode(', ', $conflicts));
+                }
+            }
+            
+            // Update the assignment
+            $updateData = [
                 'id_grupo' => $current['id_grupo'],
-                'id_docente' => $current['id_docente'],
                 'id_materia' => $current['id_materia'],
+                'id_docente' => $current['id_docente'],
                 'id_bloque' => $newBloque,
                 'dia' => $newDia
             ];
             
-            $conflicts = $this->checkConflicts($conflictData, $idHorario);
-            if (!empty($conflicts)) {
-                $this->db->rollback();
-                ResponseHelper::error("Conflicto detectado: " . implode(', ', $conflicts));
+            // Pass force_override to the model if it was set
+            if ($forceOverride) {
+                $updateData['force_override'] = true;
             }
             
-            // Update the assignment
-            $success = $this->horarioModel->updateHorario($idHorario, [
-                'id_grupo' => $current['id_grupo'],
-                'id_materia' => $current['id_materia'],
-                'id_docente' => $current['id_docente'],
-                'id_bloque' => $newBloque,
-                'dia' => $newDia
-            ]);
+            $success = $this->horarioModel->updateHorario($idHorario, $updateData);
             
             if (!$success) {
                 throw new Exception("Error al mover el horario");

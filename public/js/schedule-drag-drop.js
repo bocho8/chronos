@@ -948,8 +948,15 @@ class ScheduleDragDropManager {
             console.error('Response headers:', response.headers);
             
             // Show confirmation modal for conflicts
-            if (data.message && data.message.includes('Conflicto detectado')) {
-                const cleanMessage = data.message.replace('Conflicto detectado: ', '');
+            if (data.message && (data.message.includes('Conflicto detectado') || data.message.includes('Ya existe una asignación para este horario') || data.message.includes('Error: Ya existe una asignación para este horario'))) {
+                let cleanMessage = data.message;
+                if (data.message.includes('Conflicto detectado: ')) {
+                    cleanMessage = data.message.replace('Conflicto detectado: ', '');
+                } else if (data.message.includes('Error interno del servidor: Ya existe una asignación para este horario')) {
+                    cleanMessage = 'Ya existe una asignación para este horario';
+                } else if (data.message.includes('Error: Ya existe una asignación para este horario')) {
+                    cleanMessage = 'Ya existe una asignación para este horario';
+                }
                 
                 
                 if (typeof confirmConflict === 'function') {
@@ -1249,10 +1256,72 @@ class ScheduleDragDropManager {
                 }
                 
             } else {
-                this.showToast('Error: ' + data.message, 'error');
+                // Check if it's a conflict error
+                if (data.message && (data.message.includes('Conflicto detectado') || data.message.includes('Ya existe una asignación para este horario') || data.message.includes('Error: Ya existe una asignación para este horario'))) {
+                    let conflictMessage = data.message;
+                    if (data.message.includes('Conflicto detectado: ')) {
+                        conflictMessage = data.message.replace('Conflicto detectado: ', '');
+                    }
+                    
+                    if (typeof confirmConflict === 'function') {
+                        const confirmed = await confirmConflict(conflictMessage, {
+                            title: 'Conflicto Detectado',
+                            confirmText: 'Mover de Todas Formas',
+                            cancelText: 'Cancelar'
+                        });
+                        
+                        if (confirmed) {
+                            // Retry with force_override
+                            await this.forceMoveAssignment(dropZone, draggedData);
+                        }
+                    } else {
+                        this.showToast('Error: ' + data.message, 'error');
+                    }
+                } else {
+                    this.showToast('Error: ' + data.message, 'error');
+                }
             }
         } catch (error) {
             console.error('Error moving assignment:', error);
+            this.showToast('Error de conexión al mover asignación', 'error');
+        }
+    }
+
+    async forceMoveAssignment(dropZone, draggedData) {
+        const bloque = dropZone.dataset.bloque;
+        const dia = dropZone.dataset.dia;
+        
+        this.showToast('Moviendo asignación...', 'info');
+        
+        try {
+            const response = await fetch('/src/controllers/HorarioHandler.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'quick_move',
+                    id_horario: draggedData.assignmentId,
+                    new_bloque: bloque,
+                    new_dia: dia,
+                    force_override: true
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showToast(`Asignación movida: ${draggedData.subjectName} - ${draggedData.teacherName}`, 'success');
+                
+                // Refresh the entire schedule grid to show the moved assignment
+                if (typeof filterScheduleGrid === 'function') {
+                    filterScheduleGrid(this.currentGroupId);
+                }
+            } else {
+                this.showToast('Error: ' + data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error forcing move assignment:', error);
             this.showToast('Error de conexión al mover asignación', 'error');
         }
     }
@@ -1839,8 +1908,11 @@ class ScheduleDragDropManager {
                 }, 100);
             } else {
                 // Show confirmation modal for conflicts
-                if (data.message && data.message.includes('Conflicto detectado')) {
-                    const cleanMessage = data.message.replace('Conflicto detectado: ', '');
+                if (data.message && (data.message.includes('Conflicto detectado') || data.message.includes('Ya existe una asignación para este horario') || data.message.includes('Error: Ya existe una asignación para este horario'))) {
+                    let cleanMessage = data.message;
+                    if (data.message.includes('Conflicto detectado: ')) {
+                        cleanMessage = data.message.replace('Conflicto detectado: ', '');
+                    }
                     
                     // Try confirmConflict first, fallback to browser confirm
                     if (typeof confirmConflict === 'function') {

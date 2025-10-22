@@ -1122,7 +1122,70 @@ try {
                         hideCellLoadingState();
                     }
                 } else {
-                    showToast('Error: ' + data.message, 'error');
+                    // Check if it's a conflict error
+                    if (data.message && (data.message.includes('Conflicto detectado') || data.message.includes('Ya existe una asignación para este horario') || data.message.includes('Error: Ya existe una asignación para este horario'))) {
+                        // Extract conflict message
+                        let conflictMessage = data.message;
+                        if (data.message.includes('Conflicto detectado: ')) {
+                            conflictMessage = data.message.replace('Conflicto detectado: ', '');
+                        } else if (data.message.includes('Error interno del servidor: Ya existe una asignación para este horario')) {
+                            conflictMessage = 'Ya existe una asignación para este horario';
+                        } else if (data.message.includes('Error: Ya existe una asignación para este horario')) {
+                            conflictMessage = 'Ya existe una asignación para este horario';
+                        }
+                        
+                        // Show confirmation modal
+                        confirmConflict(conflictMessage, {
+                            title: 'Conflicto Detectado',
+                            confirmText: 'Continuar de Todas Formas',
+                            cancelText: 'Cancelar'
+                        }).then(confirmed => {
+                            if (confirmed) {
+                                // Resend with force_override
+                                const requestData = {
+                                    action: window.isEditMode ? 'update' : 'create',
+                                    id: document.getElementById('horario_id').value,
+                                    id_bloque: document.getElementById('horario_id_bloque').value,
+                                    dia: document.getElementById('horario_dia').value,
+                                    id_grupo: document.getElementById('id_grupo').value,
+                                    id_materia: document.getElementById('id_materia').value,
+                                    id_docente: document.getElementById('id_docente').value,
+                                    force_override: true
+                                };
+                                
+                                fetch(url, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(requestData)
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        showToast(data.message, 'success');
+                                        closeHorarioModal();
+                                        if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
+                                            filterScheduleGrid(selectedGroupId);
+                                            hideCellLoadingState();
+                                        }
+                                    } else {
+                                        showToast('Error: ' + data.message, 'error');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    showToast('Error processing request', 'error');
+                                })
+                                .finally(() => {
+                                    hideButtonLoadingState(submitButton);
+                                });
+                            } else {
+                                hideButtonLoadingState(submitButton);
+                            }
+                        });
+                        return; // Don't hide button state yet
+                    } else {
+                        showToast('Error: ' + data.message, 'error');
+                    }
                 }
             })
             .catch(error => {
@@ -1476,7 +1539,68 @@ try {
                         hideCellLoadingState();
                     }
                 } else {
-                    if (data.data && typeof data.data === 'object') {
+                    // Check if it's a conflict error
+                    if (data.message && (data.message.includes('Conflicto detectado') || data.message.includes('Ya existe una asignación para este horario') || data.message.includes('Error: Ya existe una asignación para este horario'))) {
+                        // Extract conflict message
+                        let conflictMessage = data.message;
+                        if (data.message.includes('Conflicto detectado: ')) {
+                            conflictMessage = data.message.replace('Conflicto detectado: ', '');
+                        } else if (data.message.includes('Error interno del servidor: Ya existe una asignación para este horario')) {
+                            conflictMessage = 'Ya existe una asignación para este horario';
+                        } else if (data.message.includes('Error: Ya existe una asignación para este horario')) {
+                            conflictMessage = 'Ya existe una asignación para este horario';
+                        }
+                        
+                        // Show confirmation modal
+                        confirmConflict(conflictMessage, {
+                            title: 'Conflicto Detectado',
+                            confirmText: 'Continuar de Todas Formas',
+                            cancelText: 'Cancelar'
+                        }).then(confirmed => {
+                            if (confirmed) {
+                                // Resend with force_override
+                                const requestData = {
+                                    action: isEditMode ? 'update' : 'create',
+                                    id: document.getElementById('horario_id').value,
+                                    id_bloque: document.getElementById('horario_id_bloque').value,
+                                    dia: document.getElementById('horario_dia').value,
+                                    id_grupo: document.getElementById('id_grupo').value,
+                                    id_materia: document.getElementById('id_materia').value,
+                                    id_docente: document.getElementById('id_docente').value,
+                                    force_override: true
+                                };
+                                
+                                fetch(url, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(requestData)
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        showToast(data.message, 'success');
+                                        closeHorarioModal();
+                                        if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
+                                            filterScheduleGrid(selectedGroupId);
+                                            hideCellLoadingState();
+                                        }
+                                    } else {
+                                        showToast('Error: ' + data.message, 'error');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    showToast('Error processing request', 'error');
+                                })
+                                .finally(() => {
+                                    hideButtonLoadingState(submitButton);
+                                });
+                            } else {
+                                hideButtonLoadingState(submitButton);
+                            }
+                        });
+                        return; // Don't hide button state yet
+                    } else if (data.data && typeof data.data === 'object') {
                         Object.keys(data.data).forEach(field => {
                             showFieldError(field, data.data[field]);
                         });

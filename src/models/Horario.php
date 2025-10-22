@@ -146,13 +146,18 @@ class Horario {
                 throw new Exception("El horario no existe");
             }
 
-            if ($this->hasScheduleConflict($data, $id)) {
-                throw new Exception("Ya existe una asignación para este horario");
-            }
+            // Only check conflicts if force_override is not set or false
+            $forceOverride = $data['force_override'] ?? false;
+            
+            if (!$forceOverride) {
+                if ($this->hasScheduleConflict($data, $id)) {
+                    throw new Exception("Ya existe una asignación para este horario");
+                }
 
-            if (!empty($data['id_docente']) && !empty($data['id_bloque']) && !empty($data['dia'])) {
-                if (!$this->isDocenteAvailable($data['id_docente'], $data['id_bloque'], $data['dia'], $id)) {
-                    throw new Exception("El docente no está disponible en este horario");
+                if (!empty($data['id_docente']) && !empty($data['id_bloque']) && !empty($data['dia'])) {
+                    if (!$this->isDocenteAvailable($data['id_docente'], $data['id_bloque'], $data['dia'], $id)) {
+                        throw new Exception("El docente no está disponible en este horario");
+                    }
                 }
             }
             
