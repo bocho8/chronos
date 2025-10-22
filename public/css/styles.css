@@ -24,8 +24,6 @@
     --color-yellow-200: oklch(94.5% 0.129 101.54);
     --color-yellow-300: oklch(90.5% 0.182 98.111);
     --color-yellow-600: oklch(68.1% 0.162 75.834);
-    --color-yellow-700: oklch(55.4% 0.135 66.442);
-    --color-yellow-800: oklch(47.6% 0.114 61.907);
     --color-green-50: oklch(98.2% 0.018 155.826);
     --color-green-100: oklch(96.2% 0.044 156.743);
     --color-green-200: oklch(92.5% 0.084 155.995);
@@ -1082,18 +1080,6 @@
   .bg-yellow-100 {
     background-color: var(--color-yellow-100);
   }
-  .from-blue-600 {
-    --tw-gradient-from: var(--color-blue-600);
-    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
-  }
-  .from-green-600 {
-    --tw-gradient-from: var(--color-green-600);
-    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
-  }
-  .from-red-600 {
-    --tw-gradient-from: var(--color-red-600);
-    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
-  }
   .p-1 {
     padding: calc(var(--spacing) * 1);
   }
@@ -1594,6 +1580,13 @@
       }
     }
   }
+  .hover\:bg-yellow-700 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-yellow-700);
+      }
+    }
+  }
   .hover\:text-blue-600 {
     &:hover {
       @media (hover: hover) {
@@ -2073,41 +2066,6 @@
   .md\:grid-cols-3 {
     @media (width >= 48rem) {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-  .md\:flex-row {
-    @media (width >= 48rem) {
-      flex-direction: row;
-    }
-  }
-  .md\:items-center {
-    @media (width >= 48rem) {
-      align-items: center;
-    }
-  }
-  .md\:gap-0 {
-    @media (width >= 48rem) {
-      gap: calc(var(--spacing) * 0);
-    }
-  }
-  .md\:gap-4 {
-    @media (width >= 48rem) {
-      gap: calc(var(--spacing) * 4);
-    }
-  }
-  .md\:gap-5 {
-    @media (width >= 48rem) {
-      gap: calc(var(--spacing) * 5);
-    }
-  }
-  .md\:gap-6 {
-    @media (width >= 48rem) {
-      gap: calc(var(--spacing) * 6);
-    }
-  }
-  .md\:gap-8 {
-    @media (width >= 48rem) {
-      gap: calc(var(--spacing) * 8);
     }
   }
   .md\:space-y-0 {
