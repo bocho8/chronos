@@ -166,6 +166,31 @@ CREATE TABLE log (
     detalle TEXT
 );
 
+-- Additional tables for schedule publishing functionality
+CREATE SEQUENCE horario_publicado_id_publicacion_seq INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE;
+
+CREATE TABLE horario_publicado (
+    id_publicacion INTEGER PRIMARY KEY DEFAULT nextval('horario_publicado_id_publicacion_seq'),
+    id_horario_referencia INTEGER,
+    fecha_publicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    publicado_por INTEGER REFERENCES usuario(id_usuario),
+    activo BOOLEAN DEFAULT TRUE,
+    descripcion TEXT
+);
+
+CREATE SEQUENCE solicitud_publicacion_id_solicitud_seq INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE;
+
+CREATE TABLE solicitud_publicacion (
+    id_solicitud INTEGER PRIMARY KEY DEFAULT nextval('solicitud_publicacion_id_solicitud_seq'),
+    fecha_solicitud TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    solicitado_por INTEGER NOT NULL REFERENCES usuario(id_usuario),
+    estado VARCHAR(20) DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'aprobado', 'rechazado')),
+    revisado_por INTEGER REFERENCES usuario(id_usuario),
+    fecha_revision TIMESTAMP,
+    notas TEXT,
+    snapshot_hash VARCHAR(64) NOT NULL
+);
+
 -- Performance Indexes
 CREATE INDEX idx_usuario_cedula ON usuario(cedula);
 CREATE INDEX idx_usuario_email ON usuario(email);
@@ -184,6 +209,8 @@ CREATE INDEX idx_horario_dia ON horario(dia);
 CREATE INDEX idx_observacion_docente ON observacion(id_docente);
 CREATE INDEX idx_log_usuario ON log(id_usuario);
 CREATE INDEX idx_log_fecha ON log(fecha);
+CREATE INDEX idx_solicitud_publicacion_solicitado_por ON solicitud_publicacion(solicitado_por);
+CREATE INDEX idx_solicitud_publicacion_estado ON solicitud_publicacion(estado);
 
 -- Table Documentation
 COMMENT ON TABLE rol IS 'Roles de usuario y permisos';
@@ -201,6 +228,8 @@ COMMENT ON TABLE observacion_predefinida IS 'Plantillas de observaciones predefi
 COMMENT ON TABLE observacion IS 'Observaciones y notas de docentes';
 COMMENT ON TABLE grupo IS 'Grupos de estudiantes y niveles';
 COMMENT ON TABLE log IS 'Registro de actividad del sistema';
+COMMENT ON TABLE horario_publicado IS 'Horarios publicados oficialmente';
+COMMENT ON TABLE solicitud_publicacion IS 'Solicitudes de publicación de horarios';
 
 -- Insert default roles
 INSERT INTO rol (nombre_rol, descripcion) VALUES

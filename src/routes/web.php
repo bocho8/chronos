@@ -116,6 +116,18 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->get('/gestion-horarios', function() {
             require __DIR__ . '/../views/admin/AdminGestionHorarios.php';
         });
+        
+        $router->get('/view-schedules', function() {
+            require __DIR__ . '/../views/admin/AdminScheduleViewer.php';
+        });
+        
+        $router->get('/test-schedule-viewer', function() {
+            require __DIR__ . '/../views/admin/TestScheduleViewer.php';
+        });
+        
+        $router->get('/simple-test', function() {
+            require __DIR__ . '/../views/admin/SimpleTest.php';
+        });
 
         $router->get('/users', 'Admin\UserController@index');
         $router->get('/users/create', 'Admin\UserController@create');

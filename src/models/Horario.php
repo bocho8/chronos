@@ -584,7 +584,7 @@ class Horario {
             
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            $publishedCheck = $this->db->prepare("SELECT COUNT(*) as count FROM horario_publicado WHERE activo = 1");
+            $publishedCheck = $this->db->prepare("SELECT COUNT(*) as count FROM horario_publicado WHERE activo = true");
             $publishedCheck->execute();
             $publishedCount = $publishedCheck->fetch(PDO::FETCH_ASSOC);
             

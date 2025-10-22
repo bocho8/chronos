@@ -382,8 +382,8 @@ try {
         }
 
         function viewSchedulePreview() {
-            // Redirect to schedule management page to view current schedules
-            window.location.href = '/admin/gestion-horarios';
+            // Redirect to read-only schedule viewer
+            window.location.href = '/admin/view-schedules';
         }
 
         function logout() {

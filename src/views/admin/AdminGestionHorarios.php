@@ -2625,11 +2625,19 @@ try {
             if (status === 'pendiente') {
                 btn.disabled = true;
                 btn.className = 'px-3 py-1 text-sm bg-gray-400 text-white rounded cursor-not-allowed flex items-center';
-                btn.querySelector('span:last-child').textContent = '<?php _e('request_publish_pending'); ?>';
+                // Update the text node after the span
+                const textNode = btn.childNodes[2]; // The text node after the span
+                if (textNode) {
+                    textNode.textContent = ' <?php _e('request_publish_pending'); ?>';
+                }
             } else {
                 btn.disabled = false;
                 btn.className = 'px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center cursor-pointer';
-                btn.querySelector('span:last-child').textContent = '<?php _e('request_publish_schedules'); ?>';
+                // Update the text node after the span
+                const textNode = btn.childNodes[2]; // The text node after the span
+                if (textNode) {
+                    textNode.textContent = ' <?php _e('request_publish_schedules'); ?>';
+                }
             }
         }
 
