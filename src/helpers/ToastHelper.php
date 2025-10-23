@@ -15,35 +15,35 @@ class ToastHelper {
     /**
      * Show success toast
      */
-    public static function success($message) {
-        self::addToast($message, 'success');
+    public static function success($message, $actions = []) {
+        self::addToast($message, 'success', $actions);
     }
     
     /**
      * Show error toast
      */
-    public static function error($message) {
-        self::addToast($message, 'error');
+    public static function error($message, $actions = []) {
+        self::addToast($message, 'error', $actions);
     }
     
     /**
      * Show warning toast
      */
-    public static function warning($message) {
-        self::addToast($message, 'warning');
+    public static function warning($message, $actions = []) {
+        self::addToast($message, 'warning', $actions);
     }
     
     /**
      * Show info toast
      */
-    public static function info($message) {
-        self::addToast($message, 'info');
+    public static function info($message, $actions = []) {
+        self::addToast($message, 'info', $actions);
     }
     
     /**
      * Add toast to session for display on next page load
      */
-    private static function addToast($message, $type) {
+    private static function addToast($message, $type, $actions = []) {
         if (!isset($_SESSION['toasts'])) {
             $_SESSION['toasts'] = [];
         }
@@ -51,6 +51,7 @@ class ToastHelper {
         $_SESSION['toasts'][] = [
             'message' => $message,
             'type' => $type,
+            'actions' => $actions,
             'timestamp' => time()
         ];
     }
@@ -80,8 +81,14 @@ class ToastHelper {
         foreach ($toasts as $toast) {
             $message = htmlspecialchars($toast['message'], ENT_QUOTES, 'UTF-8');
             $type = htmlspecialchars($toast['type'], ENT_QUOTES, 'UTF-8');
+            $actions = isset($toast['actions']) ? $toast['actions'] : [];
             
-            $html .= "toastManager.{$type}('{$message}');";
+            if (!empty($actions)) {
+                $actionsJson = json_encode($actions);
+                $html .= "toastManager.{$type}('{$message}', {actions: {$actionsJson}});";
+            } else {
+                $html .= "toastManager.{$type}('{$message}');";
+            }
         }
         
         $html .= '</script>';
@@ -92,10 +99,45 @@ class ToastHelper {
     /**
      * Show toast immediately (for AJAX responses)
      */
-    public static function showImmediate($message, $type = 'info') {
+    public static function showImmediate($message, $type = 'info', $actions = []) {
         $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
         $type = htmlspecialchars($type, ENT_QUOTES, 'UTF-8');
         
-        echo "<script>toastManager.{$type}('{$message}');</script>";
+        if (!empty($actions)) {
+            $actionsJson = json_encode($actions);
+            echo "<script>toastManager.{$type}('{$message}', {actions: {$actionsJson}});</script>";
+        } else {
+            echo "<script>toastManager.{$type}('{$message}');</script>";
+        }
+    }
+
+    /**
+     * Show success toast with undo action
+     */
+    public static function successWithUndo($message, $undoText = 'Undo', $undoUrl = null) {
+        $actions = [];
+        if ($undoUrl) {
+            $actions[] = [
+                'text' => $undoText,
+                'onClick' => "window.location.href = '{$undoUrl}'",
+                'style' => 'primary'
+            ];
+        }
+        self::success($message, $actions);
+    }
+
+    /**
+     * Show error toast with retry action
+     */
+    public static function errorWithRetry($message, $retryText = 'Retry', $retryUrl = null) {
+        $actions = [];
+        if ($retryUrl) {
+            $actions[] = [
+                'text' => $retryText,
+                'onClick' => "window.location.href = '{$retryUrl}'",
+                'style' => 'primary'
+            ];
+        }
+        self::error($message, $actions);
     }
 }

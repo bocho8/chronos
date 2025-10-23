@@ -19,6 +19,9 @@ class ToastManager {
     constructor() {
         this.container = null;
         this.toasts = new Map();
+        this.queue = [];
+        this.maxToasts = 5;
+        this.queueIndicator = null;
         this.init();
     }
 
@@ -148,6 +151,17 @@ class ToastManager {
                 overflow: hidden;
             }
 
+            .toast::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 6px;
+                background: rgba(0, 0, 0, 0.1);
+                border-radius: 0 0 8px 8px;
+            }
+
             .toast.show {
                 transform: translateX(0);
                 opacity: 1;
@@ -215,11 +229,29 @@ class ToastManager {
             position: absolute;
             bottom: 0;
             left: 0;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.3);
+            height: 6px;
+            background: linear-gradient(90deg, 
+                rgba(255, 255, 255, 0.95) 0%, 
+                rgba(255, 255, 255, 0.8) 30%,
+                rgba(255, 255, 255, 0.6) 60%, 
+                rgba(255, 255, 255, 0.3) 100%);
             border-radius: 0 0 8px 8px;
             transition: width linear;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.5), 0 0 4px rgba(255, 255, 255, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
         }
+
+        .toast-progress.animated {
+            background: linear-gradient(90deg, 
+                rgba(255, 255, 255, 0.95) 0%, 
+                rgba(255, 255, 255, 0.8) 30%,
+                rgba(255, 255, 255, 0.6) 60%, 
+                rgba(255, 255, 255, 0.3) 100%);
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.5), 0 0 4px rgba(255, 255, 255, 0.3);
+        }
+
+
+
 
         /* Confirmation Modal Styles */
         #confirmModal {
@@ -272,6 +304,61 @@ class ToastManager {
             transform: translateY(0);
         }
 
+        /* Action Buttons */
+        .toast-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 12px;
+        }
+
+        .toast-action-btn {
+            padding: 4px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .toast-action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .toast-action-btn.primary {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .toast-action-btn.primary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Queue Indicator */
+        .toast-queue-indicator {
+            position: fixed;
+            top: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 60;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Pause state */
+        .toast.paused .toast-progress {
+            animation-play-state: paused;
+        }
+
             @keyframes slideIn {
                 from {
                     transform: translateX(100%);
@@ -310,35 +397,48 @@ class ToastManager {
             duration = 5000,
             closable = true,
             icon = null,
-            onClose = null
+            onClose = null,
+            pauseOnHover = true,
+            actions = []
         } = options;
 
+        // Check if we're at the limit
+        if (this.toasts.size >= this.maxToasts) {
+            this.queue.push({ message, type, options });
+            this.updateQueueIndicator();
+            return null;
+        }
+
         const toastId = this.generateId();
-        const toast = this.createToast(toastId, message, type, icon, closable);
+        const toast = this.createToast(toastId, message, type, icon, closable, actions);
         
         this.container.appendChild(toast);
-        this.toasts.set(toastId, toast);
+        this.toasts.set(toastId, {
+            element: toast,
+            duration,
+            remainingTime: duration,
+            startTime: Date.now(),
+            paused: false,
+            onClose
+        });
 
         setTimeout(() => {
             toast.classList.add('show', 'slide-in');
         }, 100);
 
-        if (duration > 0) {
-            const progressBar = toast.querySelector('.toast-progress');
-            if (progressBar) {
-                progressBar.style.transition = `width ${duration}ms linear`;
-                progressBar.style.width = '0%';
-            }
+        // Setup pause on hover
+        if (pauseOnHover) {
+            this.setupPauseOnHover(toastId);
+        }
 
-            setTimeout(() => {
-                this.hide(toastId, onClose);
-            }, duration);
+        if (duration > 0) {
+            this.startProgressAnimation(toastId, duration);
         }
 
         return toastId;
     }
 
-    createToast(id, message, type, icon, closable) {
+    createToast(id, message, type, icon, closable, actions = []) {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.setAttribute('data-toast-id', id);
@@ -352,22 +452,48 @@ class ToastManager {
 
         const toastIcon = icon || defaultIcons[type] || defaultIcons.info;
 
+        // Build action buttons HTML
+        let actionsHtml = '';
+        if (actions.length > 0) {
+            actionsHtml = '<div class="toast-actions">';
+            actions.forEach((action, index) => {
+                const actionClass = action.style === 'primary' ? 'primary' : '';
+                actionsHtml += `<button class="toast-action-btn ${actionClass}" data-action-index="${index}">${action.text}</button>`;
+            });
+            actionsHtml += '</div>';
+        }
+
         toast.innerHTML = `
             <div class="toast-content">
                 <div class="toast-icon">${toastIcon}</div>
                 <div class="toast-message">${message}</div>
             </div>
+            ${actionsHtml}
             ${closable ? `<button class="toast-close" onclick="toastManager.hide('${id}')">×</button>` : ''}
-            <div class="toast-progress" style="width: 100%;"></div>
+            <div class="toast-progress animated" style="width: 100%;"></div>
         `;
+
+        // Add event listeners for action buttons
+        if (actions.length > 0) {
+            actions.forEach((action, index) => {
+                const button = toast.querySelector(`[data-action-index="${index}"]`);
+                if (button && action.onClick) {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        action.onClick(id);
+                    });
+                }
+            });
+        }
 
         return toast;
     }
 
     hide(toastId, onClose = null) {
-        const toast = this.toasts.get(toastId);
-        if (!toast) return;
+        const toastData = this.toasts.get(toastId);
+        if (!toastData) return;
 
+        const toast = toastData.element;
         toast.classList.remove('show');
         toast.classList.add('slide-out');
 
@@ -380,13 +506,129 @@ class ToastManager {
             if (onClose && typeof onClose === 'function') {
                 onClose();
             }
+
+            // Process queue if there are waiting toasts
+            this.processQueue();
         }, 300);
     }
 
+    setupPauseOnHover(toastId) {
+        const toastData = this.toasts.get(toastId);
+        if (!toastData) return;
+
+        const toast = toastData.element;
+        
+        toast.addEventListener('mouseenter', () => {
+            if (toastData.paused) return;
+            
+            toastData.paused = true;
+            toast.classList.add('paused');
+            
+            // Calculate remaining time
+            const elapsed = Date.now() - toastData.startTime;
+            toastData.remainingTime = Math.max(0, toastData.duration - elapsed);
+            
+            // Pause the progress bar animation
+            const progressBar = toast.querySelector('.toast-progress');
+            if (progressBar) {
+                const computedStyle = window.getComputedStyle(progressBar);
+                const currentWidth = computedStyle.width;
+                progressBar.style.width = currentWidth;
+                progressBar.style.transition = 'none';
+            }
+        });
+
+        toast.addEventListener('mouseleave', () => {
+            if (!toastData.paused) return;
+            
+            toastData.paused = false;
+            toast.classList.remove('paused');
+            toastData.startTime = Date.now();
+            
+            // Restart progress animation with remaining time
+            if (toastData.remainingTime > 0) {
+                const progressBar = toast.querySelector('.toast-progress');
+                if (progressBar) {
+                    // Calculate current width based on remaining time
+                    const currentWidth = (toastData.remainingTime / toastData.duration) * 100;
+                    progressBar.style.width = `${currentWidth}%`;
+                    progressBar.style.transition = 'none';
+                    
+                    // Force reflow
+                    progressBar.offsetHeight;
+                    
+                    // Animate to 0%
+                    progressBar.style.transition = `width ${toastData.remainingTime}ms linear`;
+                    progressBar.style.width = '0%';
+                }
+            }
+        });
+    }
+
+    startProgressAnimation(toastId, duration) {
+        const toastData = this.toasts.get(toastId);
+        if (!toastData) return;
+
+        const toast = toastData.element;
+        const progressBar = toast.querySelector('.toast-progress');
+        
+        if (progressBar) {
+            // Start at 100% width
+            progressBar.style.width = '100%';
+            progressBar.style.transition = 'none';
+            
+            // Force a reflow to ensure the initial state is applied
+            progressBar.offsetHeight;
+            
+            // Now animate to 0% over the duration
+            progressBar.style.transition = `width ${duration}ms linear`;
+            progressBar.style.width = '0%';
+        }
+
+        // Auto-hide after duration
+        setTimeout(() => {
+            if (this.toasts.has(toastId)) {
+                this.hide(toastId, toastData.onClose);
+            }
+        }, duration);
+    }
+
+    updateQueueIndicator() {
+        if (this.queue.length === 0) {
+            if (this.queueIndicator) {
+                this.queueIndicator.remove();
+                this.queueIndicator = null;
+            }
+            return;
+        }
+
+        if (!this.queueIndicator) {
+            this.queueIndicator = document.createElement('div');
+            this.queueIndicator.className = 'toast-queue-indicator';
+            document.body.appendChild(this.queueIndicator);
+        }
+
+        this.queueIndicator.textContent = `+${this.queue.length} more`;
+    }
+
+    processQueue() {
+        if (this.queue.length === 0 || this.toasts.size >= this.maxToasts) {
+            return;
+        }
+
+        const queuedToast = this.queue.shift();
+        this.updateQueueIndicator();
+        
+        // Show the queued toast
+        this.show(queuedToast.message, queuedToast.type, queuedToast.options);
+    }
+
     hideAll() {
-        this.toasts.forEach((toast, id) => {
+        this.toasts.forEach((toastData, id) => {
             this.hide(id);
         });
+        this.queue = [];
+        this.updateQueueIndicator();
     }
 
     generateId() {
@@ -407,6 +649,29 @@ class ToastManager {
 
     info(message, options = {}) {
         return this.show(message, 'info', options);
+    }
+
+    // New convenience methods for common actions
+    successWithUndo(message, undoCallback, options = {}) {
+        return this.success(message, {
+            ...options,
+            actions: [{
+                text: 'Undo',
+                onClick: undoCallback,
+                style: 'primary'
+            }]
+        });
+    }
+
+    errorWithRetry(message, retryCallback, options = {}) {
+        return this.error(message, {
+            ...options,
+            actions: [{
+                text: 'Retry',
+                onClick: retryCallback,
+                style: 'primary'
+            }]
+        });
     }
 
     setupModalListeners() {
@@ -514,6 +779,15 @@ function showToast(message, type = 'info', options = {}) {
     return toastManager.show(message, type, options);
 }
 
+// New global convenience functions
+function showSuccessWithUndo(message, undoCallback, options = {}) {
+    return toastManager.successWithUndo(message, undoCallback, options);
+}
+
+function showErrorWithRetry(message, retryCallback, options = {}) {
+    return toastManager.errorWithRetry(message, retryCallback, options);
+}
+
 function hideToast(toastId) {
     if (typeof toastId === 'string') {
         toastManager.hide(toastId);
@@ -558,6 +832,8 @@ window.testModal = async function() {
     window.toastManager = toastManager;
     window.showToast = showToast;
     window.hideToast = hideToast;
+    window.showSuccessWithUndo = showSuccessWithUndo;
+    window.showErrorWithRetry = showErrorWithRetry;
 
 })();
 
