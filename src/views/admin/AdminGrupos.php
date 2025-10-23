@@ -242,7 +242,7 @@ function getGroupInitials($nombre) {
                                     <span class="text-gray-400 text-2xl">•</span>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button class="py-2 px-3 md:px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-white text-gray-700 hover:bg-gray-50">
+                                    <button onclick="exportGrupos()" class="py-2 px-3 md:px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-white text-gray-700 hover:bg-gray-50">
                                         <?php _e('export'); ?>
                                     </button>
                                     <button onclick="showAddGrupoModal()" class="py-2 px-3 md:px-4 border-none rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-darkblue text-white hover:bg-navy flex items-center">
@@ -441,6 +441,12 @@ function getGroupInitials($nombre) {
         function deleteGrupo(id, nombre) {
             const confirmMessage = `<?php _e('confirm_delete_group'); ?> "${nombre}"?`;
             if (confirm(confirmMessage)) {
+                // Show loading state on delete button
+                const deleteButton = event.target;
+                const originalText = deleteButton.textContent;
+                deleteButton.disabled = true;
+                deleteButton.textContent = '<?php _e('deleting'); ?>...';
+                
                 const formData = new FormData();
                 formData.append('action', 'delete');
                 formData.append('id', id);
@@ -453,9 +459,8 @@ function getGroupInitials($nombre) {
                 .then(data => {
                     if (data.success) {
                         showToast('<?php _e('group_deleted_successfully'); ?>', 'success');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
+                        // Remove group from UI without page reload
+                        removeGroupFromList(id);
                     } else {
                         showToast(data.message || 'Error al eliminar el grupo', 'error');
                     }
@@ -463,13 +468,18 @@ function getGroupInitials($nombre) {
                 .catch(error => {
                     console.error('Error:', error);
                     showToast('Error al eliminar el grupo', 'error');
+                })
+                .finally(() => {
+                    // Restore button state
+                    deleteButton.disabled = false;
+                    deleteButton.textContent = originalText;
                 });
             }
         }
 
         function viewGroupSchedule(id) {
-
-            window.location.href = `admin-horarios.php?grupo=${id}`;
+            // Navigate to the admin schedule management page with the group ID
+            window.location.href = `/src/views/admin/AdminHorarios.php?grupo=${id}`;
         }
 
         function closeGrupoModal() {
@@ -510,6 +520,12 @@ function getGroupInitials($nombre) {
                 return;
             }
             
+            // Show loading state
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = '<?php _e('saving'); ?>...';
+            
             fetch('/src/controllers/GrupoHandler.php', {
                 method: 'POST',
                 body: formData
@@ -522,10 +538,13 @@ function getGroupInitials($nombre) {
                         '<?php _e('group_created_successfully'); ?>';
                     showToast(message, 'success');
                     closeGrupoModal();
-
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
+                    
+                    // Update UI without page reload
+                    if (isEditMode) {
+                        updateGroupInList(data.data);
+                    } else {
+                        addGroupToList(data.data);
+                    }
                 } else {
                     showToast(data.message || 'Error al procesar la solicitud', 'error');
                 }
@@ -533,6 +552,11 @@ function getGroupInitials($nombre) {
             .catch(error => {
                 console.error('Error:', error);
                 showToast('Error al procesar la solicitud', 'error');
+            })
+            .finally(() => {
+                // Restore button state
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
             });
         }
 
@@ -541,6 +565,135 @@ function getGroupInitials($nombre) {
             errorElements.forEach(element => {
                 element.textContent = '';
             });
+        }
+
+        // Helper functions for dynamic UI updates
+        function addGroupToList(groupData) {
+            const groupsContainer = document.querySelector('.divide-y.divide-gray-200');
+            
+            // Create new group article element
+            const groupArticle = document.createElement('article');
+            groupArticle.className = 'item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg';
+            groupArticle.setAttribute('data-item-id', groupData.id_grupo);
+            groupArticle.setAttribute('data-original-text', '');
+            groupArticle.setAttribute('data-available-labels', `Level: ${groupData.nivel}|Estado: Sin horario`);
+            groupArticle.setAttribute('data-label-mapping', JSON.stringify({
+                'Estados': 'Estado: Sin horario',
+                'Niveles': `Level: ${groupData.nivel}`
+            }));
+            
+            groupArticle.innerHTML = `
+                <div class="flex items-center">
+                    <div class="checkbox-container">
+                        <input type="checkbox" class="item-checkbox" data-item-id="${groupData.id_grupo}">
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
+                        ${getGroupInitials(groupData.nombre)}
+                    </div>
+                    <div class="meta">
+                        <div class="font-semibold text-darktext mb-1">
+                            ${escapeHtml(groupData.nombre)}
+                        </div>
+                        <div class="text-muted text-sm">
+                            Estado: Sin horario
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="viewGroupSchedule(${groupData.id_grupo})" 
+                            class="text-green-600 hover:text-green-800 text-sm font-medium transition-colors">
+                        <?php _e('view_schedule'); ?>
+                    </button>
+                    <button onclick="editGrupo(${groupData.id_grupo})" 
+                            class="text-darkblue hover:text-navy text-sm font-medium transition-colors">
+                        <?php _e('edit'); ?>
+                    </button>
+                    <button onclick="deleteGrupo(${groupData.id_grupo}, '${escapeHtml(groupData.nombre)}')" 
+                            class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors">
+                        <?php _e('delete'); ?>
+                    </button>
+                </div>
+            `;
+            
+            // Add to the beginning of the list
+            groupsContainer.insertBefore(groupArticle, groupsContainer.firstChild);
+            
+            // Update statistics
+            updateStatistics();
+        }
+
+        function updateGroupInList(groupData) {
+            if (!groupData || !groupData.id_grupo) {
+                console.error('updateGroupInList: Invalid group data');
+                return;
+            }
+            
+            const groupElement = document.querySelector(`[data-item-id="${groupData.id_grupo}"]`);
+            if (groupElement) {
+                // Update group name
+                const nameElement = groupElement.querySelector('.font-semibold.text-darktext');
+                if (nameElement) {
+                    nameElement.textContent = groupData.nombre;
+                }
+                
+                // Update group initials
+                const initialsElement = groupElement.querySelector('.w-10.h-10.rounded-full');
+                if (initialsElement) {
+                    initialsElement.textContent = getGroupInitials(groupData.nombre);
+                }
+                
+                // Update data attributes
+                groupElement.setAttribute('data-available-labels', `Level: ${groupData.nivel}|Estado: Sin horario`);
+                groupElement.setAttribute('data-label-mapping', JSON.stringify({
+                    'Estados': 'Estado: Sin horario',
+                    'Niveles': `Level: ${groupData.nivel}`
+                }));
+                
+                // Update delete button onclick
+                const deleteButton = groupElement.querySelector('button[onclick*="deleteGrupo"]');
+                if (deleteButton) {
+                    deleteButton.setAttribute('onclick', `deleteGrupo(${groupData.id_grupo}, '${escapeHtml(groupData.nombre)}')`);
+                }
+            }
+        }
+
+        function removeGroupFromList(groupId) {
+            const groupElement = document.querySelector(`[data-item-id="${groupId}"]`);
+            if (groupElement) {
+                groupElement.remove();
+                updateStatistics();
+            }
+        }
+
+        function getGroupInitials(nombre) {
+            const words = nombre.split(' ');
+            if (words.length >= 2) {
+                return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+            }
+            return nombre.substring(0, 2).toUpperCase();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updateStatistics() {
+            // Update the statistics display if it exists
+            const statsContainer = document.getElementById('statisticsContainer');
+            if (statsContainer) {
+                const totalGroups = document.querySelectorAll('.item-row').length;
+                const conHorario = document.querySelectorAll('.item-row').length; // This would need to be calculated based on actual data
+                const sinHorario = 0; // This would need to be calculated based on actual data
+                
+                statsContainer.innerHTML = `
+                    <div class="flex justify-between text-sm text-gray-600 mt-2">
+                        <span>Con Horario: ${conHorario}</span>
+                        <span>Sin Horario: ${sinHorario}</span>
+                    </div>
+                `;
+            }
         }
 
         document.getElementById('grupoModal').addEventListener('click', function(e) {
@@ -554,42 +707,188 @@ function getGroupInitials($nombre) {
             const searchLower = searchTerm.toLowerCase().trim();
             
             if (searchLower === '') {
-
+                // Show all groups
                 grupos.forEach(grupo => {
                     grupo.style.display = '';
                 });
+                removeNoResultsMessage();
                 return;
             }
 
+            // Client-side search for immediate feedback
+            let visibleCount = 0;
             grupos.forEach(grupo => {
-                const nombre = grupo.dataset.nombre || '';
-                const nivel = grupo.dataset.nivel || '';
+                const nombre = grupo.querySelector('.font-semibold.text-darktext')?.textContent || '';
+                const nivel = grupo.querySelector('.text-muted.text-sm')?.textContent || '';
                 
-                if (nombre.includes(searchLower) || nivel.includes(searchLower)) {
+                if (nombre.toLowerCase().includes(searchLower) || nivel.toLowerCase().includes(searchLower)) {
                     grupo.style.display = '';
+                    visibleCount++;
                 } else {
                     grupo.style.display = 'none';
                 }
             });
 
-            const visibleGrupos = Array.from(grupos).filter(grupo => grupo.style.display !== 'none');
+            // Show no results message if needed
+            if (visibleCount === 0) {
+                showNoResultsMessage(searchTerm);
+            } else {
+                removeNoResultsMessage();
+            }
+
+            // Optional: Server-side search for more comprehensive results
+            if (searchLower.length >= 2) {
+                performServerSearch(searchTerm);
+            }
+        }
+
+        function performServerSearch(searchTerm) {
+            // Debounce server search to avoid too many requests
+            clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(() => {
+                fetch(`/src/controllers/GrupoHandler.php?action=search&q=${encodeURIComponent(searchTerm)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.data) {
+                            // Update the UI with server search results
+                            updateSearchResults(data.data);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                    });
+            }, 300);
+        }
+
+        function updateSearchResults(searchResults) {
+            // This would update the UI with server search results
+            // For now, we'll keep the client-side search as primary
+        }
+
+        function showNoResultsMessage(searchTerm) {
+            removeNoResultsMessage();
+            const gruposContainer = document.querySelector('.divide-y.divide-gray-200');
+            const messageDiv = document.createElement('div');
+            messageDiv.id = 'noResultsMessage';
+            messageDiv.className = 'p-8 text-center';
+            messageDiv.innerHTML = `
+                <div class="text-gray-500 text-lg mb-2">No se encontraron grupos que coincidan con "${searchTerm}"</div>
+                <div class="text-gray-400 text-sm">Intente con un término de búsqueda diferente</div>
+            `;
+            gruposContainer.appendChild(messageDiv);
+        }
+
+        function removeNoResultsMessage() {
             const noResultsMessage = document.getElementById('noResultsMessage');
-            
-            if (visibleGrupos.length === 0 && searchLower !== '') {
-                if (!noResultsMessage) {
-                    const gruposList = document.getElementById('gruposList');
-                    const messageDiv = document.createElement('div');
-                    messageDiv.id = 'noResultsMessage';
-                    messageDiv.className = 'p-8 text-center';
-                    messageDiv.innerHTML = `
-                        <div class="text-gray-500 text-lg mb-2">No se encontraron grupos que coincidan con "${searchTerm}"</div>
-                        <div class="text-gray-400 text-sm">Intente con un término de búsqueda diferente</div>
-                    `;
-                    gruposList.appendChild(messageDiv);
-                }
-            } else if (noResultsMessage) {
+            if (noResultsMessage) {
                 noResultsMessage.remove();
             }
+        }
+
+        // Export and bulk operations
+        function exportGrupos(selectedIds = null) {
+            if (!selectedIds) {
+                selectedIds = getSelectedIds();
+            }
+            
+            if (selectedIds.length === 0) {
+                showToast('<?php _e('select_groups_to_export'); ?>', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const exportButton = event?.target || document.querySelector('[data-bulk-action="export"]');
+            if (exportButton) {
+                const originalText = exportButton.textContent;
+                exportButton.disabled = true;
+                exportButton.textContent = '<?php _e('exporting'); ?>...';
+            }
+            
+            const params = new URLSearchParams();
+            selectedIds.forEach(id => params.append('ids[]', id));
+            params.append('action', 'export');
+            
+            fetch(`/src/controllers/GrupoHandler.php?${params.toString()}`)
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    }
+                    throw new Error('Export failed');
+                })
+                .then(blob => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `grupos_export_${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showToast('<?php _e('export_successful'); ?>', 'success');
+                })
+                .catch(error => {
+                    console.error('Export error:', error);
+                    showToast('<?php _e('export_failed'); ?>', 'error');
+                })
+                .finally(() => {
+                    // Restore button state
+                    if (exportButton) {
+                        exportButton.disabled = false;
+                        exportButton.textContent = originalText;
+                    }
+                });
+        }
+
+        function bulkDeleteGrupos(selectedIds) {
+            if (selectedIds.length === 0) {
+                showToast('<?php _e('select_groups_to_delete'); ?>', 'error');
+                return;
+            }
+            
+            const confirmMessage = `<?php _e('confirm_bulk_delete_groups'); ?> ${selectedIds.length} <?php _e('groups'); ?>?`;
+            if (confirm(confirmMessage)) {
+                // Show loading state
+                const deleteButton = document.querySelector('[data-bulk-action="delete"]');
+                const originalText = deleteButton.textContent;
+                deleteButton.disabled = true;
+                deleteButton.textContent = '<?php _e('deleting'); ?>...';
+                
+                const formData = new FormData();
+                formData.append('action', 'bulk_delete');
+                selectedIds.forEach(id => formData.append('ids[]', id));
+                
+                fetch('/src/controllers/GrupoHandler.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(`<?php _e('groups_deleted_successfully'); ?>: ${data.deleted_count || selectedIds.length}`, 'success');
+                        // Remove groups from UI
+                        selectedIds.forEach(id => removeGroupFromList(id));
+                    } else {
+                        showToast(data.message || '<?php _e('error_deleting_groups'); ?>', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Bulk delete error:', error);
+                    showToast('<?php _e('error_deleting_groups'); ?>', 'error');
+                })
+                .finally(() => {
+                    // Restore button state
+                    deleteButton.disabled = false;
+                    deleteButton.textContent = originalText;
+                });
+            }
+        }
+
+        function getSelectedIds() {
+            const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+            return Array.from(checkboxes).map(checkbox => checkbox.dataset.itemId);
         }
 
         document.getElementById('logoutButton').addEventListener('click', function() {
@@ -609,7 +908,11 @@ function getGroupInitials($nombre) {
 
             },
             onBulkAction: function(action, selectedIds) {
-
+                if (action === 'export') {
+                    exportGrupos(selectedIds);
+                } else if (action === 'delete') {
+                    bulkDeleteGrupos(selectedIds);
+                }
             }
         });
 

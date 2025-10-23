@@ -98,7 +98,9 @@ function handleCreateGrupo($grupoModel) {
     $result = $grupoModel->createGrupo($nombre, $nivel);
     
     if ($result['success']) {
-        ResponseHelper::success($result, 201);
+        // Get the created group data
+        $grupo = $grupoModel->getGrupoById($result['id']);
+        ResponseHelper::success('Grupo creado exitosamente', $grupo);
     } else {
         ResponseHelper::error($result['message'], 400);
     }
@@ -140,7 +142,9 @@ function handleUpdateGrupo($grupoModel) {
     $result = $grupoModel->updateGrupo($id, $nombre, $nivel);
     
     if ($result['success']) {
-        ResponseHelper::success($result);
+        // Get the updated group data
+        $grupo = $grupoModel->getGrupoById($id);
+        ResponseHelper::success('Grupo actualizado exitosamente', $grupo);
     } else {
         ResponseHelper::error($result['message'], 400);
     }
@@ -191,7 +195,8 @@ function handleGetGrupo($grupoModel) {
     
     if ($grupo !== false) {
         if ($grupo) {
-            ResponseHelper::success($grupo);
+            // Return data in the correct format
+            ResponseHelper::success('Grupo obtenido exitosamente', $grupo);
         } else {
             ResponseHelper::error('Grupo no encontrado', 404);
         }
