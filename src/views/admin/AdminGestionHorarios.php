@@ -1033,6 +1033,7 @@ try {
 
 
     <script src="/js/toast.js?v=<?php echo time(); ?>"></script>
+    <script src="/js/auto-save-manager.js"></script>
     <script src="/js/schedule-drag-drop.js?v=<?php echo time(); ?>"></script>
     <script>
         // Cache bust: <?php echo time(); ?> - Random: <?php echo rand(1000, 9999); ?>
@@ -1079,18 +1080,26 @@ try {
 
         // Global function to avoid any scoping issues
         window.handleScheduleFormSubmission = function(e) {
+            console.log('handleScheduleFormSubmission called');
             e.preventDefault();
             
             const form = document.getElementById('horarioForm');
             if (!form) {
+                console.log('Form not found');
                 return;
             }
             
             const submitButton = form.querySelector('button[type="button"][onclick*="handleScheduleFormSubmission"]');
+            
+            // Prevent double submission
+            if (submitButton.disabled) {
+                console.log('Form submission already in progress, ignoring duplicate');
+                return;
+            }
+            
             showButtonLoadingState(submitButton);
             
             const url = '/src/controllers/HorarioHandler.php';
-            
             const requestData = {
                 action: window.isEditMode ? 'update' : 'create',
                 id: document.getElementById('horario_id').value,
@@ -1101,100 +1110,129 @@ try {
                 id_docente: document.getElementById('id_docente').value
             };
             
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestData)
-            })
-            .then(response => {
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    showToast(data.message, 'success');
-                    closeHorarioModal();
-                    // Refresh grid instead of page reload
-                    if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
-                        filterScheduleGrid(selectedGroupId);
-                        // Reset pointer-events on cells after grid refresh
-                        hideCellLoadingState();
-                    }
-                } else {
-                    // Check if it's a conflict error
-                    if (data.message && (data.message.includes('Conflicto detectado') || data.message.includes('Ya existe una asignación para este horario') || data.message.includes('Error: Ya existe una asignación para este horario'))) {
-                        // Extract conflict message
-                        let conflictMessage = data.message;
-                        if (data.message.includes('Conflicto detectado: ')) {
-                            conflictMessage = data.message.replace('Conflicto detectado: ', '');
-                        } else if (data.message.includes('Error interno del servidor: Ya existe una asignación para este horario')) {
-                            conflictMessage = 'Ya existe una asignación para este horario';
-                        } else if (data.message.includes('Error: Ya existe una asignación para este horario')) {
-                            conflictMessage = 'Ya existe una asignación para este horario';
-                        }
-                        
-                        // Show confirmation modal
-                        confirmConflict(conflictMessage, {
-                            title: 'Conflicto Detectado',
-                            confirmText: 'Continuar de Todas Formas',
-                            cancelText: 'Cancelar'
-                        }).then(confirmed => {
+            const saveKey = `schedule_${requestData.action}_${requestData.id_grupo}_${requestData.id_bloque}_${requestData.dia}`;
+            
+            // Additional check for AutoSaveManager active requests
+            if (window.autoSaveManager && window.autoSaveManager.activeRequests && window.autoSaveManager.activeRequests.has(saveKey)) {
+                console.log('AutoSave request already in progress for key:', saveKey);
+                hideButtonLoadingState(submitButton);
+                return;
+            }
+            
+            // Use AutoSaveManager for consistent behavior
+            if (window.autoSaveManager) {
+                window.autoSaveManager.save(saveKey, async () => {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!data.success) {
+                        // Check if it's a conflict error
+                        if (data.message && (data.message.includes('Conflicto detectado') || data.message.includes('Ya existe una asignación para este horario') || data.message.includes('Error: Ya existe una asignación para este horario'))) {
+                            // Extract conflict message
+                            let conflictMessage = data.message;
+                            if (data.message.includes('Conflicto detectado: ')) {
+                                conflictMessage = data.message.replace('Conflicto detectado: ', '');
+                            } else if (data.message.includes('Error interno del servidor: Ya existe una asignación para este horario')) {
+                                conflictMessage = 'Ya existe una asignación para este horario';
+                            } else if (data.message.includes('Error: Ya existe una asignación para este horario')) {
+                                conflictMessage = 'Ya existe una asignación para este horario';
+                            }
+                            
+                            // Show confirmation modal
+                            const confirmed = await confirmConflict(conflictMessage, {
+                                title: 'Conflicto Detectado',
+                                confirmText: 'Continuar de Todas Formas',
+                                cancelText: 'Cancelar'
+                            });
+                            
                             if (confirmed) {
                                 // Resend with force_override
-                                const requestData = {
-                                    action: window.isEditMode ? 'update' : 'create',
-                                    id: document.getElementById('horario_id').value,
-                                    id_bloque: document.getElementById('horario_id_bloque').value,
-                                    dia: document.getElementById('horario_dia').value,
-                                    id_grupo: document.getElementById('id_grupo').value,
-                                    id_materia: document.getElementById('id_materia').value,
-                                    id_docente: document.getElementById('id_docente').value,
+                                const forceRequestData = {
+                                    ...requestData,
                                     force_override: true
                                 };
                                 
-                                fetch(url, {
+                                const forceResponse = await fetch(url, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(requestData)
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        showToast(data.message, 'success');
-                                        closeHorarioModal();
-                                        if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
-                                            filterScheduleGrid(selectedGroupId);
-                                            hideCellLoadingState();
-                                        }
-                                    } else {
-                                        showToast('Error: ' + data.message, 'error');
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                    showToast('Error processing request', 'error');
-                                })
-                                .finally(() => {
-                                    hideButtonLoadingState(submitButton);
+                                    body: JSON.stringify(forceRequestData)
                                 });
+                                
+                                const forceData = await forceResponse.json();
+                                
+                                if (!forceData.success) {
+                                    throw new Error(forceData.message || 'Error processing request');
+                                }
+                                
+                                return forceData;
                             } else {
-                                hideButtonLoadingState(submitButton);
+                                throw new Error('Operation cancelled by user');
                             }
-                        });
-                        return; // Don't hide button state yet
+                        } else {
+                            throw new Error(data.message || 'Error processing request');
+                        }
+                    }
+                    
+                    return data;
+                }, {
+                    indicator: submitButton,
+                    debounceDelay: 0, // Immediate for form submissions
+                    onSuccess: (data) => {
+                        showToast(data.message, 'success');
+                        closeHorarioModal();
+                        // Refresh grid instead of page reload
+                        if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
+                            filterScheduleGrid(selectedGroupId);
+                            // Reset pointer-events on cells after grid refresh
+                            hideCellLoadingState();
+                        }
+                    },
+                    onError: (error) => {
+                        console.error('Schedule form submission error:', error);
+                        if (error.message !== 'Operation cancelled by user') {
+                            showToast('Error: ' + error.message, 'error');
+                        }
+                    }
+                }).finally(() => {
+                    hideButtonLoadingState(submitButton);
+                });
+            } else {
+                // Fallback to original implementation
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        closeHorarioModal();
+                        if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
+                            filterScheduleGrid(selectedGroupId);
+                            hideCellLoadingState();
+                        }
                     } else {
                         showToast('Error: ' + data.message, 'error');
                     }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Error processing request', 'error');
-            })
-            .finally(() => {
-                hideButtonLoadingState(submitButton);
-            });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Error processing request', 'error');
+                })
+                .finally(() => {
+                    hideButtonLoadingState(submitButton);
+                });
+            }
         };
         // Ensure showToast is available globally
         if (typeof showToast === 'undefined') {
@@ -1478,145 +1516,6 @@ try {
             }
         }
         
-        function handleScheduleFormSubmission(e) {
-            e.preventDefault();
-            
-            if (!validateHorarioForm()) {
-                showToast('<?php _e('please_correct_errors'); ?>', 'error');
-                return;
-            }
-            
-            const form = document.getElementById('horarioForm');
-            const submitButton = form.querySelector('button[type="button"][onclick*="handleScheduleFormSubmission"]');
-            showButtonLoadingState(submitButton);
-                
-            const url = '/src/controllers/HorarioHandler.php';
-            const method = 'POST';
-            
-            let requestBody;
-            let contentType;
-            
-            // Create a completely new request object
-            const requestData = {
-                action: isEditMode ? 'update' : 'create',
-                id: document.getElementById('horario_id').value,
-                id_bloque: document.getElementById('horario_id_bloque').value,
-                dia: document.getElementById('horario_dia').value,
-                id_grupo: document.getElementById('id_grupo').value,
-                id_materia: document.getElementById('id_materia').value,
-                id_docente: document.getElementById('id_docente').value
-            };
-            
-            requestBody = JSON.stringify(requestData);
-            contentType = 'application/json';
-            
-            const fetchOptions = {
-                method: method,
-                body: requestBody
-            };
-            
-            if (contentType) {
-                fetchOptions.headers = {
-                    'Content-Type': contentType
-                };
-            }
-            
-            fetch(url, fetchOptions)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    showToast(data.message, 'success');
-                    closeHorarioModal();
-                    // Refresh grid instead of page reload
-                    if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
-                        filterScheduleGrid(selectedGroupId);
-                        // Reset pointer-events on cells after grid refresh
-                        hideCellLoadingState();
-                    }
-                } else {
-                    // Check if it's a conflict error
-                    if (data.message && (data.message.includes('Conflicto detectado') || data.message.includes('Ya existe una asignación para este horario') || data.message.includes('Error: Ya existe una asignación para este horario'))) {
-                        // Extract conflict message
-                        let conflictMessage = data.message;
-                        if (data.message.includes('Conflicto detectado: ')) {
-                            conflictMessage = data.message.replace('Conflicto detectado: ', '');
-                        } else if (data.message.includes('Error interno del servidor: Ya existe una asignación para este horario')) {
-                            conflictMessage = 'Ya existe una asignación para este horario';
-                        } else if (data.message.includes('Error: Ya existe una asignación para este horario')) {
-                            conflictMessage = 'Ya existe una asignación para este horario';
-                        }
-                        
-                        // Show confirmation modal
-                        confirmConflict(conflictMessage, {
-                            title: 'Conflicto Detectado',
-                            confirmText: 'Continuar de Todas Formas',
-                            cancelText: 'Cancelar'
-                        }).then(confirmed => {
-                            if (confirmed) {
-                                // Resend with force_override
-                                const requestData = {
-                                    action: isEditMode ? 'update' : 'create',
-                                    id: document.getElementById('horario_id').value,
-                                    id_bloque: document.getElementById('horario_id_bloque').value,
-                                    dia: document.getElementById('horario_dia').value,
-                                    id_grupo: document.getElementById('id_grupo').value,
-                                    id_materia: document.getElementById('id_materia').value,
-                                    id_docente: document.getElementById('id_docente').value,
-                                    force_override: true
-                                };
-                                
-                                fetch(url, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(requestData)
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        showToast(data.message, 'success');
-                                        closeHorarioModal();
-                                        if (typeof filterScheduleGrid === 'function' && selectedGroupId) {
-                                            filterScheduleGrid(selectedGroupId);
-                                            hideCellLoadingState();
-                                        }
-                                    } else {
-                                        showToast('Error: ' + data.message, 'error');
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                    showToast('Error processing request', 'error');
-                                })
-                                .finally(() => {
-                                    hideButtonLoadingState(submitButton);
-                                });
-                            } else {
-                                hideButtonLoadingState(submitButton);
-                            }
-                        });
-                        return; // Don't hide button state yet
-                    } else if (data.data && typeof data.data === 'object') {
-                        Object.keys(data.data).forEach(field => {
-                            showFieldError(field, data.data[field]);
-                        });
-                    } else {
-                        showToast('Error: ' + data.message, 'error');
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('<?php _e('error_processing_request'); ?>', 'error');
-            })
-            .finally(() => {
-                hideButtonLoadingState(submitButton);
-            });
-        }
         
         function clearErrors() {
             const errorElements = document.querySelectorAll('[id$="Error"]');

@@ -186,6 +186,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php _e('app_name'); ?> — Mi Disponibilidad</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/auto-save-manager.js"></script>
     <?php echo Sidebar::getStyles(); ?>
     <style type="text/css">
         body {
@@ -443,8 +444,9 @@ try {
             const dia = cell.dataset.dia;
             const currentState = cell.dataset.disponible === 'true';
             const newState = !currentState;
+            const saveKey = `disponibilidad_${dia}_${bloque}`;
             
-            // Actualizar UI inmediatamente
+            // Actualizar UI inmediatamente (optimistic update)
             cell.dataset.disponible = newState.toString();
             cell.className = cell.className.replace(currentState ? 'disponible' : 'no-disponible', 
                                                    newState ? 'disponible' : 'no-disponible');
@@ -456,20 +458,37 @@ try {
                 hiddenInput.value = newState ? '1' : '0';
             }
             
-            // Enviar actualización al servidor
-            const formData = new FormData();
-            formData.append('action', 'update_disponibilidad');
-            formData.append('id_bloque', bloque);
-            formData.append('dia', dia);
-            formData.append('disponible', newState);
+            // Mark as unsaved
+            window.autoSaveManager.markUnsaved(saveKey);
             
-            fetch('/src/controllers/docente_disponibilidad_handler.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
+            // Debounced save with visual feedback
+            window.autoSaveManager.save(saveKey, async () => {
+                const formData = new FormData();
+                formData.append('action', 'update_disponibilidad');
+                formData.append('id_bloque', bloque);
+                formData.append('dia', dia);
+                formData.append('disponible', newState);
+                
+                const response = await fetch('/src/controllers/docente_disponibilidad_handler.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
                 if (!data.success) {
+                    throw new Error(data.message || 'Error actualizando disponibilidad');
+                }
+                
+                return data;
+            }, {
+                indicator: cell,
+                debounceDelay: 300,
+                onSuccess: (result) => {
+                    // Success - keep the optimistic update
+                    console.log('Disponibilidad actualizada correctamente');
+                },
+                onError: (error) => {
                     // Revertir cambios en caso de error
                     cell.dataset.disponible = currentState.toString();
                     cell.className = cell.className.replace(newState ? 'disponible' : 'no-disponible', 
@@ -478,20 +497,8 @@ try {
                     if (hiddenInput) {
                         hiddenInput.value = currentState ? '1' : '0';
                     }
-                    alert('Error actualizando disponibilidad: ' + data.message);
+                    console.error('Error actualizando disponibilidad:', error);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Revertir cambios en caso de error
-                cell.dataset.disponible = currentState.toString();
-                cell.className = cell.className.replace(newState ? 'disponible' : 'no-disponible', 
-                                                       currentState ? 'disponible' : 'no-disponible');
-                cell.textContent = currentState ? 'Disponible' : 'No disponible';
-                if (hiddenInput) {
-                    hiddenInput.value = currentState ? '1' : '0';
-                }
-                alert('Error de conexión');
             });
         }
 

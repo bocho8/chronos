@@ -34,6 +34,7 @@ if (!AuthHelper::checkSessionTimeout()) {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php _e('app_name'); ?> — <?php _e('translations_management'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/auto-save-manager.js"></script>
     <?php echo Sidebar::getStyles(); ?>
     <style>
         .translation-table {
@@ -503,7 +504,8 @@ if (!AuthHelper::checkSessionTimeout()) {
                            value="${escapeHtml(translation.es || '')}" 
                            data-key="${key}" 
                            data-lang="es"
-                           onblur="saveTranslation('${key}', 'es', this.value)"
+                           data-autosave-key="${key}_es"
+                           oninput="handleTranslationInput('${key}', 'es', this)"
                            onkeypress="handleKeyPress(event, '${key}', 'es', this.value)">
                 </td>
                 <td class="px-4 py-3 translation-cell ${enHasSpanish ? 'spanish-error-cell' : ''}">
@@ -512,7 +514,8 @@ if (!AuthHelper::checkSessionTimeout()) {
                            value="${escapeHtml(translation.en || '')}" 
                            data-key="${key}" 
                            data-lang="en"
-                           onblur="saveTranslation('${key}', 'en', this.value)"
+                           data-autosave-key="${key}_en"
+                           oninput="handleTranslationInput('${key}', 'en', this)"
                            onkeypress="handleKeyPress(event, '${key}', 'en', this.value)">
                     ${enHasSpanish ? '<span class="text-orange-600 text-xs font-semibold">⚠️ Spanish</span>' : ''}
                 </td>
@@ -522,7 +525,8 @@ if (!AuthHelper::checkSessionTimeout()) {
                            value="${escapeHtml(translation.it || '')}" 
                            data-key="${key}" 
                            data-lang="it"
-                           onblur="saveTranslation('${key}', 'it', this.value)"
+                           data-autosave-key="${key}_it"
+                           oninput="handleTranslationInput('${key}', 'it', this)"
                            onkeypress="handleKeyPress(event, '${key}', 'it', this.value)">
                     ${itHasSpanish ? '<span class="text-orange-600 text-xs font-semibold">⚠️ Spanish</span>' : ''}
                 </td>
@@ -668,6 +672,42 @@ if (!AuthHelper::checkSessionTimeout()) {
             if (event.key === 'Enter') {
                 event.target.blur();
             }
+        }
+
+        // Handle translation input with debounced auto-save
+        function handleTranslationInput(key, language, inputElement) {
+            const value = inputElement.value;
+            const saveKey = `${key}_${language}`;
+            
+            // Mark as unsaved
+            window.autoSaveManager.markUnsaved(saveKey);
+            
+            // Debounced save
+            window.autoSaveManager.save(saveKey, async () => {
+                return await saveTranslation(key, language, value);
+            }, {
+                indicator: inputElement,
+                debounceDelay: 1500,
+                onSuccess: (result) => {
+                    // Update local data
+                    if (!translations[key]) {
+                        translations[key] = {};
+                    }
+                    translations[key][language] = value;
+                    
+                    // Mark as saved to prevent re-triggering
+                    window.autoSaveManager.markSaved(saveKey);
+                    
+                    // Refresh the table to show updated data
+                    renderTranslations();
+                    
+                    // Refresh statistics
+                    updateStatistics();
+                },
+                onError: (error) => {
+                    console.error('Translation save error:', error);
+                }
+            });
         }
 
         async function fillMissingTranslations() {
