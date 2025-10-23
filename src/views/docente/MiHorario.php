@@ -63,18 +63,27 @@ try {
         $cargaHoraria = $docenteInfo['horas_asignadas'] ?? 0;
         $porcentajeMargen = $docenteInfo['porcentaje_margen'] ?? 0;
         
-        $scheduleQuery = "SELECT h.*, m.nombre as materia_nombre, g.nombre as grupo_nombre,
-                                 b.hora_inicio, b.hora_fin
-                         FROM horario h
-                         INNER JOIN materia m ON h.id_materia = m.id_materia
-                         INNER JOIN grupo g ON h.id_grupo = g.id_grupo
-                         INNER JOIN bloque_horario b ON h.id_bloque = b.id_bloque
-                         WHERE h.id_docente = :id_docente
-                         ORDER BY h.dia, b.hora_inicio";
-        $stmt = $database->getConnection()->prepare($scheduleQuery);
-        $stmt->bindParam(':id_docente', $docenteInfo['id_docente'], PDO::PARAM_INT);
-        $stmt->execute();
-        $miHorario = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Get published schedules for this teacher
+        require_once __DIR__ . '/../../models/Horario.php';
+        $horarioModel = new Horario($database->getConnection());
+        $miHorario = $horarioModel->getPublishedSchedulesByDocente($docenteInfo['id_docente']);
+        
+        // Handle case where no published schedules exist - fallback to draft schedules
+        if ($miHorario === false || empty($miHorario)) {
+            // Get draft schedules for this teacher
+            $scheduleQuery = "SELECT h.*, m.nombre as materia_nombre, g.nombre as grupo_nombre,
+                                     b.hora_inicio, b.hora_fin
+                             FROM horario h
+                             INNER JOIN materia m ON h.id_materia = m.id_materia
+                             INNER JOIN grupo g ON h.id_grupo = g.id_grupo
+                             INNER JOIN bloque_horario b ON h.id_bloque = b.id_bloque
+                             WHERE h.id_docente = :id_docente
+                             ORDER BY h.dia, b.hora_inicio";
+            $stmt = $database->getConnection()->prepare($scheduleQuery);
+            $stmt->bindParam(':id_docente', $docenteInfo['id_docente'], PDO::PARAM_INT);
+            $stmt->execute();
+            $miHorario = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
         
         $blocksQuery = "SELECT id_bloque, hora_inicio, hora_fin FROM bloque_horario ORDER BY hora_inicio";
         $stmt = $database->getConnection()->prepare($blocksQuery);

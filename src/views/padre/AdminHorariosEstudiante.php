@@ -51,11 +51,15 @@ try {
     if ($selectedGrupo) {
         $selectedGrupoData = $horarioModel->getGrupoById($selectedGrupo);
         
-    $horarios = $horarioModel->getHorariosByGrupo($selectedGrupo);
-
-    $horarios = array_filter($horarios, function($horario) {
-        return isset($horario['publicado']) && $horario['publicado'] == 1;
-    });
+        $horarios = $horarioModel->getPublishedSchedulesByGrupo($selectedGrupo);
+        
+        // Handle case where no published schedules exist - fallback to draft schedules
+        if ($horarios === false || empty($horarios)) {
+            $horarios = $horarioModel->getHorariosByGrupo($selectedGrupo);
+            if ($horarios === false) {
+                $horarios = [];
+            }
+        }
 
         $horariosOrganizados = [];
         foreach ($horarios as $horario) {

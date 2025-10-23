@@ -167,15 +167,22 @@ CREATE TABLE log (
 );
 
 -- Additional tables for schedule publishing functionality
-CREATE SEQUENCE horario_publicado_id_publicacion_seq INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE;
-
-CREATE TABLE horario_publicado (
-    id_publicacion INTEGER PRIMARY KEY DEFAULT nextval('horario_publicado_id_publicacion_seq'),
-    id_horario_referencia INTEGER,
+CREATE TABLE publicacion (
+    id_publicacion SERIAL PRIMARY KEY,
     fecha_publicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     publicado_por INTEGER REFERENCES usuario(id_usuario),
     activo BOOLEAN DEFAULT TRUE,
     descripcion TEXT
+);
+
+CREATE TABLE horario_publicado (
+    id_horario_publicado SERIAL PRIMARY KEY,
+    id_publicacion INTEGER NOT NULL REFERENCES publicacion(id_publicacion) ON DELETE CASCADE,
+    id_grupo INTEGER NOT NULL REFERENCES grupo(id_grupo),
+    id_docente INTEGER NOT NULL REFERENCES docente(id_docente),
+    id_materia INTEGER NOT NULL REFERENCES materia(id_materia),
+    id_bloque INTEGER NOT NULL REFERENCES bloque_horario(id_bloque),
+    dia VARCHAR(20) NOT NULL CHECK (dia IN ('LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'))
 );
 
 CREATE SEQUENCE solicitud_publicacion_id_solicitud_seq INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE;
@@ -188,7 +195,8 @@ CREATE TABLE solicitud_publicacion (
     revisado_por INTEGER REFERENCES usuario(id_usuario),
     fecha_revision TIMESTAMP,
     notas TEXT,
-    snapshot_hash VARCHAR(64) NOT NULL
+    snapshot_hash VARCHAR(64) NOT NULL,
+    id_publicacion INTEGER REFERENCES publicacion(id_publicacion)
 );
 
 -- Performance Indexes

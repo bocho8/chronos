@@ -38,18 +38,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $horarioModel = new Horario($database->getConnection());
         
         if ($_POST['action'] === 'publish_schedule') {
-            $scheduleId = $_POST['schedule_id'] ?? null;
+            $userId = $_SESSION['user']['id_usuario'] ?? null;
             
-            if ($scheduleId) {
-                $result = $horarioModel->publishSchedule($scheduleId);
+            if ($userId) {
+                $result = $horarioModel->publishSchedule($userId);
                 
                 if ($result) {
                     $message = $translation->get('schedule_published_success');
                     $messageType = 'success';
 
                     $database->query("INSERT INTO log (id_usuario, accion, fecha) VALUES (?, ?, NOW())", [
-                        $_SESSION['user']['id_usuario'],
-                        "Publicó horario ID: $scheduleId"
+                        $userId,
+                        "Publicó horarios oficiales"
                     ]);
                 } else {
                     $message = $translation->get('schedule_publication_failed');
@@ -248,7 +248,7 @@ try {
                                             </div>
                                             <div class="flex space-x-3">
                                                 <button 
-                                                    onclick="viewSchedulePreview()"
+                                                    onclick="viewSchedulePreview(<?php echo $request['id_publicacion']; ?>)"
                                                     class="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
                                                     <span class="text-sm">👁️</span>
                                                     Ver Vista Previa
@@ -303,10 +303,16 @@ try {
                                             </div>
                                             <div class="flex space-x-3">
                                                 <button 
-                                                    onclick="viewSchedulePreview()"
+                                                    onclick="viewPublishedSchedules()"
                                                     class="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
                                                     <span class="text-sm">👁️</span>
-                                                    Ver Vista Previa
+                                                    Ver Horarios
+                                                </button>
+                                                <button 
+                                                    onclick="deletePublishedSchedule(<?php echo $schedule['id_publicacion']; ?>)"
+                                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                                                    <span class="text-sm">🗑️</span>
+                                                    Eliminar
                                                 </button>
                                             </div>
                                         </div>
@@ -327,6 +333,22 @@ try {
     </form>
 
     <script>
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500 text-white' : 
+                type === 'error' ? 'bg-red-500 text-white' : 
+                'bg-blue-500 text-white'
+            }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
         function approveRequest(requestId) {
             if (confirm('¿Está seguro de que desea aprobar esta solicitud de publicación? Los horarios serán publicados inmediatamente.')) {
                 fetch('/admin/api/publish-request/approve?action=approve', {
@@ -381,9 +403,45 @@ try {
             }
         }
 
-        function viewSchedulePreview() {
-            // Redirect to read-only schedule viewer
+        function viewSchedulePreview(publicationId) {
+            // Redirect to read-only schedule viewer with specific publication
+            window.location.href = '/admin/view-schedules?publication_id=' + publicationId;
+        }
+
+        function viewPublishedSchedules() {
+            // Redirect to schedule viewer for published schedules
             window.location.href = '/admin/view-schedules';
+        }
+
+        function deletePublishedSchedule(publicationId) {
+            if (!confirm('¿Está seguro de que desea eliminar estos horarios publicados? Esta acción no se puede deshacer.')) {
+                return;
+            }
+            
+            fetch('/src/controllers/PublishRequestHandler.php?action=delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    publication_id: publicationId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    // Reload the page to update the list
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showToast(data.message || 'Error al eliminar los horarios publicados', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('Error de conexión al eliminar horarios', 'error');
+            });
         }
 
         function logout() {

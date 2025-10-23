@@ -65,8 +65,41 @@ try {
     
     // Get schedules for selected group
     $schedules = [];
-    if ($selectedGroup) {
-        $schedules = $horarioModel->getHorariosByGrupo($selectedGroupId);
+    $isPreview = false;
+    
+    // Check if this is a preview of a pending publication
+    if (isset($_GET['publication_id']) && !empty($_GET['publication_id'])) {
+        $publicationId = (int)$_GET['publication_id'];
+        
+        // Check if this is a pending publication (activo = false)
+        $checkQuery = "SELECT activo FROM publicacion WHERE id_publicacion = ?";
+        $stmt = $database->getConnection()->prepare($checkQuery);
+        $stmt->execute([$publicationId]);
+        $publication = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($publication && !$publication['activo']) {
+            // This is a pending publication - show preview
+            $schedules = $horarioModel->getPendingPublicationSchedules($publicationId);
+            $isPreview = true;
+        } else {
+            // This is a published publication - show as published
+            if ($selectedGroup) {
+                $schedules = $horarioModel->getPublishedSchedulesByGrupo($selectedGroupId);
+            } else {
+                $schedules = [];
+            }
+            $isPreview = false;
+        }
+    } elseif ($selectedGroup) {
+        $schedules = $horarioModel->getPublishedSchedulesByGrupo($selectedGroupId);
+        
+        // Handle case where no published schedules exist - fallback to draft schedules
+        if ($schedules === false || empty($schedules)) {
+            $schedules = $horarioModel->getHorariosByGrupo($selectedGroupId);
+            if ($schedules === false) {
+                $schedules = [];
+            }
+        }
     }
     
     // Get time blocks
@@ -97,7 +130,12 @@ try {
     
     // Check if schedules are published
     $publishStatus = $horarioModel->getPublishRequestStatus();
-    $isPublished = $publishStatus === 'publicado';
+    
+    // Check if there are active published schedules
+    $publishedCheck = $database->getConnection()->prepare("SELECT COUNT(*) as count FROM publicacion WHERE activo = true");
+    $publishedCheck->execute();
+    $publishedCount = $publishedCheck->fetch(PDO::FETCH_ASSOC);
+    $isPublished = $publishedCount && $publishedCount['count'] > 0;
     
 } catch (Exception $e) {
     $grupos = [];
@@ -342,6 +380,18 @@ try {
             <div class="mb-6 md:mb-8">
                 <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('schedule_viewer'); ?></h2>
                 <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('schedule_viewer_description'); ?></p>
+                
+                <?php if ($isPreview): ?>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center">
+                            <span class="text-yellow-600 text-lg mr-2">👁️</span>
+                            <div>
+                                <h3 class="text-sm font-medium text-yellow-800">Vista Previa de Solicitud Pendiente</h3>
+                                <p class="text-sm text-yellow-700">Estás viendo una vista previa de los horarios que están pendientes de aprobación.</p>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
 
                     <!-- Group Selector and Actions -->

@@ -63,6 +63,9 @@ function handlePostRequest($action, $horarioModel) {
         case 'reject':
             rejectPublishRequest($horarioModel);
             break;
+        case 'delete':
+            deletePublishedSchedule($horarioModel);
+            break;
         default:
             ResponseHelper::jsonError('Acción no válida', 400);
     }
@@ -172,6 +175,39 @@ function rejectPublishRequest($horarioModel) {
             ]);
         } else {
             ResponseHelper::jsonError('Error al rechazar la solicitud');
+        }
+    } catch (Exception $e) {
+        ResponseHelper::jsonError($e->getMessage());
+    }
+}
+
+function deletePublishedSchedule($horarioModel) {
+    // Check if user has permission (Director or Admin)
+    if (!AuthHelper::hasRole('DIRECTOR') && !AuthHelper::hasRole('ADMIN')) {
+        ResponseHelper::jsonError('No tiene permisos para eliminar horarios publicados', 403);
+        return;
+    }
+    
+    // Read JSON input
+    $input = json_decode(file_get_contents('php://input'), true);
+    $publicationId = $input['publication_id'] ?? null;
+    
+    if (!$publicationId) {
+        ResponseHelper::jsonError('ID de publicación requerido');
+        return;
+    }
+    
+    $userId = $_SESSION['user']['id_usuario'];
+    
+    try {
+        $result = $horarioModel->deletePublishedSchedule($publicationId, $userId);
+        
+        if ($result) {
+            ResponseHelper::jsonSuccess([
+                'message' => 'Horarios publicados eliminados exitosamente'
+            ]);
+        } else {
+            ResponseHelper::jsonError('Error al eliminar los horarios publicados');
         }
     } catch (Exception $e) {
         ResponseHelper::jsonError($e->getMessage());

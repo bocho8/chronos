@@ -589,7 +589,7 @@ class Horario {
             
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            $publishedCheck = $this->db->prepare("SELECT COUNT(*) as count FROM horario_publicado WHERE activo = true");
+            $publishedCheck = $this->db->prepare("SELECT COUNT(*) as count FROM publicacion WHERE activo = true");
             $publishedCheck->execute();
             $publishedCount = $publishedCheck->fetch(PDO::FETCH_ASSOC);
             
@@ -605,17 +605,16 @@ class Horario {
     }
     
     /**
-     * Obtiene horarios publicados
+     * Obtiene horarios publicados (metadata de publicaciones)
      */
     public function getPublishedSchedules() {
         try {
-            $query = "SELECT hp.*, 
-                            hp.fecha_publicacion,
+            $query = "SELECT p.*, 
                             'Horario Oficial' as nombre,
                             'Horario publicado y visible para todos los usuarios' as descripcion
-                     FROM horario_publicado hp
-                     WHERE hp.activo = true
-                     ORDER BY hp.fecha_publicacion DESC";
+                     FROM publicacion p
+                     WHERE p.activo = true
+                     ORDER BY p.fecha_publicacion DESC";
             
             $stmt = $this->db->prepare($query);
             $stmt->execute();
@@ -623,6 +622,68 @@ class Horario {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("Error getting published schedules: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Obtiene horarios publicados para un grupo específico
+     */
+    public function getPublishedSchedulesByGrupo($idGrupo) {
+        try {
+            $query = "SELECT hp.*, 
+                            g.nombre as grupo_nombre, g.nivel as grupo_nivel,
+                            m.nombre as materia_nombre,
+                            u.nombre as docente_nombre, u.apellido as docente_apellido,
+                            b.hora_inicio, b.hora_fin
+                     FROM horario_publicado hp
+                     JOIN publicacion p ON hp.id_publicacion = p.id_publicacion
+                     JOIN grupo g ON hp.id_grupo = g.id_grupo
+                     JOIN materia m ON hp.id_materia = m.id_materia
+                     JOIN docente d ON hp.id_docente = d.id_docente
+                     JOIN usuario u ON d.id_usuario = u.id_usuario
+                     JOIN bloque_horario b ON hp.id_bloque = b.id_bloque
+                     WHERE hp.id_grupo = :id_grupo AND p.activo = true
+                     ORDER BY hp.dia, b.hora_inicio";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_grupo', $idGrupo, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting published schedules by grupo: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Obtiene horarios publicados para un docente específico
+     */
+    public function getPublishedSchedulesByDocente($idDocente) {
+        try {
+            $query = "SELECT hp.*, 
+                            g.nombre as grupo_nombre, g.nivel as grupo_nivel,
+                            m.nombre as materia_nombre,
+                            u.nombre as docente_nombre, u.apellido as docente_apellido,
+                            b.hora_inicio, b.hora_fin
+                     FROM horario_publicado hp
+                     JOIN publicacion p ON hp.id_publicacion = p.id_publicacion
+                     JOIN grupo g ON hp.id_grupo = g.id_grupo
+                     JOIN materia m ON hp.id_materia = m.id_materia
+                     JOIN docente d ON hp.id_docente = d.id_docente
+                     JOIN usuario u ON d.id_usuario = u.id_usuario
+                     JOIN bloque_horario b ON hp.id_bloque = b.id_bloque
+                     WHERE hp.id_docente = :id_docente AND p.activo = true
+                     ORDER BY hp.dia, b.hora_inicio";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id_docente', $idDocente, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting published schedules by docente: " . $e->getMessage());
             return false;
         }
     }
@@ -672,30 +733,29 @@ class Horario {
     }
 
     /**
-     * Publica un horario
+     * Publica un horario creando un snapshot de todos los horarios actuales
      */
-    public function publishSchedule($scheduleId) {
+    public function publishSchedule($userId) {
         try {
             $this->db->beginTransaction();
 
-            $createTableQuery = "CREATE TABLE IF NOT EXISTS horario_publicado (
-                id_publicacion SERIAL PRIMARY KEY,
-                id_horario_referencia INTEGER,
-                fecha_publicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                publicado_por INTEGER,
-                activo BOOLEAN DEFAULT TRUE,
-                descripcion TEXT
-            )";
-            $this->db->exec($createTableQuery);
-
-            $deactivateQuery = "UPDATE horario_publicado SET activo = FALSE WHERE activo = TRUE";
+            // Deactivate previous publications
+            $deactivateQuery = "UPDATE publicacion SET activo = FALSE WHERE activo = TRUE";
             $this->db->exec($deactivateQuery);
 
-            $publishQuery = "INSERT INTO horario_publicado (id_horario_referencia, descripcion, activo) 
-                           VALUES (?, 'Horario oficial publicado por la dirección', TRUE)";
-            
-            $stmt = $this->db->prepare($publishQuery);
-            $result = $stmt->execute([$scheduleId]);
+            // Create new publication entry
+            $publicationQuery = "INSERT INTO publicacion (publicado_por, descripcion, activo) 
+                               VALUES (?, 'Horario oficial publicado por la dirección', TRUE)";
+            $stmt = $this->db->prepare($publicationQuery);
+            $stmt->execute([$userId]);
+            $publicationId = $this->db->lastInsertId();
+
+            // Copy all current schedules to published table
+            $copyQuery = "INSERT INTO horario_publicado (id_publicacion, id_grupo, id_docente, id_materia, id_bloque, dia)
+                         SELECT ?, id_grupo, id_docente, id_materia, id_bloque, dia
+                         FROM horario";
+            $stmt = $this->db->prepare($copyQuery);
+            $result = $stmt->execute([$publicationId]);
             
             if ($result) {
                 $this->db->commit();
@@ -713,28 +773,33 @@ class Horario {
     }
 
     /**
-     * Creates a publish request for all schedules
+     * Creates a publish request and snapshot for all schedules
      */
     public function createPublishRequest($userId) {
         try {
             $this->db->beginTransaction();
 
-            // Check if there's already a pending request
-            $existingQuery = "SELECT id_solicitud FROM solicitud_publicacion WHERE estado = 'pendiente' LIMIT 1";
-            $existingStmt = $this->db->prepare($existingQuery);
-            $existingStmt->execute();
-            
-            if ($existingStmt->fetch()) {
-                throw new Exception("Ya existe una solicitud de publicación pendiente");
-            }
-
             // Generate hash of current schedules
             $scheduleHash = $this->getScheduleHash();
             
-            // Create the request
-            $query = "INSERT INTO solicitud_publicacion (solicitado_por, snapshot_hash) VALUES (?, ?)";
+            // Create publication entry with activo=FALSE (pending review)
+            $publicationQuery = "INSERT INTO publicacion (publicado_por, descripcion, activo) 
+                               VALUES (?, 'Horario pendiente de aprobación', FALSE)";
+            $stmt = $this->db->prepare($publicationQuery);
+            $stmt->execute([$userId]);
+            $publicationId = $this->db->lastInsertId();
+
+            // Copy all current schedules to published table (snapshot)
+            $copyQuery = "INSERT INTO horario_publicado (id_publicacion, id_grupo, id_docente, id_materia, id_bloque, dia)
+                         SELECT ?, id_grupo, id_docente, id_materia, id_bloque, dia
+                         FROM horario";
+            $stmt = $this->db->prepare($copyQuery);
+            $stmt->execute([$publicationId]);
+            
+            // Create the request linked to the publication
+            $query = "INSERT INTO solicitud_publicacion (solicitado_por, snapshot_hash, id_publicacion) VALUES (?, ?, ?)";
             $stmt = $this->db->prepare($query);
-            $result = $stmt->execute([$userId, $scheduleHash]);
+            $result = $stmt->execute([$userId, $scheduleHash, $publicationId]);
             
             if ($result) {
                 $this->db->commit();
@@ -756,7 +821,7 @@ class Horario {
      */
     public function getPublishRequestStatus() {
         try {
-            $query = "SELECT estado, fecha_solicitud, snapshot_hash FROM solicitud_publicacion 
+            $query = "SELECT id_solicitud, estado, fecha_solicitud, snapshot_hash FROM solicitud_publicacion 
                      WHERE estado = 'pendiente' 
                      ORDER BY fecha_solicitud DESC LIMIT 1";
             $stmt = $this->db->prepare($query);
@@ -768,14 +833,8 @@ class Horario {
                 return 'none';
             }
             
-            // Check if schedules have changed since request
-            $currentHash = $this->getScheduleHash();
-            if ($request['snapshot_hash'] !== $currentHash) {
-                // Schedules changed, invalidate the request
-                $this->cancelPublishRequest($request['id_solicitud']);
-                return 'none';
-            }
-            
+            // Return the status without auto-canceling
+            // Multiple pending requests are allowed
             return $request['estado'];
         } catch (PDOException $e) {
             error_log("Error getting publish request status: " . $e->getMessage());
@@ -784,43 +843,86 @@ class Horario {
     }
 
     /**
-     * Approves a publish request and publishes schedules
+     * Approves a publish request and activates the snapshot
      */
     public function approvePublishRequest($requestId, $userId) {
         try {
-            // First update the request status
+            $this->db->beginTransaction();
+
+            // Get the publication ID from the request
+            $getPubQuery = "SELECT id_publicacion FROM solicitud_publicacion WHERE id_solicitud = ? AND estado = 'pendiente'";
+            $stmt = $this->db->prepare($getPubQuery);
+            $stmt->execute([$requestId]);
+            $request = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$request) {
+                throw new Exception("Solicitud no encontrada o ya procesada");
+            }
+            
+            $publicationId = $request['id_publicacion'];
+
+            // Deactivate all other publications
+            $deactivateQuery = "UPDATE publicacion SET activo = FALSE WHERE activo = TRUE";
+            $this->db->exec($deactivateQuery);
+
+            // Activate this publication
+            $activateQuery = "UPDATE publicacion SET activo = TRUE WHERE id_publicacion = ?";
+            $stmt = $this->db->prepare($activateQuery);
+            $stmt->execute([$publicationId]);
+
+            // Update the request status
             $updateQuery = "UPDATE solicitud_publicacion 
                            SET estado = 'aprobado', revisado_por = ?, fecha_revision = CURRENT_TIMESTAMP 
-                           WHERE id_solicitud = ? AND estado = 'pendiente'";
-            $updateStmt = $this->db->prepare($updateQuery);
-            $updateResult = $updateStmt->execute([$userId, $requestId]);
+                           WHERE id_solicitud = ?";
+            $stmt = $this->db->prepare($updateQuery);
+            $stmt->execute([$userId, $requestId]);
             
-            if (!$updateResult) {
-                throw new Exception("No se pudo actualizar la solicitud");
-            }
-
-            // Publish the schedules using existing method (it handles its own transaction)
-            $publishResult = $this->publishSchedule(1); // Use dummy ID since we're publishing all
-            
-            return $publishResult;
+            $this->db->commit();
+            return true;
             
         } catch (PDOException $e) {
+            $this->db->rollBack();
             error_log("Error approving publish request: " . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Rejects a publish request
+     * Rejects a publish request and deletes the pending snapshot
      */
     public function rejectPublishRequest($requestId, $userId, $reason = '') {
         try {
-            $query = "UPDATE solicitud_publicacion 
-                     SET estado = 'rechazado', revisado_por = ?, fecha_revision = CURRENT_TIMESTAMP, notas = ?
-                     WHERE id_solicitud = ? AND estado = 'pendiente'";
-            $stmt = $this->db->prepare($query);
-            return $stmt->execute([$userId, $reason, $requestId]);
+            $this->db->beginTransaction();
+
+            // Get the publication ID from the request
+            $getPubQuery = "SELECT id_publicacion FROM solicitud_publicacion WHERE id_solicitud = ? AND estado = 'pendiente'";
+            $stmt = $this->db->prepare($getPubQuery);
+            $stmt->execute([$requestId]);
+            $request = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$request) {
+                throw new Exception("Solicitud no encontrada o ya procesada");
+            }
+            
+            $publicationId = $request['id_publicacion'];
+
+            // Update the request status and clear the publication reference
+            $updateQuery = "UPDATE solicitud_publicacion 
+                           SET estado = 'rechazado', revisado_por = ?, fecha_revision = CURRENT_TIMESTAMP, notas = ?, id_publicacion = NULL
+                           WHERE id_solicitud = ?";
+            $stmt = $this->db->prepare($updateQuery);
+            $stmt->execute([$userId, $reason, $requestId]);
+
+            // Delete the pending snapshot (CASCADE will handle horario_publicado)
+            $deleteQuery = "DELETE FROM publicacion WHERE id_publicacion = ? AND activo = FALSE";
+            $stmt = $this->db->prepare($deleteQuery);
+            $stmt->execute([$publicationId]);
+            
+            $this->db->commit();
+            return true;
+            
         } catch (PDOException $e) {
+            $this->db->rollBack();
             error_log("Error rejecting publish request: " . $e->getMessage());
             return false;
         }
@@ -836,6 +938,68 @@ class Horario {
             return $stmt->execute([$requestId]);
         } catch (PDOException $e) {
             error_log("Error canceling publish request: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Gets pending publication schedules for preview
+     */
+    public function getPendingPublicationSchedules($publicationId) {
+        try {
+            $query = "SELECT hp.*, g.nombre as grupo_nombre, g.nivel as grupo_nivel, 
+                            m.nombre as materia_nombre, u.nombre as docente_nombre, 
+                            u.apellido as docente_apellido, b.hora_inicio, b.hora_fin
+                     FROM horario_publicado hp
+                     JOIN grupo g ON hp.id_grupo = g.id_grupo
+                     JOIN materia m ON hp.id_materia = m.id_materia
+                     JOIN docente d ON hp.id_docente = d.id_docente
+                     JOIN usuario u ON d.id_usuario = u.id_usuario
+                     JOIN bloque_horario b ON hp.id_bloque = b.id_bloque
+                     WHERE hp.id_publicacion = ?
+                     ORDER BY hp.dia, b.hora_inicio";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$publicationId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting pending publication schedules: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Deletes a published schedule (sets activo = FALSE)
+     */
+    public function deletePublishedSchedule($publicationId, $userId) {
+        try {
+            $this->db->beginTransaction();
+
+            // Check if the publication exists and is active
+            $checkQuery = "SELECT id_publicacion FROM publicacion WHERE id_publicacion = ? AND activo = TRUE";
+            $stmt = $this->db->prepare($checkQuery);
+            $stmt->execute([$publicationId]);
+            
+            if (!$stmt->fetch()) {
+                throw new Exception("Publicación no encontrada o ya inactiva");
+            }
+
+            // Deactivate the publication (set activo = FALSE)
+            $deactivateQuery = "UPDATE publicacion SET activo = FALSE WHERE id_publicacion = ?";
+            $stmt = $this->db->prepare($deactivateQuery);
+            $result = $stmt->execute([$publicationId]);
+
+            if ($result) {
+                $this->db->commit();
+                return true;
+            } else {
+                $this->db->rollBack();
+                return false;
+            }
+            
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            error_log("Error deleting published schedule: " . $e->getMessage());
             return false;
         }
     }
