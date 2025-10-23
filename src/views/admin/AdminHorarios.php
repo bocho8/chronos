@@ -33,7 +33,27 @@ try {
     $database = new Database($dbConfig);
     
     $horarioModel = new Horario($database->getConnection());
-    $horarios = $horarioModel->getAllHorarios();
+    
+    // Check if filtering by specific group
+    $grupoId = $_GET['grupo'] ?? null;
+    $grupoFiltrado = null;
+    
+    if ($grupoId && is_numeric($grupoId)) {
+        require_once __DIR__ . '/../../models/Grupo.php';
+        $grupoModel = new Grupo($database->getConnection());
+        $grupoFiltrado = $grupoModel->getGrupoById($grupoId);
+        
+        if ($grupoFiltrado) {
+            // Get schedules only for this specific group
+            $horarios = $horarioModel->getHorariosByGrupo($grupoId);
+        } else {
+            $horarios = [];
+        }
+    } else {
+        // Get all schedules
+        $horarios = $horarioModel->getAllHorarios();
+    }
+    
     $bloques = $horarioModel->getAllBloques();
     $materias = $horarioModel->getAllMaterias();
     $docentes = $horarioModel->getAllDocentes();
@@ -219,8 +239,27 @@ try {
             <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-6xl mx-auto">
                     <div class="mb-6 md:mb-8">
-                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('schedules_management'); ?></h2>
-                        <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('schedules_management_description'); ?></p>
+                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5">
+                            <?php if ($grupoFiltrado): ?>
+                                <?php _e('schedules_for_group'); ?>: <?php echo htmlspecialchars($grupoFiltrado['nombre']); ?>
+                            <?php else: ?>
+                                <?php _e('schedules_management'); ?>
+                            <?php endif; ?>
+                        </h2>
+                        <p class="text-muted mb-4 md:mb-6 text-sm md:text-base">
+                            <?php if ($grupoFiltrado): ?>
+                                <?php _e('schedules_for_group_description'); ?> <?php echo htmlspecialchars($grupoFiltrado['nombre']); ?> (<?php echo htmlspecialchars($grupoFiltrado['nivel']); ?>)
+                            <?php else: ?>
+                                <?php _e('schedules_management_description'); ?>
+                            <?php endif; ?>
+                        </p>
+                        <?php if ($grupoFiltrado): ?>
+                            <div class="mb-4">
+                                <a href="/src/views/admin/AdminHorarios.php" class="text-darkblue hover:text-navy text-sm font-medium">
+                                    ← <?php _e('view_all_schedules'); ?>
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
