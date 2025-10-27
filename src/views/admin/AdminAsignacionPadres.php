@@ -60,7 +60,6 @@ try {
     <title><?php _e('app_name'); ?> — <?php _e('admin_panel'); ?> · <?php _e('parent_group_assignment'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
     <?php echo Sidebar::getStyles(); ?>
-    <script src="/js/toast.js"></script>
     <style>
         .assignment-card {
             transition: all 0.2s ease;
@@ -79,6 +78,119 @@ try {
         }
         .group-tag:hover {
             background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        }
+
+        /* Modal styles consistent with other admin pages */
+        #editModal {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            z-index: 10000 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            padding: 1rem !important;
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+        
+        #editModal.hidden {
+            display: none !important;
+        }
+        
+        #editModal .modal-content {
+            position: relative !important;
+            z-index: 10001 !important;
+            background: white !important;
+            border-radius: 12px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            max-width: 600px !important;
+            width: 100% !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+            animation: modalSlideIn 0.3s ease-out !important;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        #editModal button[type="submit"], 
+        #editModal button[type="button"] {
+            z-index: 10002 !important;
+            position: relative !important;
+        }
+
+        /* Multiple select styling */
+        #edit_groupSelect, #groupSelect {
+            background-color: #f8fafc !important;
+            border: 2px solid #e2e8f0 !important;
+            border-radius: 8px !important;
+            padding: 12px !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        #edit_groupSelect:focus, #groupSelect:focus {
+            border-color: #1f366d !important;
+            box-shadow: 0 0 0 3px rgba(31, 54, 109, 0.1) !important;
+            background-color: white !important;
+        }
+
+        #edit_groupSelect option, #groupSelect option {
+            padding: 8px 12px !important;
+            background-color: white !important;
+            color: #374151 !important;
+        }
+
+        #edit_groupSelect option:checked, #groupSelect option:checked {
+            background-color: #1f366d !important;
+            color: white !important;
+            font-weight: 600 !important;
+        }
+
+        #edit_groupSelect option:hover, #groupSelect option:hover {
+            background-color: #f1f5f9 !important;
+        }
+
+        #edit_groupSelect option:checked:hover, #groupSelect option:checked:hover {
+            background-color: #1a2d5a !important;
+        }
+
+        /* Make multiple select behave like checkboxes - no Ctrl needed */
+        #edit_groupSelect, #groupSelect {
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+        }
+
+        /* Custom styling for better UX */
+        #edit_groupSelect option, #groupSelect option {
+            position: relative !important;
+            padding-left: 30px !important;
+        }
+
+        #edit_groupSelect option:checked::before, #groupSelect option:checked::before {
+            content: "✓" !important;
+            position: absolute !important;
+            left: 8px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            color: white !important;
+            font-weight: bold !important;
         }
     </style>
 </head>
@@ -141,13 +253,24 @@ try {
                                     </div>
                                     <div>
                                         <label for="groupSelect" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('select_groups'); ?> <span class="text-red-500">*</span></label>
-                                        <select id="groupSelect" name="id_grupos[]" multiple required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue">
+                                        <select id="groupSelect" name="id_grupos[]" multiple required class="w-full min-h-[200px]">
                                             <?php foreach ($grupos as $grupo): ?>
                                                 <option value="<?php echo $grupo['id_grupo']; ?>">
                                                     <?php echo htmlspecialchars($grupo['nombre'] . ' (' . $grupo['nivel'] . ')'); ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <div class="flex justify-between items-center mt-2">
+                                            <p class="text-xs text-gray-500 flex items-center">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                Haz clic en los grupos para seleccionarlos (selección múltiple automática)
+                                            </p>
+                                            <span id="groupCount" class="text-xs font-medium text-darkblue bg-blue-100 px-2 py-1 rounded-full">
+                                                0 grupos seleccionados
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="flex justify-end">
@@ -204,39 +327,254 @@ try {
         </main>
     </div>
 
+    <!-- Edit Modal -->
+    <div id="editModal" class="hidden">
+        <div class="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 id="editModalTitle" class="text-xl font-semibold text-gray-900">Editar Grupos del Padre</h3>
+                    <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form id="editForm" class="space-y-6">
+                    <input type="hidden" id="edit_id_padre" name="id_padre">
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Padre Seleccionado</label>
+                        <p id="edit_padre_nombre" class="text-lg font-semibold text-darkblue"></p>
+                    </div>
+                    
+                    <div>
+                        <label for="edit_groupSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                            Grupos Asignados <span class="text-red-500">*</span>
+                        </label>
+                        <select id="edit_groupSelect" name="id_grupos[]" multiple required 
+                                class="w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue min-h-[250px] text-sm">
+                            <?php foreach ($grupos as $grupo): ?>
+                                <option value="<?php echo $grupo['id_grupo']; ?>">
+                                    <?php echo htmlspecialchars($grupo['nombre'] . ' (' . $grupo['nivel'] . ')'); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="flex justify-between items-center mt-2">
+                            <p class="text-xs text-gray-500 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Haz clic en los grupos para seleccionarlos (selección múltiple automática)
+                            </p>
+                            <span id="editGroupCount" class="text-xs font-medium text-darkblue bg-blue-100 px-2 py-1 rounded-full">
+                                0 grupos seleccionados
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                        <button type="button" onclick="closeEditModal()" 
+                                class="px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkblue hover:bg-navy transition-colors">
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toastContainer"></div>
 
+    <script src="/js/toast.js?v=<?php echo time(); ?>"></script>
     <script>
-        document.getElementById('assignmentForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            formData.append('action', 'assign_groups');
-            
-            fetch('/src/controllers/ParentAssignmentHandler.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('<?php _e('groups_assigned_successfully'); ?>', 'success');
-                    setTimeout(() => location.reload(), 1000);
+        // Function to update group count
+        function updateGroupCount(selectId, countId) {
+            const select = document.getElementById(selectId);
+            const countElement = document.getElementById(countId);
+            if (select && countElement) {
+                const selectedCount = select.selectedOptions.length;
+                countElement.textContent = `${selectedCount} grupo${selectedCount !== 1 ? 's' : ''} seleccionado${selectedCount !== 1 ? 's' : ''}`;
+                
+                // Update styling based on selection
+                if (selectedCount === 0) {
+                    countElement.className = 'text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full';
                 } else {
-                    showToast('Error: ' + data.message, 'error');
+                    countElement.className = 'text-xs font-medium text-darkblue bg-blue-100 px-2 py-1 rounded-full';
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('<?php _e('error_processing_request'); ?>', 'error');
+            }
+        }
+
+        // Wait for DOM and toast system to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners for group count updates
+            const groupSelect = document.getElementById('groupSelect');
+            const editGroupSelect = document.getElementById('edit_groupSelect');
+            
+            if (groupSelect) {
+                groupSelect.addEventListener('change', function() {
+                    updateGroupCount('groupSelect', 'groupCount');
+                });
+                
+                // Make clicking work without Ctrl
+                groupSelect.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    const option = e.target;
+                    if (option.tagName === 'OPTION') {
+                        option.selected = !option.selected;
+                        this.dispatchEvent(new Event('change'));
+                    }
+                });
+                
+                // Initial count
+                updateGroupCount('groupSelect', 'groupCount');
+            }
+            
+            if (editGroupSelect) {
+                editGroupSelect.addEventListener('change', function() {
+                    updateGroupCount('edit_groupSelect', 'editGroupCount');
+                });
+                
+                // Make clicking work without Ctrl
+                editGroupSelect.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    const option = e.target;
+                    if (option.tagName === 'OPTION') {
+                        option.selected = !option.selected;
+                        this.dispatchEvent(new Event('change'));
+                    }
+                });
+            }
+
+            // Assignment form
+            document.getElementById('assignmentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                formData.append('action', 'assign_groups');
+                
+                fetch('/src/controllers/ParentAssignmentHandler.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (typeof showToast === 'function') {
+                            showToast('Grupos asignados exitosamente', 'success');
+                        }
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        if (typeof showToast === 'function') {
+                            showToast('Error: ' + data.message, 'error');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    if (typeof showToast === 'function') {
+                        showToast('Error procesando solicitud', 'error');
+                    }
+                });
             });
+
+            // Edit form
+            const editForm = document.getElementById('editForm');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(this);
+                    formData.append('action', 'assign_groups');
+                    formData.append('replace', 'true');
+                    
+                    fetch('/src/controllers/ParentAssignmentHandler.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (typeof showToast === 'function') {
+                                showToast('Grupos actualizados exitosamente', 'success');
+                            }
+                            closeEditModal();
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            if (typeof showToast === 'function') {
+                                showToast('Error: ' + data.message, 'error');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        if (typeof showToast === 'function') {
+                            showToast('Error procesando solicitud', 'error');
+                        }
+                    });
+                });
+            }
         });
 
         function editParentAssignments(id_padre, nombre) {
-            // TODO: Implement edit functionality
-            showToast('Edit functionality coming soon', 'info');
+            // Set the parent info
+            document.getElementById('edit_id_padre').value = id_padre;
+            document.getElementById('edit_padre_nombre').textContent = nombre;
+            
+            // Get current assignments for this parent
+            fetch('/src/controllers/ParentAssignmentHandler.php?action=get_parent_groups&id_padre=' + id_padre)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const select = document.getElementById('edit_groupSelect');
+                        const assignedIds = data.data.map(g => g.id_grupo.toString());
+                        
+                        // Clear all selections
+                        Array.from(select.options).forEach(option => {
+                            option.selected = false;
+                        });
+                        
+                        // Select assigned groups
+                        Array.from(select.options).forEach(option => {
+                            if (assignedIds.includes(option.value)) {
+                                option.selected = true;
+                            }
+                        });
+                        
+                        // Update group count
+                        updateGroupCount('edit_groupSelect', 'editGroupCount');
+                        
+                        // Show modal
+                        document.getElementById('editModal').classList.remove('hidden');
+                    } else {
+                        if (typeof showToast === 'function') {
+                            showToast('Error cargando grupos del padre', 'error');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    if (typeof showToast === 'function') {
+                        showToast('Error de conexión', 'error');
+                    }
+                });
         }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeEditModal();
+            }
+        });
     </script>
 </body>
 </html>

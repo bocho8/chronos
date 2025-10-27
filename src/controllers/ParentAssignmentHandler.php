@@ -62,6 +62,7 @@ try {
 function handleAssignGroups($padreModel) {
     $id_padre = $_POST['id_padre'] ?? '';
     $id_grupos = $_POST['id_grupos'] ?? [];
+    $replace = $_POST['replace'] ?? false;
     
     if (empty($id_padre) || !is_numeric($id_padre)) {
         ResponseHelper::error('ID de padre inválido');
@@ -73,12 +74,28 @@ function handleAssignGroups($padreModel) {
         return;
     }
     
+    // If replace mode, first remove all existing assignments
+    if ($replace) {
+        $currentGroups = $padreModel->getGroupsForParent($id_padre);
+        if ($currentGroups !== false) {
+            foreach ($currentGroups as $group) {
+                $padreModel->removeGroupFromParent($id_padre, $group['id_grupo']);
+            }
+        }
+    }
+    
     $successCount = 0;
     $errors = [];
     
     foreach ($id_grupos as $id_grupo) {
         if (!is_numeric($id_grupo)) {
             $errors[] = "ID de grupo inválido: $id_grupo";
+            continue;
+        }
+        
+        // Skip if already assigned (unless in replace mode, which was already cleared)
+        if (!$replace && $padreModel->hasAccessToGroup($id_padre, $id_grupo)) {
+            $successCount++;
             continue;
         }
         
