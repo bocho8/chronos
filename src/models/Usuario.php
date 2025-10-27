@@ -89,6 +89,9 @@ class Usuario {
 
             if (!empty($usuarioData['roles'])) {
                 $this->assignRoles($userId, $usuarioData['roles']);
+                
+                // Create role-specific records
+                $this->createRoleSpecificRecords($userId, $usuarioData['roles']);
             }
 
             $this->logAction($userId, 'create', "Usuario creado: {$usuarioData['nombre']} {$usuarioData['apellido']}");
@@ -306,6 +309,8 @@ class Usuario {
      * Actualizar roles de un usuario
      */
     private function updateRoles($userId, $roleNames) {
+        // Get current roles before update
+        $currentRoles = $this->getCurrentRoles($userId);
 
         $deleteQuery = "DELETE FROM usuario_rol WHERE id_usuario = :id_usuario";
         $deleteStmt = $this->db->prepare($deleteQuery);
@@ -314,6 +319,12 @@ class Usuario {
 
         if (!empty($roleNames)) {
             $this->assignRoles($userId, $roleNames);
+            
+            // Get roles that were added
+            $addedRoles = array_diff($roleNames, $currentRoles);
+            if (!empty($addedRoles)) {
+                $this->createRoleSpecificRecords($userId, $addedRoles);
+            }
         }
     }
     
@@ -361,6 +372,121 @@ class Usuario {
         } catch (Exception $e) {
             error_log("Error getting user by email: " . $e->getMessage());
             return false;
+        }
+    }
+    
+    /**
+     * Create role-specific records (docente, padre, etc.)
+     */
+    private function createRoleSpecificRecords($userId, $roleNames) {
+        foreach ($roleNames as $roleName) {
+            // Create a savepoint for each role to avoid aborting the entire transaction
+            $savepointName = 'sp_' . $roleName . '_' . uniqid();
+            
+            try {
+                $this->db->exec("SAVEPOINT {$savepointName}");
+                
+                // Create docente record if DOCENTE role is assigned
+                if ($roleName === 'DOCENTE') {
+                    // Check if record already exists
+                    $checkQuery = "SELECT COUNT(*) FROM docente WHERE id_usuario = :id_usuario";
+                    $checkStmt = $this->db->prepare($checkQuery);
+                    $checkStmt->bindValue(':id_usuario', $userId, PDO::PARAM_INT);
+                    $checkStmt->execute();
+                    
+                    if ($checkStmt->fetchColumn() == 0) {
+                        $docenteQuery = "INSERT INTO docente (id_usuario, trabaja_otro_liceo, horas_asignadas, porcentaje_margen) 
+                                        VALUES (:id_usuario, FALSE, 0, 100.0)";
+                        $docenteStmt = $this->db->prepare($docenteQuery);
+                        $docenteStmt->bindValue(':id_usuario', $userId, PDO::PARAM_INT);
+                        $docenteStmt->execute();
+                    }
+                }
+                
+                // Create padre record if PADRE role is assigned
+                if ($roleName === 'PADRE') {
+                    // Check if record already exists
+                    $checkQuery = "SELECT COUNT(*) FROM padre WHERE id_usuario = :id_usuario";
+                    $checkStmt = $this->db->prepare($checkQuery);
+                    $checkStmt->bindValue(':id_usuario', $userId, PDO::PARAM_INT);
+                    $checkStmt->execute();
+                    
+                    if ($checkStmt->fetchColumn() == 0) {
+                        $padreQuery = "INSERT INTO padre (id_usuario) VALUES (:id_usuario)";
+                        $padreStmt = $this->db->prepare($padreQuery);
+                        $padreStmt->bindValue(':id_usuario', $userId, PDO::PARAM_INT);
+                        $padreStmt->execute();
+                    }
+                }
+                
+                // Release the savepoint if successful
+                $this->db->exec("RELEASE SAVEPOINT {$savepointName}");
+                
+            } catch (Exception $e) {
+                error_log("Error creating role-specific record for role '{$roleName}': " . $e->getMessage());
+                
+                // Rollback to the savepoint to recover from the error
+                try {
+                    $this->db->exec("ROLLBACK TO SAVEPOINT {$savepointName}");
+                } catch (Exception $rollbackEx) {
+                    error_log("Error rolling back to savepoint: " . $rollbackEx->getMessage());
+                }
+                
+                // Continue with other roles
+            }
+        }
+    }
+    
+    /**
+     * Check if docente record exists for this user
+     */
+    private function docenteRecordExists($userId) {
+        try {
+            $query = "SELECT COUNT(*) FROM docente WHERE id_usuario = :id_usuario";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':id_usuario', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchColumn() > 0;
+        } catch (Exception $e) {
+            error_log("Error checking docente record: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Check if padre record exists for this user
+     */
+    private function padreRecordExists($userId) {
+        try {
+            $query = "SELECT COUNT(*) FROM padre WHERE id_usuario = :id_usuario";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':id_usuario', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchColumn() > 0;
+        } catch (Exception $e) {
+            error_log("Error checking padre record: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get current roles for a user
+     */
+    private function getCurrentRoles($userId) {
+        try {
+            $query = "SELECT nombre_rol FROM usuario_rol WHERE id_usuario = :id_usuario";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':id_usuario', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $roles = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $roles[] = $row['nombre_rol'];
+            }
+            return $roles;
+        } catch (Exception $e) {
+            error_log("Error getting current roles: " . $e->getMessage());
+            return [];
         }
     }
     
