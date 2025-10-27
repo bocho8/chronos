@@ -239,7 +239,6 @@ function getGroupInitials($nombre) {
                                     <input type="text" id="searchInput" placeholder="<?php _e('search_groups'); ?>" 
                                            class="w-full py-2 px-3 md:px-4 pr-10 border border-gray-300 rounded text-xs md:text-sm focus:ring-darkblue focus:border-darkblue"
                                            onkeyup="searchGrupos(this.value)">
-                                    <span class="text-gray-400 text-2xl">•</span>
                                 </div>
                                 <div class="flex gap-2">
                                     <button onclick="exportGrupos()" class="py-2 px-3 md:px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-white text-gray-700 hover:bg-gray-50">

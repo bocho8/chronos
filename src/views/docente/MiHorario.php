@@ -98,7 +98,6 @@ try {
 function generateScheduleTable($horario, $timeBlocks) {
     if (empty($horario)) {
         return '<div class="text-center py-8">
-                    <span class="text-gray-400 text-2xl">•</span>
                     <p class="mt-2 text-sm text-gray-500">' . _e('no_schedules_published') . '</p>
                     <p class="text-xs text-gray-400">' . _e('schedules_will_be_visible_when_published') . '</p>
                 </div>';
@@ -225,7 +224,6 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
                                     <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                        <span class="text-gray-400 text-2xl">•</span>
                                     </div>
                                 </div>
                                 <div class="ml-4">
@@ -239,7 +237,6 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
                                     <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                        <span class="text-xs font-bold leading-none">•</span>
                                     </div>
                                 </div>
                                 <div class="ml-4">
@@ -272,7 +269,6 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
                             <h3 class="text-lg font-medium text-gray-900"><?php _e('my_class_schedule'); ?></h3>
                             <button onclick="window.print()" 
                                     class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                                <span class="text-xs font-bold leading-none">•</span>
                                 <?php _e('print'); ?>
                             </button>
                         </div>

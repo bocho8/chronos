@@ -312,7 +312,6 @@ function getUserInitials($nombre, $apellido) {
                   <input type="text" id="searchInput" placeholder="<?php _e('search_users'); ?>" 
                          class="w-full py-2 px-3 md:px-4 pr-10 border border-gray-300 rounded text-xs md:text-sm focus:ring-darkblue focus:border-darkblue"
                          onkeyup="searchUsuarios(this.value)">
-                  <span class="text-gray-400 text-2xl">•</span>
                 </div>
                 <div class="flex gap-2">
                   <button class="py-2 px-3 md:px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-white text-gray-700 hover:bg-gray-50">
@@ -371,7 +370,7 @@ function getUserInitials($nombre, $apellido) {
                            data-label-mapping="<?php 
                                $mapping = [];
                                $mapping['Estados'] = ($usuario['roles'] && $usuario['roles'] !== 'Sin roles') ? 'Estado: Con roles' : 'Estado: Sin roles';
-                               $mapping['Información'] = 'Email: ' . htmlspecialchars($usuario['email']) . ' • CI: ' . htmlspecialchars($usuario['cedula']);
+                               $mapping['Información'] = 'Email: ' . htmlspecialchars($usuario['email']) . ' | CI: ' . htmlspecialchars($usuario['cedula']);
                                if ($usuario['roles'] && $usuario['roles'] !== 'Sin roles') {
                                    $mapping['Roles'] = 'Roles: ' . htmlspecialchars($usuario['roles']);
                                }
@@ -393,12 +392,12 @@ function getUserInitials($nombre, $apellido) {
                             <?php echo htmlspecialchars($usuario['email']); ?>
                           </div>
                           <div class="hidden md:block">
-                            <?php echo htmlspecialchars($usuario['email']); ?> • 
-                            CI: <?php echo htmlspecialchars($usuario['cedula']); ?> • 
+                            <?php echo htmlspecialchars($usuario['email']); ?> | 
+                            CI: <?php echo htmlspecialchars($usuario['cedula']); ?> | 
                             <?php _e('roles'); ?>: <?php echo htmlspecialchars($usuario['roles'] ?? 'Sin roles'); ?>
                           </div>
                           <div class="block md:hidden text-xs">
-                            CI: <?php echo htmlspecialchars($usuario['cedula']); ?> • 
+                            CI: <?php echo htmlspecialchars($usuario['cedula']); ?> | 
                             <?php _e('roles'); ?>: <?php echo htmlspecialchars($usuario['roles'] ?? 'Sin roles'); ?>
                           </div>
                         </div>

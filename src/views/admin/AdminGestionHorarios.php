@@ -2530,7 +2530,7 @@ try {
             <div class="flex justify-between items-center mb-6">
                 <h3 id="horarioModalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_schedule'); ?></h3>
                 <button onclick="closeHorarioModal()" class="text-gray-400 hover:text-gray-600">
-                    <span class="inline mr-2 text-xs">•</span>
+                    <span class="inline mr-2 text-xs">×</span>
                 </button>
             </div>
             

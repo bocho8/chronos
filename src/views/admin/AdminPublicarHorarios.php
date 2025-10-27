@@ -203,9 +203,8 @@ try {
                             <div class="flex">
                                 <div class="flex-shrink-0">
                                     <?php if ($messageType === 'success'): ?>
-                                        <span class="text-gray-400 text-2xl">•</span>
                                     <?php else: ?>
-                                        <span class="text-sm">📋</span>
+                                        <span class="text-sm"></span>
                                     <?php endif; ?>
                                 </div>
                                 <div class="ml-3">
@@ -221,7 +220,6 @@ try {
                         
                         <?php if (empty($pendingRequests)): ?>
                             <div class="text-center py-12 bg-white rounded-lg border border-gray-200">
-                                <span class="text-gray-400 text-2xl">•</span>
                                 <p class="mt-2 text-sm text-gray-500">No hay solicitudes de publicación pendientes</p>
                             </div>
                         <?php else: ?>
@@ -279,7 +277,6 @@ try {
                         
                         <?php if (empty($publishedSchedules)): ?>
                             <div class="text-center py-12 bg-white rounded-lg border border-gray-200">
-                                <span class="text-gray-400 text-2xl">•</span>
                                 <p class="mt-2 text-sm text-gray-500">No hay horarios publicados</p>
                             </div>
                         <?php else: ?>

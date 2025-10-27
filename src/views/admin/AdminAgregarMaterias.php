@@ -264,7 +264,6 @@ try {
                             <div class="flex">
                                 <div class="flex-shrink-0">
                                     <?php if ($messageType === 'success'): ?>
-                                        <span class="text-gray-400 text-2xl">•</span>
                                     <?php else: ?>
                                         <span class="text-sm">📋</span>
                                     <?php endif; ?>
@@ -397,7 +396,6 @@ try {
                             
                             <?php if (empty($recentSubjects)): ?>
                                 <div class="text-center py-8">
-                                    <span class="text-gray-400 text-2xl">•</span>
                                     <p class="mt-2 text-sm text-gray-500">No hay materias registradas</p>
                                 </div>
                             <?php else: ?>

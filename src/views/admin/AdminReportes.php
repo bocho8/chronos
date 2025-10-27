@@ -225,7 +225,6 @@ try {
                             <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('quick_reports'); ?></h3>
                             <div class="space-y-3">
                                 <button onclick="generateReport('teachers')" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
-                                    <span class="text-gray-400 text-2xl">•</span>
                                     <div>
                                         <p class="font-medium text-gray-900"><?php _e('teachers_report'); ?></p>
                                         <p class="text-sm text-gray-500"><?php _e('teachers_report_description'); ?></p>
@@ -233,7 +232,6 @@ try {
                                 </button>
 
                                 <button onclick="generateReport('schedules')" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
-                                    <span class="text-gray-400 text-2xl">•</span>
                                     <div>
                                         <p class="font-medium text-gray-900"><?php _e('schedules_report'); ?></p>
                                         <p class="text-sm text-gray-500"><?php _e('schedules_report_description'); ?></p>
@@ -291,7 +289,7 @@ try {
                                     <div class="flex items-start space-x-3">
                                         <div class="flex-shrink-0">
                                             <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                                <span class="text-gray-600 text-xs leading-none">•</span>
+                                                <span class="text-gray-600 text-xs leading-none"></span>
                                             </div>
                                         </div>
                                         <div class="flex-1 min-w-0">
@@ -310,7 +308,6 @@ try {
                             </div>
                         <?php else: ?>
                             <div class="text-center py-8">
-                                <span class="text-gray-400 text-2xl">•</span>
                                 <p class="mt-2 text-sm text-gray-500"><?php _e('no_recent_activity'); ?></p>
                             </div>
                         <?php endif; ?>

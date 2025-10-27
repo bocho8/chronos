@@ -205,7 +205,6 @@ try {
                             </div>
                             <div class="ml-auto">
                                 <button onclick="printSchedule()" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                                    <span class="text-gray-400 text-2xl">•</span>
                                     <?php _e('print'); ?>
                                 </button>
                             </div>
@@ -262,7 +261,6 @@ try {
                     <?php else: ?>
                     <!-- Mensaje cuando no hay grupo seleccionado -->
                     <div class="bg-white rounded-lg shadow-sm border border-lightborder p-12 text-center">
-                        <span class="text-gray-400 text-2xl">•</span>
                         <h3 class="text-lg font-medium text-gray-900 mb-2"><?php _e('no_group_selected'); ?></h3>
                         <p class="text-gray-500"><?php _e('select_group_to_view_schedule'); ?></p>
                     </div>

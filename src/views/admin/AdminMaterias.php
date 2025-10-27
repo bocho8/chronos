@@ -453,10 +453,10 @@ try {
                                                 <div class="text-muted text-sm">
                                                     <?php echo $materia['horas_semanales']; ?> horas semanales
                                                     <?php if ($materia['pauta_anep_nombre']): ?>
-                                                        • <?php echo htmlspecialchars($materia['pauta_anep_nombre']); ?>
+                                                        | <?php echo htmlspecialchars($materia['pauta_anep_nombre']); ?>
                                                     <?php endif; ?>
                                                     <?php if ($materia['es_programa_italiano']): ?>
-                                                        • Programa Italiano
+                                                        | Programa Italiano
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
@@ -567,7 +567,7 @@ try {
                                                         <?php _e('min_days'); ?>: <?php echo $pauta['dias_minimos']; ?> | 
                                                         <?php _e('max_days'); ?>: <?php echo $pauta['dias_maximos']; ?>
                                                         <?php if ($pauta['condiciones_especiales']): ?>
-                                                            • <?php echo htmlspecialchars($pauta['condiciones_especiales']); ?>
+                                                            | <?php echo htmlspecialchars($pauta['condiciones_especiales']); ?>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>

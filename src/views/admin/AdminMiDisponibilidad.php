@@ -136,7 +136,6 @@ if (!AuthHelper::checkSessionTimeout()) {
                     <!-- Información -->
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
                         <div class="flex items-center">
-                            <span class="text-gray-400 text-2xl">•</span>
                             <div>
                                 <h3 class="text-lg font-medium text-blue-900"><?php _e('admin_note'); ?></h3>
                                 <p class="text-blue-700"><?php _e('admin_availability_note'); ?></p>
@@ -146,7 +145,6 @@ if (!AuthHelper::checkSessionTimeout()) {
 
                     <!-- Redirección a gestión de disponibilidad -->
                     <div class="bg-white rounded-lg shadow-sm border border-lightborder p-12 text-center">
-                        <span class="text-gray-400 text-2xl">•</span>
                         <h3 class="text-xl font-semibold text-gray-900 mb-4"><?php _e('manage_all_availability'); ?></h3>
                         <p class="text-gray-600 mb-6"><?php _e('as_admin_manage_all_teachers'); ?></p>
                         

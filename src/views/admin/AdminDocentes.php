@@ -285,7 +285,6 @@ function getTeacherAssignments($teacherId, $assignments) {
                   <input type="text" id="searchInput" placeholder="<?php _e('search_teachers'); ?>" 
                          class="w-full py-2 px-3 md:px-4 pr-10 border border-gray-300 rounded text-xs md:text-sm focus:ring-darkblue focus:border-darkblue"
                          onkeyup="searchDocentes(this.value)">
-                  <span class="text-gray-400 text-2xl">•</span>
                 </div>
                 <div class="flex gap-2">
                   <button class="py-2 px-3 md:px-4 border border-gray-300 rounded cursor-pointer font-medium transition-all text-xs md:text-sm bg-white text-gray-700 hover:bg-gray-50">
@@ -353,7 +352,7 @@ function getTeacherAssignments($teacherId, $assignments) {
                            data-label-mapping="<?php 
                                $mapping = [];
                                $mapping['Estados'] = $hasAssignments ? 'Estado: Con asignaciones' : 'Estado: Sin asignaciones';
-                               $mapping['Información'] = 'Email: ' . htmlspecialchars($docente['email']) . ' • CI: ' . htmlspecialchars($docente['cedula']);
+                               $mapping['Información'] = 'Email: ' . htmlspecialchars($docente['email']) . ' | CI: ' . htmlspecialchars($docente['cedula']);
                                if ($hasAssignments) {
                                    $mapping['Materias'] = 'Materias: ' . $assignmentCount . ' asignadas';
                                }
@@ -375,7 +374,7 @@ function getTeacherAssignments($teacherId, $assignments) {
                           <?php echo htmlspecialchars($docente['nombre'] . ' ' . $docente['apellido']); ?>
                         </div>
                         <div class="text-muted text-sm">
-                          <?php echo htmlspecialchars($docente['email']); ?> • 
+                          <?php echo htmlspecialchars($docente['email']); ?> | 
                           CI: <?php echo htmlspecialchars($docente['cedula']); ?>
                         </div>
                       </div>

@@ -228,7 +228,6 @@ try {
                             <h3 class="text-base md:text-lg font-medium text-gray-900 mb-3 md:mb-4"><?php _e('recent_activity'); ?></h3>
                             <?php if (empty($recentActivity)): ?>
                                 <div class="text-center py-8">
-                                    <span class="text-gray-400 text-2xl">•</span>
                                     <p class="mt-2 text-sm text-gray-500"><?php _e('no_recent_activity'); ?></p>
                                 </div>
                             <?php else: ?>
@@ -237,7 +236,7 @@ try {
                                         <div class="flex items-start space-x-2 md:space-x-3">
                                             <div class="flex-shrink-0">
                                                 <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                                    <span class="text-gray-600 text-xs leading-none">•</span>
+                                                    <span class="text-gray-600 text-xs leading-none"></span>
                                                 </div>
                                             </div>
                                             <div class="flex-1 min-w-0">

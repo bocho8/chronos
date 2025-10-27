@@ -213,7 +213,7 @@ function getUserInitials($nombre, $apellido) {
                                     <?php echo htmlspecialchars($selectedDocente['nombre'] . ' ' . $selectedDocente['apellido']); ?>
                                 </h3>
                                 <p class="text-gray-600">
-                                    <?php echo htmlspecialchars($selectedDocente['email']); ?> • 
+                                    <?php echo htmlspecialchars($selectedDocente['email']); ?> | 
                                     CI: <?php echo htmlspecialchars($selectedDocente['cedula']); ?>
                                 </p>
                             </div>

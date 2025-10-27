@@ -100,7 +100,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         
                         <div class="flex flex-col items-center text-center">
                             <div class="w-20 h-20 bg-white border border-gray-300 rounded-full flex items-center justify-center mb-2">
-                                <span class="text-gray-400 text-2xl">•</span>
                             </div>
                             <p class="font-semibold text-gray-800">Mario Gubenio</p>
                             <p class="text-sm text-gray-500">Química</p>
@@ -109,7 +108,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         
                         <div class="flex flex-col items-center text-center">
                             <div class="w-20 h-20 bg-white border border-gray-300 rounded-full flex items-center justify-center mb-2">
-                                <span class="text-gray-400 text-2xl">•</span>
                             </div>
                             <p class="font-semibold text-gray-800">Marcelo Sime</p>
                             <p class="text-sm text-gray-500">Física/Electrónica</p>
@@ -118,7 +116,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
                         <div class="flex flex-col items-center text-center">
                             <div class="w-20 h-20 bg-white border border-gray-300 rounded-full flex items-center justify-center mb-2">
-                                <span class="text-gray-400 text-2xl">•</span>
                             </div>
                             <p class="font-semibold text-gray-800">Lourdes Canflore</p>
                             <p class="text-sm text-gray-500">Italiano</p>
