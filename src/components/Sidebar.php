@@ -117,9 +117,7 @@ class Sidebar {
                 $this->getAdministrationSections(),
                 $this->getAcademicSections(),
                 $this->getDirectorSections(),
-                $this->getCoordinatorSections(),
-                $this->getTeacherSections(),
-                $this->getParentSections()
+                $this->getCoordinatorSections()
             ),
             'DIRECTOR' => array_merge(
                 [],
@@ -129,8 +127,7 @@ class Sidebar {
             ),
             'COORDINADOR' => array_merge(
                 [],
-                $this->getCoordinatorSections(),
-                $this->getTeacherSections()
+                $this->getCoordinatorSections()
             ),
             'DOCENTE' => array_merge([], $this->getTeacherSections()),
             'PADRE' => array_merge([], $this->getParentSections()),
@@ -228,24 +225,9 @@ class Sidebar {
                 'title' => 'coordinator_functions',
                 'items' => [
                     [
-                        'url' => $urls['teachers'],
-                        'text' => 'teachers',
-                        'icon' => '👨‍🏫'
-                    ],
-                    [
-                        'url' => $urls['calendar'],
-                        'text' => 'calendar',
-                        'icon' => '📅'
-                    ],
-                    [
                         'url' => $urls['teacher_availability'],
                         'text' => 'teacher_availability',
                         'icon' => '⏰'
-                    ],
-                    [
-                        'url' => $urls['subject_assignments'],
-                        'text' => 'subject_assignments',
-                        'icon' => '🔗'
                     ],
                     [
                         'url' => $urls['reports'],
