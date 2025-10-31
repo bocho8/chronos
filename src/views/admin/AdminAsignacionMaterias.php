@@ -25,7 +25,7 @@ $languageSwitcher->handleLanguageChange();
 AuthHelper::requireRole(['ADMIN', 'DIRECTOR', 'COORDINADOR']);
 
 if (!AuthHelper::checkSessionTimeout()) {
-    header("Location: /src/views/login.php?message=session_expired");
+    header("Location: /login?message=session_expired");
     exit();
 }
 
@@ -458,7 +458,7 @@ try {
                 const formData = new FormData(this);
                 formData.append('action', 'assign_subjects');
                 
-                fetch('/src/controllers/GroupSubjectHandler.php', {
+                fetch('/admin/api/group-subjects', {
                     method: 'POST',
                     body: formData
                 })
@@ -492,7 +492,7 @@ try {
                     const formData = new FormData(this);
                     formData.append('action', 'assign_subjects');
                     
-                    fetch('/src/controllers/GroupSubjectHandler.php', {
+                    fetch('/admin/api/group-subjects', {
                         method: 'POST',
                         body: formData
                     })
@@ -526,7 +526,7 @@ try {
             document.getElementById('edit_grupo_nombre').textContent = nombre;
             
             // Get current assignments for this group
-            fetch('/src/controllers/GroupSubjectHandler.php?action=get_group_subjects&id_grupo=' + id_grupo)
+            fetch('/admin/api/group-subjects?action=get_group_subjects&id_grupo=' + id_grupo)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {

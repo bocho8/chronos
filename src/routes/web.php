@@ -17,6 +17,8 @@ require_once __DIR__ . '/../app/Controllers/Admin/GroupController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/UserController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/CoordinatorController.php';
 require_once __DIR__ . '/../app/Controllers/Admin/TranslationController.php';
+require_once __DIR__ . '/../app/Controllers/Admin/ParentAssignmentController.php';
+require_once __DIR__ . '/../app/Controllers/Admin/GroupSubjectController.php';
 
 use App\Core\Router;
 use App\Middleware\AuthMiddleware;
@@ -164,6 +166,14 @@ $router->group(['middleware' => ['auth']], function($router) {
         });
         $router->post('/api/users', 'Admin\UserController@handleRequest');
         $router->post('/api/coordinators', 'Admin\CoordinatorController@handleRequest');
+        
+        // Parent Assignment Routes
+        $router->get('/parent-assignments', 'Admin\ParentAssignmentController@index');
+        $router->post('/api/parent-assignments', 'Admin\ParentAssignmentController@handleRequest');
+        
+        // Group Subject Assignment Routes
+        $router->get('/group-subjects', 'Admin\GroupSubjectController@index');
+        $router->post('/api/group-subjects', 'Admin\GroupSubjectController@handleRequest');
 
         // Translation Management Routes
         $router->get('/translations', 'Admin\TranslationController@index');

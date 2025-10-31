@@ -25,7 +25,7 @@ $languageSwitcher->handleLanguageChange();
 AuthHelper::requireRole(['ADMIN', 'DIRECTOR', 'COORDINADOR']);
 
 if (!AuthHelper::checkSessionTimeout()) {
-    header("Location: /src/views/login.php?message=session_expired");
+    header("Location: /login?message=session_expired");
     exit();
 }
 
@@ -458,7 +458,7 @@ try {
                 const formData = new FormData(this);
                 formData.append('action', 'assign_groups');
                 
-                fetch('/src/controllers/ParentAssignmentHandler.php', {
+                fetch('/admin/api/parent-assignments', {
                     method: 'POST',
                     body: formData
                 })
@@ -493,7 +493,7 @@ try {
                     formData.append('action', 'assign_groups');
                     formData.append('replace', 'true');
                     
-                    fetch('/src/controllers/ParentAssignmentHandler.php', {
+                    fetch('/admin/api/parent-assignments', {
                         method: 'POST',
                         body: formData
                     })
@@ -527,7 +527,7 @@ try {
             document.getElementById('edit_padre_nombre').textContent = nombre;
             
             // Get current assignments for this parent
-            fetch('/src/controllers/ParentAssignmentHandler.php?action=get_parent_groups&id_padre=' + id_padre)
+            fetch('/admin/api/parent-assignments?action=get_parent_groups&id_padre=' + id_padre)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {

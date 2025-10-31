@@ -183,12 +183,12 @@ class Sidebar {
                         'icon' => '👥'
                     ],
                     [
-                        'url' => '/src/views/admin/AdminAsignacionPadres.php',
+                        'url' => '/admin/parent-assignments',
                         'text' => 'parent_group_assignment',
                         'icon' => '👨‍👩‍👧‍👦'
                     ],
                     [
-                        'url' => '/src/views/admin/AdminAsignacionMaterias.php',
+                        'url' => '/admin/group-subjects',
                         'text' => 'group_subject_assignment',
                         'icon' => '📖'
                     ],
