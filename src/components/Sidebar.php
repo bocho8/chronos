@@ -353,12 +353,12 @@ class Sidebar {
             }
             .sidebar-container.sidebar-open {
                 width: 256px !important;
-                z-index: 50;
+                z-index: 50 !important;
                 box-shadow: 4px 0 6px -1px rgba(0, 0, 0, 0.1);
             }
         }
         
-        @media (min-width: 641px) and (max-width: 768px) {
+        @media (min-width: 641px) and (max-width: 1023px) {
             .sidebar-container {
                 width: 224px !important; /* w-56 */
             }
@@ -367,24 +367,6 @@ class Sidebar {
         @media (min-width: 1024px) {
             .sidebar-container {
                 width: 256px !important; /* w-64 */
-            }
-        }
-        
-        /* Main content adjustment for sidebar */
-        .main-content {
-            margin-left: 0;
-            transition: margin-left 0.3s ease;
-        }
-        
-        @media (min-width: 641px) {
-            .main-content {
-                margin-left: 224px; /* w-56 */
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .main-content {
-                margin-left: 256px; /* w-64 */
             }
         }
         </style>

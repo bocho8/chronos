@@ -107,13 +107,22 @@ try {
             position: relative !important;
             z-index: 10001 !important;
             background: white !important;
-            border-radius: 12px !important;
+            border-radius: 8px !important;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
             max-width: 600px !important;
-            width: 100% !important;
-            max-height: 90vh !important;
+            width: calc(100% - 2rem) !important;
+            margin: 1rem !important;
+            max-height: calc(100vh - 2rem) !important;
             overflow-y: auto !important;
             animation: modalSlideIn 0.3s ease-out !important;
+        }
+        
+        @media (min-width: 640px) {
+            #editModal .modal-content {
+                border-radius: 12px !important;
+                width: 100% !important;
+                margin: 0 !important;
+            }
         }
         
         @keyframes modalSlideIn {
@@ -198,12 +207,19 @@ try {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col">
+        <main class="flex-1 flex flex-col ml-0 md:ml-56 lg:ml-64 transition-all">
+            <!-- Mobile Sidebar Overlay -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden sm:hidden" onclick="toggleSidebar()"></div>
+            
             <!-- Header -->
-            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-                <div class="w-8"></div>
-                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
-                <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder relative z-30">
+                <button id="sidebarToggle" class="sm:hidden p-2 rounded-md hover:bg-navy transition-colors text-white" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block flex-1"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-sm font-semibold text-center sm:hidden flex-1"><?php _e('welcome'); ?></div>
                 <div class="flex items-center">
                     <?php echo $languageSwitcher->render('', 'mr-4'); ?>
                     <button class="mr-4 p-2 rounded-full hover:bg-navy" title="<?php _e('notifications'); ?>">
@@ -225,24 +241,24 @@ try {
             </header>
 
             <!-- Main Content -->
-            <div class="flex-1 p-6">
+            <div class="flex-1 p-3 sm:p-4 md:p-6">
                 <div class="max-w-7xl mx-auto">
-                    <div class="mb-8">
-                        <h2 class="text-darktext text-2xl font-semibold mb-2.5"><?php _e('group_subject_assignment'); ?></h2>
-                        <p class="text-muted mb-6 text-base"><?php _e('group_subject_assignment_description'); ?></p>
+                    <div class="mb-4 sm:mb-6 md:mb-8">
+                        <h2 class="text-darktext text-xl sm:text-2xl font-semibold mb-2 sm:mb-2.5"><?php _e('group_subject_assignment'); ?></h2>
+                        <p class="text-muted mb-4 sm:mb-6 text-sm sm:text-base"><?php _e('group_subject_assignment_description'); ?></p>
                     </div>
 
                     <!-- Assignment Form -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-                        <div class="p-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900"><?php _e('assign_subjects_to_group'); ?></h3>
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 sm:mb-6">
+                        <div class="p-3 sm:p-4 border-b border-gray-200">
+                            <h3 class="text-base sm:text-lg font-semibold text-gray-900"><?php _e('assign_subjects_to_group'); ?></h3>
                         </div>
-                        <div class="p-4">
-                            <form id="assignmentForm" class="space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-3 sm:p-4">
+                            <form id="assignmentForm" class="space-y-3 sm:space-y-4">
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                                     <div>
                                         <label for="groupSelect" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('select_group'); ?> <span class="text-red-500">*</span></label>
-                                        <select id="groupSelect" name="id_grupo" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue">
+                                        <select id="groupSelect" name="id_grupo" required class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue">
                                             <option value=""><?php _e('select_group'); ?></option>
                                             <?php foreach ($grupos as $grupo): ?>
                                                 <option value="<?php echo $grupo['id_grupo']; ?>">
@@ -253,28 +269,29 @@ try {
                                     </div>
                                     <div>
                                         <label for="subjectSelect" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('select_subjects'); ?> <span class="text-red-500">*</span></label>
-                                        <select id="subjectSelect" name="id_materias[]" multiple required class="w-full min-h-[200px]">
+                                        <select id="subjectSelect" name="id_materias[]" multiple required class="w-full min-h-[150px] sm:min-h-[200px] text-sm sm:text-base">
                                             <?php foreach ($materias as $materia): ?>
                                                 <option value="<?php echo $materia['id_materia']; ?>" data-hours="<?php echo $materia['horas_semanales']; ?>">
                                                     <?php echo htmlspecialchars($materia['nombre'] . ' (' . $materia['horas_semanales'] . 'h/sem)'); ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <div class="flex justify-between items-center mt-2">
-                                            <p class="text-xs text-gray-500 flex items-center">
-                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2 gap-2">
+                                            <p class="text-xs text-gray-500 flex items-start sm:items-center">
+                                                <svg class="w-4 h-4 mr-1 mt-0.5 sm:mt-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                 </svg>
-                                                Haz clic en las materias para seleccionarlas (selección múltiple automática)
+                                                <span class="hidden sm:inline">Haz clic en las materias para seleccionarlas (selección múltiple automática)</span>
+                                                <span class="sm:hidden">Clic para seleccionar materias</span>
                                             </p>
-                                            <span id="subjectCount" class="text-xs font-medium text-darkblue bg-blue-100 px-2 py-1 rounded-full">
+                                            <span id="subjectCount" class="text-xs font-medium text-darkblue bg-blue-100 px-2 py-1 rounded-full whitespace-nowrap">
                                                 0 materias seleccionadas
                                             </span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex justify-end">
-                                    <button type="submit" class="px-4 py-2 bg-darkblue text-white rounded-md hover:bg-navy transition-colors">
+                                <div class="flex justify-end pt-2">
+                                    <button type="submit" class="w-full sm:w-auto px-4 py-2 text-sm sm:text-base bg-darkblue text-white rounded-md hover:bg-navy transition-colors">
                                         <?php _e('assign_subjects'); ?>
                                     </button>
                                 </div>
@@ -284,32 +301,32 @@ try {
 
                     <!-- Groups List -->
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div class="p-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900"><?php _e('groups_and_subjects'); ?></h3>
+                        <div class="p-3 sm:p-4 border-b border-gray-200">
+                            <h3 class="text-base sm:text-lg font-semibold text-gray-900"><?php _e('groups_and_subjects'); ?></h3>
                         </div>
-                        <div class="p-4">
-                            <div class="space-y-4">
+                        <div class="p-3 sm:p-4">
+                            <div class="space-y-3 sm:space-y-4">
                                 <?php if (!empty($grupos)): ?>
                                     <?php foreach ($grupos as $grupo): ?>
-                                        <div class="assignment-card p-4 border border-gray-200 rounded-lg">
-                                            <div class="flex items-center justify-between">
-                                                <div class="flex-1">
-                                                    <h4 class="font-medium text-gray-900"><?php echo htmlspecialchars($grupo['nombre']); ?></h4>
-                                                    <p class="text-sm text-gray-600"><?php echo htmlspecialchars($grupo['nivel']); ?></p>
-                                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        <div class="assignment-card p-3 sm:p-4 border border-gray-200 rounded-lg">
+                                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                                <div class="flex-1 min-w-0">
+                                                    <h4 class="font-medium text-gray-900 text-sm sm:text-base truncate"><?php echo htmlspecialchars($grupo['nombre']); ?></h4>
+                                                    <p class="text-xs sm:text-sm text-gray-600 mt-1"><?php echo htmlspecialchars($grupo['nivel']); ?></p>
+                                                    <div class="mt-2 flex flex-wrap gap-1.5 sm:gap-2">
                                                         <?php if (!empty($grupo['materias_asignadas'])): ?>
                                                             <?php $materiasAsignadas = explode(', ', $grupo['materias_asignadas']); ?>
                                                             <?php foreach ($materiasAsignadas as $materia): ?>
-                                                                <span class="subject-tag"><?php echo htmlspecialchars(trim($materia)); ?></span>
+                                                                <span class="subject-tag text-xs"><?php echo htmlspecialchars(trim($materia)); ?></span>
                                                             <?php endforeach; ?>
                                                         <?php else: ?>
-                                                            <span class="text-gray-500 text-sm"><?php _e('no_subjects_assigned'); ?></span>
+                                                            <span class="text-gray-500 text-xs sm:text-sm"><?php _e('no_subjects_assigned'); ?></span>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
-                                                <div class="flex gap-2">
+                                                <div class="flex gap-2 sm:ml-4 flex-shrink-0">
                                                     <button onclick="editGroupAssignments(<?php echo $grupo['id_grupo']; ?>, '<?php echo htmlspecialchars($grupo['nombre']); ?>')" 
-                                                            class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
+                                                            class="px-3 py-1.5 sm:py-1 text-xs sm:text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors whitespace-nowrap">
                                                         <?php _e('edit'); ?>
                                                     </button>
                                                 </div>
@@ -317,7 +334,7 @@ try {
                                         </div>
                                     <?php endforeach; ?>
                                 <?php else: ?>
-                                    <p class="text-gray-500 text-center py-8"><?php _e('no_groups_found'); ?></p>
+                                    <p class="text-gray-500 text-center py-8 text-sm sm:text-base"><?php _e('no_groups_found'); ?></p>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -330,56 +347,57 @@ try {
     <!-- Edit Modal -->
     <div id="editModal" class="hidden">
         <div class="modal-content">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 id="editModalTitle" class="text-xl font-semibold text-gray-900">Editar Materias del Grupo</h3>
-                    <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="p-4 sm:p-6">
+                <div class="flex justify-between items-center mb-4 sm:mb-6">
+                    <h3 id="editModalTitle" class="text-lg sm:text-xl font-semibold text-gray-900 pr-2">Editar Materias del Grupo</h3>
+                    <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
                 
-                <form id="editForm" class="space-y-6">
+                <form id="editForm" class="space-y-4 sm:space-y-6">
                     <input type="hidden" id="edit_id_grupo" name="id_grupo">
                     
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Grupo Seleccionado</label>
-                        <p id="edit_grupo_nombre" class="text-lg font-semibold text-darkblue"></p>
+                    <div class="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Grupo Seleccionado</label>
+                        <p id="edit_grupo_nombre" class="text-base sm:text-lg font-semibold text-darkblue break-words"></p>
                     </div>
                     
                     <div>
-                        <label for="edit_subjectSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="edit_subjectSelect" class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                             Materias Asignadas <span class="text-red-500">*</span>
                         </label>
                         <select id="edit_subjectSelect" name="id_materias[]" multiple required 
-                                class="w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue min-h-[250px] text-sm">
+                                class="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue min-h-[200px] sm:min-h-[250px] text-sm">
                             <?php foreach ($materias as $materia): ?>
                                 <option value="<?php echo $materia['id_materia']; ?>" data-hours="<?php echo $materia['horas_semanales']; ?>">
                                     <?php echo htmlspecialchars($materia['nombre'] . ' (' . $materia['horas_semanales'] . 'h/sem)'); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <div class="flex justify-between items-center mt-2">
-                            <p class="text-xs text-gray-500 flex items-center">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2 gap-2">
+                            <p class="text-xs text-gray-500 flex items-start sm:items-center">
+                                <svg class="w-4 h-4 mr-1 mt-0.5 sm:mt-0 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                Haz clic en las materias para seleccionarlas (selección múltiple automática)
+                                <span class="hidden sm:inline">Haz clic en las materias para seleccionarlas (selección múltiple automática)</span>
+                                <span class="sm:hidden">Clic para seleccionar materias</span>
                             </p>
-                            <span id="editSubjectCount" class="text-xs font-medium text-darkblue bg-blue-100 px-2 py-1 rounded-full">
+                            <span id="editSubjectCount" class="text-xs font-medium text-darkblue bg-blue-100 px-2 py-1 rounded-full whitespace-nowrap">
                                 0 materias seleccionadas
                             </span>
                         </div>
                     </div>
 
-                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200">
                         <button type="button" onclick="closeEditModal()" 
-                                class="px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                class="w-full sm:w-auto px-4 sm:px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                             Cancelar
                         </button>
                         <button type="submit" 
-                                class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkblue hover:bg-navy transition-colors">
+                                class="w-full sm:w-auto px-4 sm:px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-darkblue hover:bg-navy transition-colors">
                             Guardar Cambios
                         </button>
                     </div>
@@ -573,6 +591,21 @@ try {
             if (e.key === 'Escape') {
                 closeEditModal();
             }
+        });
+        
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar-container');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('sidebar-open');
+                overlay.classList.toggle('hidden');
+            }
+        }
+        
+        // Close sidebar when clicking outside on mobile
+        document.getElementById('sidebarOverlay')?.addEventListener('click', function() {
+            toggleSidebar();
         });
     </script>
 </body>
