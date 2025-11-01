@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
+require_once __DIR__ . '/../../components/Breadcrumb.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 
@@ -64,6 +65,8 @@ function getGroupInitials($nombre) {
     <?php echo Sidebar::getStyles(); ?>
     <script src="/js/multiple-selection.js"></script>
     <script src="/js/status-labels.js"></script>
+    <script src="/js/pagination.js"></script>
+    <script src="/js/filter-manager.js"></script>
     <style type="text/css">
         body {
             overflow-x: hidden;
@@ -219,6 +222,14 @@ function getGroupInitials($nombre) {
             <!-- Contenido principal - Centrado -->
             <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-6xl mx-auto">
+                    <!-- Breadcrumbs (RF073) -->
+                    <?php 
+                        $breadcrumb = Breadcrumb::forAdmin([
+                            ['label' => _e('groups_management') ?? 'Groups Management', 'url' => '#']
+                        ]);
+                        echo $breadcrumb->render();
+                    ?>
+                    
                     <div class="mb-6 md:mb-8">
                         <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('groups_management'); ?></h2>
                         <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('groups_management_description'); ?></p>
@@ -271,12 +282,17 @@ function getGroupInitials($nombre) {
                             <div id="statisticsContainer"></div>
                         </div>
 
+                        <!-- Filter Result Count (RF080) -->
+                        <div id="filterResultCount" class="px-4 py-2"></div>
+
                         <!-- Lista de grupos -->
-                        <div class="divide-y divide-gray-200">
+                        <div id="gruposList" class="divide-y divide-gray-200">
                             <?php if (!empty($grupos)): ?>
                                 <?php foreach ($grupos as $grupo): ?>
-                                    <article class="item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                                    <article class="grupo-item item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
                                              data-item-id="<?php echo $grupo['id_grupo']; ?>"
+                                             data-nombre="<?php echo htmlspecialchars(strtolower($grupo['nombre'])); ?>"
+                                             data-nivel="<?php echo htmlspecialchars(strtolower($grupo['nivel'])); ?>"
                                              data-original-text=""
                                              data-available-labels="<?php 
                                                  $labels = [];
@@ -320,7 +336,7 @@ function getGroupInitials($nombre) {
                                                     class="text-darkblue hover:text-navy text-sm font-medium transition-colors">
                                                 <?php _e('edit'); ?>
                                             </button>
-                                            <button onclick="deleteGrupo(<?php echo $grupo['id_grupo']; ?>, '<?php echo htmlspecialchars($grupo['nombre']); ?>')" 
+                                            <button onclick="deleteGrupo(<?php echo $grupo['id_grupo']; ?>, '<?php echo htmlspecialchars($grupo['nombre']); ?>', this)" 
                                                     class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors">
                                                 <?php _e('delete'); ?>
                                             </button>
@@ -334,6 +350,29 @@ function getGroupInitials($nombre) {
                                 </div>
                             <?php endif; ?>
                         </div>
+
+                        <!-- Table Summary (RF083) -->
+                        <?php if (!empty($grupos)): ?>
+                        <div class="bg-gray-50 border-t border-gray-200 px-4 py-3">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-sm">
+                                <div class="text-gray-600">
+                                    <strong>Total:</strong> <?php echo count($grupos); ?> <?php _e('groups'); ?>
+                                </div>
+                                <?php 
+                                    $gruposConHorario = count(array_filter($grupos, function($g) { 
+                                        return isset($g['tiene_horario']) && $g['tiene_horario']; 
+                                    }));
+                                ?>
+                                <div class="text-gray-600">
+                                    <strong>Con horario:</strong> <?php echo $gruposConHorario; ?> | 
+                                    <strong>Sin horario:</strong> <?php echo count($grupos) - $gruposConHorario; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Pagination Container (RF082) -->
+                        <div id="paginationContainer"></div>
                     </div>
                 </div>
             </section>
@@ -345,8 +384,8 @@ function getGroupInitials($nombre) {
         <div class="modal-content p-8 w-full max-w-md mx-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_group'); ?></h3>
-                <button onclick="closeGrupoModal()" class="text-gray-400 hover:text-gray-600">
-                    <span class="text-sm">×</span>
+                <button onclick="closeGrupoModal()" class="text-gray-400 hover:text-gray-600" aria-label="<?php _e('close_modal') ?? 'Close'; ?>" tabindex="0">
+                    <span class="text-sm" aria-hidden="true">×</span>
                 </button>
             </div>
 
@@ -437,14 +476,23 @@ function getGroupInitials($nombre) {
                 });
         }
 
-        function deleteGrupo(id, nombre) {
+        async function deleteGrupo(id, nombre, buttonElement) {
             const confirmMessage = `<?php _e('confirm_delete_group'); ?> "${nombre}"?`;
-            if (confirm(confirmMessage)) {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_delete'); ?>',
+                confirmMessage,
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            
+            if (confirmed) {
                 // Show loading state on delete button
-                const deleteButton = event.target;
-                const originalText = deleteButton.textContent;
-                deleteButton.disabled = true;
-                deleteButton.textContent = '<?php _e('deleting'); ?>...';
+                const deleteButton = buttonElement || document.querySelector(`[onclick*="deleteGrupo(${id}"]`);
+                const originalText = deleteButton ? deleteButton.textContent : '';
+                if (deleteButton) {
+                    deleteButton.disabled = true;
+                    deleteButton.textContent = '<?php _e('deleting'); ?>...';
+                }
                 
                 const formData = new FormData();
                 formData.append('action', 'delete');
@@ -470,8 +518,10 @@ function getGroupInitials($nombre) {
                 })
                 .finally(() => {
                     // Restore button state
-                    deleteButton.disabled = false;
-                    deleteButton.textContent = originalText;
+                    if (deleteButton) {
+                        deleteButton.disabled = false;
+                        deleteButton.textContent = originalText;
+                    }
                 });
             }
         }
@@ -485,7 +535,41 @@ function getGroupInitials($nombre) {
             const modal = document.getElementById('grupoModal');
             modal.classList.add('hidden');
             clearErrors();
+            // RF078: Cancel button clears form fields
+            const form = document.getElementById('grupoForm');
+            if (form) {
+                form.reset();
+                document.getElementById('grupoId').value = '';
+                isEditMode = false;
+            }
         }
+
+        // RNF008: Keyboard navigation support
+        document.addEventListener('DOMContentLoaded', function() {
+            // Escape key to close modal
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const grupoModal = document.getElementById('grupoModal');
+                    if (grupoModal && !grupoModal.classList.contains('hidden')) {
+                        closeGrupoModal();
+                    }
+                }
+            });
+            
+            // Enter key to submit form
+            const grupoForm = document.getElementById('grupoForm');
+            if (grupoForm) {
+                grupoForm.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                        const submitButton = grupoForm.querySelector('button[type="submit"]');
+                        if (submitButton && document.activeElement === e.target) {
+                            e.preventDefault();
+                            handleGrupoFormSubmit(new Event('submit'));
+                        }
+                    }
+                });
+            }
+        });
 
         function handleGrupoFormSubmit(e) {
             e.preventDefault();
@@ -607,7 +691,7 @@ function getGroupInitials($nombre) {
                             class="text-darkblue hover:text-navy text-sm font-medium transition-colors">
                         <?php _e('edit'); ?>
                     </button>
-                    <button onclick="deleteGrupo(${groupData.id_grupo}, '${escapeHtml(groupData.nombre)}')" 
+                    <button onclick="deleteGrupo(${groupData.id_grupo}, '${escapeHtml(groupData.nombre)}', this)" 
                             class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors">
                         <?php _e('delete'); ?>
                     </button>
@@ -651,7 +735,7 @@ function getGroupInitials($nombre) {
                 // Update delete button onclick
                 const deleteButton = groupElement.querySelector('button[onclick*="deleteGrupo"]');
                 if (deleteButton) {
-                    deleteButton.setAttribute('onclick', `deleteGrupo(${groupData.id_grupo}, '${escapeHtml(groupData.nombre)}')`);
+                    deleteButton.setAttribute('onclick', `deleteGrupo(${groupData.id_grupo}, '${escapeHtml(groupData.nombre)}', this)`);
                 }
             }
         }
@@ -841,14 +925,20 @@ function getGroupInitials($nombre) {
                 });
         }
 
-        function bulkDeleteGrupos(selectedIds) {
+        async function bulkDeleteGrupos(selectedIds) {
             if (selectedIds.length === 0) {
                 showToast('<?php _e('select_groups_to_delete'); ?>', 'error');
                 return;
             }
             
             const confirmMessage = `<?php _e('confirm_bulk_delete_groups'); ?> ${selectedIds.length} <?php _e('groups'); ?>?`;
-            if (confirm(confirmMessage)) {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_delete'); ?>',
+                confirmMessage,
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 // Show loading state
                 const deleteButton = document.querySelector('[data-bulk-action="delete"]');
                 const originalText = deleteButton.textContent;
@@ -890,8 +980,14 @@ function getGroupInitials($nombre) {
             return Array.from(checkboxes).map(checkbox => checkbox.dataset.itemId);
         }
 
-        document.getElementById('logoutButton').addEventListener('click', function() {
-            if (confirm('<?php _e('confirm_logout'); ?>')) {
+        document.getElementById('logoutButton').addEventListener('click', async function() {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_logout'); ?>',
+                '<?php _e('confirm_logout_message'); ?>',
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         });
@@ -921,6 +1017,137 @@ function getGroupInitials($nombre) {
             metaSelector: '.meta .text-muted',
             entityType: 'grupos'
         });
+
+        // Initialize Pagination (RF082)
+        const totalGrupos = <?php echo count($grupos); ?>;
+        const paginationContainer = document.getElementById('paginationContainer');
+        
+        if (paginationContainer && totalGrupos > 0) {
+            window.paginationManager = new PaginationManager({
+                container: paginationContainer,
+                currentPage: 1,
+                perPage: 10,
+                totalRecords: totalGrupos,
+                onPageChange: function(page) {
+                    updateVisibleItems(page);
+                },
+                onPerPageChange: function(perPage) {
+                    updateVisibleItems(1);
+                }
+            });
+            
+            // Show first page by default
+            updateVisibleItems(1);
+        }
+
+        // Initialize Filter Manager (RF080)
+        const filterContainer = document.querySelector('.bg-white.rounded-lg.shadow-sm');
+        const filterResultCount = document.getElementById('filterResultCount');
+        
+        if (filterContainer && filterResultCount) {
+            window.filterManager = new FilterManager({
+                container: filterContainer,
+                resultCountContainer: filterResultCount,
+                totalCount: totalGrupos,
+                filteredCount: totalGrupos,
+                onFilterChange: function(filters) {
+                    applyFilters(filters);
+                }
+            });
+            
+            // Mark search input as filter
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.setAttribute('data-filter', 'search');
+            }
+            
+            window.filterManager.init();
+            window.filterManager.updateResultCount(totalGrupos, totalGrupos);
+        }
+
+        // Update visible items based on pagination
+        function updateVisibleItems(page) {
+            if (!window.paginationManager) return;
+            
+            const state = window.paginationManager.getState();
+            const allItems = Array.from(document.querySelectorAll('.grupo-item'));
+            
+            // Get only visible items (not filtered out)
+            const visibleItems = allItems.filter(item => {
+                const filters = window.filterManager ? window.filterManager.getFilters() : {};
+                let matches = true;
+                
+                if (filters.search && filters.search.trim() !== '') {
+                    const searchLower = filters.search.toLowerCase().trim();
+                    const nombre = item.dataset.nombre || '';
+                    const nivel = item.dataset.nivel || '';
+                    
+                    if (!nombre.includes(searchLower) && !nivel.includes(searchLower)) {
+                        matches = false;
+                    }
+                }
+                
+                return matches;
+            });
+            
+            const startIndex = (state.currentPage - 1) * state.perPage;
+            const endIndex = startIndex + state.perPage;
+            
+            // Hide all items first
+            allItems.forEach(item => {
+                item.style.display = 'none';
+            });
+            
+            // Show only items in current page range
+            visibleItems.slice(startIndex, endIndex).forEach(item => {
+                item.style.display = 'flex';
+            });
+        }
+
+        // Apply filters and update counts
+        function applyFilters(filters) {
+            const allItems = document.querySelectorAll('.grupo-item');
+            let visibleCount = 0;
+            
+            allItems.forEach(item => {
+                let matches = true;
+                
+                // Apply search filter
+                if (filters.search && filters.search.trim() !== '') {
+                    const searchLower = filters.search.toLowerCase().trim();
+                    const nombre = item.dataset.nombre || '';
+                    const nivel = item.dataset.nivel || '';
+                    
+                    if (!nombre.includes(searchLower) && !nivel.includes(searchLower)) {
+                        matches = false;
+                    }
+                }
+                
+                // Show/hide item
+                if (matches) {
+                    item.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Update filter count
+            if (window.filterManager) {
+                window.filterManager.updateResultCount(visibleCount, allItems.length);
+            }
+            
+            // Reset pagination to page 1 when filters change
+            if (window.paginationManager) {
+                window.paginationManager.currentPage = 1;
+                window.paginationManager.updateTotalRecords(visibleCount);
+                setTimeout(() => updateVisibleItems(1), 0);
+            } else {
+                allItems.forEach(item => {
+                    item.style.display = 'flex';
+                });
+            }
+        }
     </script>
 </body>
 </html>

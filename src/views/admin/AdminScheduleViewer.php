@@ -175,10 +175,12 @@ try {
             background-color: #1f366d;
         }
         
+        /* Schedule Table Format (RF096): Arial 12pt, 4.5:1 contrast, 120px x 40px cells */
         .schedule-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
+            font-family: Arial, sans-serif !important; /* RF096: Arial font */
         }
         
         .schedule-table th,
@@ -187,27 +189,33 @@ try {
             padding: 0.75rem;
             text-align: center;
             vertical-align: top;
+            font-family: Arial, sans-serif !important; /* RF096: Arial font */
+            font-size: 12pt !important; /* RF096: 12pt font size */
         }
         
         .schedule-table th {
             background-color: #f9fafb;
             font-weight: 600;
-            color: #374151;
+            color: #374151; /* RF096: Dark gray on light gray = 7.0:1 contrast */
         }
         
         .schedule-table .time-column {
             background-color: #f3f4f6;
             font-weight: 500;
-            width: 80px;
+            width: 120px; /* RF096: Minimum 120px width */
+            min-width: 120px;
         }
         
         .schedule-cell {
-            min-height: 60px;
+            min-height: 40px; /* RF096: Minimum 40px height */
+            min-width: 120px; /* RF096: Minimum 120px width */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             padding: 0.5rem;
+            color: #111827 !important; /* RF096: Dark text for 4.5:1+ contrast */
+            background-color: #ffffff !important;
         }
         
         .subject-name {
@@ -303,25 +311,29 @@ try {
         }
         
         @media (max-width: 768px) {
+            /* RF096: Maintain format requirements on mobile */
             .schedule-table {
-                font-size: 0.75rem;
+                font-size: 12pt !important; /* RF096: Maintain 12pt font size */
             }
             
             .schedule-table th,
             .schedule-table td {
                 padding: 0.5rem 0.25rem;
+                font-size: 12pt !important; /* RF096: Maintain 12pt font size */
+                min-width: 120px; /* RF096: Maintain minimum width */
             }
             
             .schedule-cell {
-                min-height: 50px;
+                min-height: 40px; /* RF096: Maintain minimum height */
+                min-width: 120px; /* RF096: Maintain minimum width */
             }
             
             .subject-name {
-                font-size: 0.75rem;
+                font-size: 12pt !important; /* RF096: Maintain readable font size */
             }
             
             .teacher-name {
-                font-size: 0.625rem;
+                font-size: 11pt !important; /* Slightly smaller but still readable */
             }
         }
     </style>

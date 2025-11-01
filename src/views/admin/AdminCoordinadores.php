@@ -274,8 +274,14 @@ function getCoordinatorInitials($nombre, $apellido) {
 
   <script src="/js/menu.js"></script>
   <script>
-    document.getElementById('logoutButton').addEventListener('click', function() {
-      if (confirm('<?php _e('confirm_logout'); ?>')) {
+    document.getElementById('logoutButton').addEventListener('click', async function() {
+      const confirmed = await showConfirmModal(
+        '<?php _e('confirm_logout'); ?>',
+        '<?php _e('confirm_logout_message'); ?>',
+        '<?php _e('confirm'); ?>',
+        '<?php _e('cancel'); ?>'
+      );
+      if (confirmed) {
         window.location.href = '/logout';
       }
     });
@@ -302,9 +308,15 @@ function getCoordinatorInitials($nombre, $apellido) {
 
     // Delete coordinator functionality
     document.querySelectorAll('.delete-coordinator').forEach(button => {
-      button.addEventListener('click', function() {
+      button.addEventListener('click', async function() {
         const id = this.getAttribute('data-id');
-        if (confirm('<?php _e('confirm_delete_coordinator'); ?>')) {
+        const confirmed = await showConfirmModal(
+          '<?php _e('confirm_delete'); ?>',
+          '<?php _e('confirm_delete_coordinator'); ?>',
+          '<?php _e('confirm'); ?>',
+          '<?php _e('cancel'); ?>'
+        );
+        if (confirmed) {
           // TODO: Implement delete coordinator functionality
           alert('<?php _e('delete'); ?> ' + id + ' - <?php _e('feature_coming_soon'); ?>');
         }

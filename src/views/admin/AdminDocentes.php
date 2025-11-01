@@ -12,6 +12,7 @@ require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
+require_once __DIR__ . '/../../components/Breadcrumb.php';
 
 initSecureSession();
 
@@ -65,6 +66,8 @@ function getTeacherAssignments($teacherId, $assignments) {
     <?php echo Sidebar::getStyles(); ?>
     <script src="/js/multiple-selection.js"></script>
     <script src="/js/status-labels.js"></script>
+    <script src="/js/pagination.js"></script>
+    <script src="/js/filter-manager.js"></script>
   <style type="text/css">
     body {
       overflow-x: hidden;
@@ -265,6 +268,14 @@ function getTeacherAssignments($teacherId, $assignments) {
       <!-- Contenido principal - Centrado -->
       <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
         <div class="max-w-6xl mx-auto">
+          <!-- Breadcrumbs (RF073) -->
+          <?php 
+            $breadcrumb = Breadcrumb::forAdmin([
+                ['label' => _e('teachers_management') ?? 'Teachers Management', 'url' => '#']
+            ]);
+            echo $breadcrumb->render();
+          ?>
+          
           <div class="mb-6 md:mb-8">
             <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('teachers_management'); ?></h2>
             <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('teachers_management_description'); ?></p>
@@ -316,6 +327,9 @@ function getTeacherAssignments($teacherId, $assignments) {
               <!-- Statistics Container -->
               <div id="statisticsContainer"></div>
             </div>
+
+            <!-- Filter Result Count (RF080) -->
+            <div id="filterResultCount" class="px-4 py-2"></div>
 
             <!-- Lista de docentes -->
             <div id="docentesList" class="divide-y divide-gray-200">
@@ -401,6 +415,31 @@ function getTeacherAssignments($teacherId, $assignments) {
                   <div class="text-gray-400 text-sm"><?php _e('add_first_teacher'); ?></div>
                 </div>
               <?php endif; ?>
+            </div>
+
+            <!-- Table Summary (RF083) -->
+            <?php if (!empty($docentes)): ?>
+            <div class="bg-gray-50 border-t border-gray-200 px-4 py-3">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-sm">
+                <div class="text-gray-600">
+                  <strong>Total:</strong> <?php echo count($docentes); ?> <?php _e('teachers'); ?>
+                </div>
+                <?php 
+                  $totalHoras = array_sum(array_column($docentes, 'horas_asignadas'));
+                  $avgHoras = count($docentes) > 0 ? round($totalHoras / count($docentes), 1) : 0;
+                  $avgMargen = count($docentes) > 0 ? round(array_sum(array_filter(array_column($docentes, 'porcentaje_margen'))) / count(array_filter(array_column($docentes, 'porcentaje_margen'), function($v) { return $v !== null; })), 1) : 0;
+                ?>
+                <div class="text-gray-600">
+                  <strong>Total horas asignadas:</strong> <?php echo $totalHoras; ?>h | 
+                  <strong>Promedio:</strong> <?php echo $avgHoras; ?>h | 
+                  <strong>Margen promedio:</strong> <?php echo $avgMargen; ?>%
+                </div>
+              </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Pagination Container (RF082) -->
+            <div id="paginationContainer"></div>
           </div>
         </div>
       </section>
@@ -412,8 +451,8 @@ function getTeacherAssignments($teacherId, $assignments) {
     <div class="modal-content p-8">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_teacher'); ?></h3>
-                <button onclick="closeDocenteModal()" class="text-gray-400 hover:text-gray-600">
-                    <span class="text-sm">×</span>
+                <button onclick="closeDocenteModal()" class="text-gray-400 hover:text-gray-600" aria-label="<?php _e('close_modal') ?? 'Close'; ?>" tabindex="0">
+                    <span class="text-sm" aria-hidden="true">×</span>
                 </button>
             </div>
 
@@ -599,9 +638,16 @@ function getTeacherAssignments($teacherId, $assignments) {
             });
         }
 
-        function deleteDocente(id, nombre) {
+        async function deleteDocente(id, nombre) {
             const confirmMessage = `¿Está seguro de que desea eliminar al docente "${nombre}"?`;
-            if (confirm(confirmMessage)) {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_delete'); ?>',
+                confirmMessage,
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            
+            if (confirmed) {
                 fetch(`/admin/teachers/${id}`, {
                     method: 'DELETE'
                 })
@@ -625,7 +671,45 @@ function getTeacherAssignments($teacherId, $assignments) {
             const modal = document.getElementById('docenteModal');
             modal.classList.add('hidden');
             clearErrors();
+            // RF078: Cancel button clears form fields
+            const form = document.getElementById('docenteForm');
+            if (form) {
+                form.reset();
+                document.getElementById('id_docente').value = '';
+                isEditMode = false;
+            }
         }
+
+        // RNF008: Keyboard navigation support
+        document.addEventListener('DOMContentLoaded', function() {
+            // Escape key to close modals
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const docenteModal = document.getElementById('docenteModal');
+                    if (docenteModal && !docenteModal.classList.contains('hidden')) {
+                        closeDocenteModal();
+                    }
+                    const assignmentModal = document.getElementById('assignmentModal');
+                    if (assignmentModal && assignmentModal.style.display !== 'none') {
+                        closeAssignmentModal();
+                    }
+                }
+            });
+            
+            // Enter key to submit form (when focused on submit button or last input)
+            const docenteForm = document.getElementById('docenteForm');
+            if (docenteForm) {
+                docenteForm.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                        const submitButton = docenteForm.querySelector('button[type="submit"]');
+                        if (submitButton && document.activeElement === e.target) {
+                            e.preventDefault();
+                            handleFormSubmit(new Event('submit'));
+                        }
+                    }
+                });
+            }
+        });
 
         function handleFormSubmit(e) {
             e.preventDefault();
@@ -799,8 +883,14 @@ function getTeacherAssignments($teacherId, $assignments) {
             togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
         }
 
-        document.getElementById('logoutButton').addEventListener('click', function() {
-            if (confirm('<?php _e('confirm_logout'); ?>')) {
+        document.getElementById('logoutButton').addEventListener('click', async function() {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_logout'); ?>',
+                '<?php _e('confirm_logout_message'); ?>',
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         });
@@ -899,8 +989,14 @@ function getTeacherAssignments($teacherId, $assignments) {
             });
         }
 
-        function removeAssignment(assignmentId, teacherId) {
-            if (confirm('<?php _e('confirm_remove_assignment'); ?>')) {
+        async function removeAssignment(assignmentId, teacherId) {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_delete'); ?>',
+                '<?php _e('confirm_remove_assignment'); ?>',
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 fetch(`/admin/assignments/${assignmentId}`, {
                     method: 'DELETE'
                 })
@@ -1000,7 +1096,149 @@ function getTeacherAssignments($teacherId, $assignments) {
                 metaSelector: '.meta .text-muted',
                 entityType: 'docentes'
             });
+
+            // Initialize Pagination (RF082)
+            const totalDocentes = <?php echo count($docentes); ?>;
+            const paginationContainer = document.getElementById('paginationContainer');
+            
+            if (paginationContainer && totalDocentes > 0) {
+                window.paginationManager = new PaginationManager({
+                    container: paginationContainer,
+                    currentPage: 1,
+                    perPage: 10,
+                    totalRecords: totalDocentes,
+                    onPageChange: function(page) {
+                        updateVisibleItems(page);
+                    },
+                    onPerPageChange: function(perPage) {
+                        updateVisibleItems(1);
+                    }
+                });
+                
+                // Show first page by default
+                updateVisibleItems(1);
+            }
+
+            // Initialize Filter Manager (RF080)
+            const filterContainer = document.querySelector('.bg-white.rounded-lg.shadow-sm');
+            const filterResultCount = document.getElementById('filterResultCount');
+            
+            if (filterContainer && filterResultCount) {
+                window.filterManager = new FilterManager({
+                    container: filterContainer,
+                    resultCountContainer: filterResultCount,
+                    totalCount: totalDocentes,
+                    filteredCount: totalDocentes,
+                    onFilterChange: function(filters) {
+                        applyFilters(filters);
+                    }
+                });
+                
+                // Mark search input as filter
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.setAttribute('data-filter', 'search');
+                }
+                
+                window.filterManager.init();
+                window.filterManager.updateResultCount(totalDocentes, totalDocentes);
+            }
         });
+
+        // Update visible items based on pagination
+        function updateVisibleItems(page) {
+            if (!window.paginationManager) return;
+            
+            const state = window.paginationManager.getState();
+            const allItems = Array.from(document.querySelectorAll('.docente-item'));
+            
+            // Get only visible items (not filtered out)
+            const visibleItems = allItems.filter(item => {
+                // Check if item matches current filters
+                const filters = window.filterManager ? window.filterManager.getFilters() : {};
+                let matches = true;
+                
+                if (filters.search && filters.search.trim() !== '') {
+                    const searchLower = filters.search.toLowerCase().trim();
+                    const nombre = item.dataset.nombre || '';
+                    const apellido = item.dataset.apellido || '';
+                    const email = item.dataset.email || '';
+                    const cedula = item.dataset.cedula || '';
+                    
+                    if (!nombre.includes(searchLower) && !apellido.includes(searchLower) && 
+                        !email.includes(searchLower) && !cedula.includes(searchLower)) {
+                        matches = false;
+                    }
+                }
+                
+                return matches;
+            });
+            
+            const startIndex = (state.currentPage - 1) * state.perPage;
+            const endIndex = startIndex + state.perPage;
+            
+            // Hide all items first
+            allItems.forEach(item => {
+                item.style.display = 'none';
+            });
+            
+            // Show only items in current page range
+            visibleItems.slice(startIndex, endIndex).forEach(item => {
+                item.style.display = 'flex';
+            });
+        }
+
+        // Apply filters and update counts
+        function applyFilters(filters) {
+            const allItems = document.querySelectorAll('.docente-item');
+            let visibleCount = 0;
+            let visibleIndex = 0;
+            
+            allItems.forEach(item => {
+                let matches = true;
+                
+                // Apply search filter
+                if (filters.search && filters.search.trim() !== '') {
+                    const searchLower = filters.search.toLowerCase().trim();
+                    const nombre = item.dataset.nombre || '';
+                    const apellido = item.dataset.apellido || '';
+                    const email = item.dataset.email || '';
+                    const cedula = item.dataset.cedula || '';
+                    
+                    if (!nombre.includes(searchLower) && !apellido.includes(searchLower) && 
+                        !email.includes(searchLower) && !cedula.includes(searchLower)) {
+                        matches = false;
+                    }
+                }
+                
+                // Show/hide item
+                if (matches) {
+                    item.style.display = 'flex';
+                    visibleCount++;
+                    item.dataset.visibleIndex = visibleIndex++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Update filter count
+            if (window.filterManager) {
+                window.filterManager.updateResultCount(visibleCount, allItems.length);
+            }
+            
+            // Reset pagination to page 1 when filters change
+            if (window.paginationManager) {
+                window.paginationManager.currentPage = 1;
+                window.paginationManager.updateTotalRecords(visibleCount);
+                // Update visible items will be called by pagination manager's render
+                setTimeout(() => updateVisibleItems(1), 0);
+            } else {
+                // If no pagination, just show all matching items
+                allItems.forEach(item => {
+                    item.style.display = 'flex';
+                });
+            }
+        }
     </script>
 </body>
 </html>

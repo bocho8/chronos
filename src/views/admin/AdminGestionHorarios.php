@@ -138,11 +138,31 @@ try {
             right: 20px;
             z-index: 10000;
         }
+        /* Schedule Table Format (RF096): Arial 12pt, 4.5:1 contrast, 120px x 40px cells */
         .horario-cell {
             cursor: pointer;
             transition: all 0.2s;
-            min-width: 100px;
+            min-width: 120px; /* RF096: Minimum 120px width */
+            min-height: 40px; /* RF096: Minimum 40px height */
             vertical-align: top;
+            font-family: Arial, sans-serif !important; /* RF096: Arial font */
+            font-size: 12pt !important; /* RF096: 12pt font size */
+            /* RF096: Contrast 4.5:1 - Using dark text (#111827) on white (#ffffff) = 16.32:1 */
+            color: #111827 !important; /* Dark gray for 4.5:1+ contrast */
+            background-color: #ffffff !important;
+        }
+        
+        .horario-cell .bg-blue-100 {
+            /* Ensure assignment cells also meet contrast requirements */
+            color: #111827 !important; /* Dark text on light blue background */
+            background-color: #dbeafe !important; /* Light blue: contrast with #111827 = 5.14:1 */
+        }
+        
+        /* RF096: Ensure table header meets format requirements */
+        table.table-fixed thead th {
+            font-family: Arial, sans-serif !important;
+            font-size: 12pt !important;
+            /* Header: white text on dark blue (#1f366d) = 8.59:1 contrast */
         }
         
         /* Time column styling to maintain proper alignment */
@@ -171,8 +191,9 @@ try {
         }
         @media (max-width: 768px) {
             .horario-cell {
-                min-width: 70px;
-                font-size: 0.7rem;
+                min-width: 120px; /* RF096: Maintain minimum width on mobile */
+                min-height: 40px; /* RF096: Maintain minimum height on mobile */
+                font-size: 12pt !important; /* RF096: Maintain 12pt font size */
                 padding: 4px 2px;
             }
             .sidebar-content {
@@ -182,8 +203,9 @@ try {
         }
         @media (max-width: 640px) {
             .horario-cell {
-                min-width: 60px;
-                font-size: 0.65rem;
+                min-width: 120px; /* RF096: Maintain minimum width even on small screens */
+                min-height: 40px; /* RF096: Maintain minimum height */
+                font-size: 12pt !important; /* RF096: Maintain 12pt font size */
                 padding: 2px 1px;
             }
             .sidebar-content {
@@ -192,25 +214,58 @@ try {
         }
         @media (max-width: 480px) {
             .horario-cell {
-                min-width: 50px;
-                font-size: 0.6rem;
+                min-width: 120px; /* RF096: Maintain minimum width */
+                min-height: 40px; /* RF096: Maintain minimum height */
+                font-size: 12pt !important; /* RF096: Maintain 12pt font size */
             }
         }
 
+        /* Conflict Colors (RF011): Red for critical, Yellow for warnings */
+        .conflict-critical {
+            background-color: #fee2e2 !important; /* light red */
+            border: 2px solid #dc2626 !important; /* red border */
+            color: #991b1b !important; /* dark red text */
+        }
+        
+        .conflict-critical .bg-blue-100 {
+            background-color: #fecaca !important;
+            color: #991b1b !important;
+            border: 1px solid #fca5a5 !important;
+        }
+        
         .conflict-warning {
-            background-color: #fef2f2 !important;
-            border: 2px solid #ef4444 !important;
-            color: #dc2626 !important;
+            background-color: #fef3c7 !important; /* light yellow */
+            border: 2px solid #d97706 !important; /* yellow/orange border */
+            color: #92400e !important; /* dark yellow text */
         }
         
         .conflict-warning .bg-blue-100 {
-            background-color: #fecaca !important;
-            color: #dc2626 !important;
-            border: 1px solid #fca5a5 !important;
+            background-color: #fde68a !important;
+            color: #92400e !important;
+            border: 1px solid #fbbf24 !important;
+        }
+        
+        /* Legacy support - map old conflict-warning to critical */
+        .conflict-warning:not(.conflict-critical):not(.conflict-warning-yellow) {
+            background-color: #fee2e2 !important;
+            border: 2px solid #dc2626 !important;
+            color: #991b1b !important;
         }
         
         .conflict-indicator {
             animation: pulse 2s infinite;
+        }
+        
+        .conflict-indicator-critical {
+            background-color: #fecaca !important;
+            border-color: #dc2626 !important;
+            color: #991b1b !important;
+        }
+        
+        .conflict-indicator-warning {
+            background-color: #fde68a !important;
+            border-color: #d97706 !important;
+            color: #92400e !important;
         }
         
         @keyframes pulse {
@@ -258,7 +313,6 @@ try {
             display: block;
         }
         
-        /* Alternative selector for debugging */
         .bg-white.rounded-lg.shadow-sm.border.border-lightborder.mb-6.sidebar-collapsed #sidebarContent {
             display: none !important;
         }
@@ -1007,7 +1061,7 @@ try {
                                                 <?php echo date('H:i', strtotime($bloque['hora_inicio'])) . ' – ' . date('H:i', strtotime($bloque['hora_fin'])); ?>
                                             </td>
                                 <?php foreach ($dias as $diaIndex => $dia): ?>
-                                            <td class="horario-cell drop-zone text-center font-medium p-1 md:p-2 border border-gray-300 cursor-pointer hover:bg-gray-50 min-h-[50px] md:min-h-[60px] <?php echo ($isLastRow && $diaIndex === count($dias) - 1) ? 'rounded-br-lg' : ''; ?>" 
+                                            <td class="horario-cell drop-zone text-center font-medium p-1 md:p-2 border border-gray-300 cursor-pointer hover:bg-gray-50 <?php echo ($isLastRow && $diaIndex === count($dias) - 1) ? 'rounded-br-lg' : ''; ?>" 
                                                 data-bloque="<?php echo $bloque['id_bloque']; ?>" 
                                                 data-dia="<?php echo $dia; ?>"
                                                 data-occupied="false"
@@ -1036,7 +1090,6 @@ try {
     <script src="/js/auto-save-manager.js"></script>
     <script src="/js/schedule-drag-drop.js?v=<?php echo time(); ?>"></script>
     <script>
-        // Cache bust: <?php echo time(); ?> - Random: <?php echo rand(1000, 9999); ?>
         
         
         // Loading state helper functions
@@ -1080,12 +1133,10 @@ try {
 
         // Global function to avoid any scoping issues
         window.handleScheduleFormSubmission = function(e) {
-            console.log('handleScheduleFormSubmission called');
             e.preventDefault();
             
             const form = document.getElementById('horarioForm');
             if (!form) {
-                console.log('Form not found');
                 return;
             }
             
@@ -1093,7 +1144,6 @@ try {
             
             // Prevent double submission
             if (submitButton.disabled) {
-                console.log('Form submission already in progress, ignoring duplicate');
                 return;
             }
             
@@ -1114,7 +1164,7 @@ try {
             
             // Additional check for AutoSaveManager active requests
             if (window.autoSaveManager && window.autoSaveManager.activeRequests && window.autoSaveManager.activeRequests.has(saveKey)) {
-                console.log('AutoSave request already in progress for key:', saveKey);
+                // AutoSave request already in progress
                 hideButtonLoadingState(submitButton);
                 return;
             }
@@ -1470,9 +1520,15 @@ try {
             });
         }
         
-        function deleteHorario(id) {
+        async function deleteHorario(id) {
             const confirmMessage = `¿Está seguro de que desea eliminar esta asignación de horario?`;
-            if (confirm(confirmMessage)) {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_delete'); ?>',
+                confirmMessage,
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 // Find the cell that contains this schedule to show loading state
                 const scheduleElement = document.querySelector(`[data-horario-id="${id}"]`);
                 let cellElement = null;
@@ -1810,16 +1866,27 @@ try {
         }
         
         function markAsConflict(assignment, conflicts) {
-            assignment.element.classList.add('conflict-warning');
-            assignment.assignment.classList.add('conflict-warning');
+            // Determine conflict severity (RF011): teacher/group conflicts are critical (red), others are warnings (yellow)
+            const hasCriticalConflict = conflicts.some(c => c.type === 'docente' || c.type === 'grupo' || c.type === 'teacher' || c.type === 'group');
+            const conflictClass = hasCriticalConflict ? 'conflict-critical' : 'conflict-warning';
+            const indicatorClass = hasCriticalConflict ? 'conflict-indicator-critical' : 'conflict-indicator-warning';
+            const icon = hasCriticalConflict ? '🚨' : '⚠️';
+            
+            // Remove existing conflict classes
+            assignment.element.classList.remove('conflict-warning', 'conflict-critical');
+            assignment.assignment.classList.remove('conflict-warning', 'conflict-critical');
+            
+            // Add appropriate conflict class
+            assignment.element.classList.add(conflictClass);
+            assignment.assignment.classList.add(conflictClass);
             
             // Remove any existing conflict indicators
             const existingIndicators = assignment.assignment.querySelectorAll('.conflict-indicator');
             existingIndicators.forEach(indicator => indicator.remove());
             
             const conflictIndicator = document.createElement('div');
-            conflictIndicator.className = 'conflict-indicator text-red-600 text-xs font-bold mt-1 bg-red-50 p-1 rounded border border-red-200';
-            conflictIndicator.innerHTML = `⚠️ ${conflicts.map(c => c.message).join(' | ')}`;
+            conflictIndicator.className = `conflict-indicator ${indicatorClass} text-xs font-bold mt-1 p-1 rounded border`;
+            conflictIndicator.innerHTML = `${icon} ${conflicts.map(c => c.message).join(' | ')}`;
             
             assignment.assignment.appendChild(conflictIndicator);
             
@@ -2202,11 +2269,7 @@ try {
             // This ensures buttons work after AJAX operations
             reSetupAllButtonEvents();
             
-            // Debug: Test if buttons are actually clickable
-            setTimeout(() => {
-                const editButtons = document.querySelectorAll('.edit-schedule-btn');
-                const deleteButtons = document.querySelectorAll('.delete-schedule-btn');
-            }, 100);
+            // Button setup completed
         }
         
         // Function to re-setup button events for all schedule assignments
@@ -2481,11 +2544,16 @@ try {
 
             const logoutButton = document.getElementById('logoutButton');
             if (logoutButton) {
-                logoutButton.addEventListener('click', function(e) {
+                logoutButton.addEventListener('click', async function(e) {
                     e.preventDefault();
                     
-                    const confirmMessage = '<?php _e('confirm_logout'); ?>';
-                    if (confirm(confirmMessage)) {
+                    const confirmed = await showConfirmModal(
+                        '<?php _e('confirm_logout'); ?>',
+                        '<?php _e('confirm_logout_message'); ?>',
+                        '<?php _e('confirm'); ?>',
+                        '<?php _e('cancel'); ?>'
+                    );
+                    if (confirmed) {
                         const form = document.createElement('form');
                         form.method = 'POST';
                         form.action = '/src/controllers/LogoutController.php';
@@ -2615,8 +2683,14 @@ try {
 
     <script>
         // Publish Request Functions
-        function requestPublish() {
-            if (!confirm('<?php _e('confirm_request_publish'); ?>')) {
+        async function requestPublish() {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_publish_request'); ?>',
+                '<?php _e('confirm_request_publish'); ?>',
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (!confirmed) {
                 return;
             }
             

@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
+require_once __DIR__ . '/../../components/Breadcrumb.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Materia.php';
 
@@ -58,6 +59,8 @@ try {
     <?php echo Sidebar::getStyles(); ?>
     <script src="/js/multiple-selection.js?v=<?php echo time(); ?>"></script>
     <script src="/js/status-labels.js"></script>
+    <script src="/js/pagination.js"></script>
+    <script src="/js/filter-manager.js"></script>
     <style type="text/css">
         .hamburger span {
             width: 25px;
@@ -349,6 +352,14 @@ try {
             <!-- Contenido principal - Centrado -->
             <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-6xl mx-auto">
+                    <!-- Breadcrumbs (RF073) -->
+                    <?php 
+                        $breadcrumb = Breadcrumb::forAdmin([
+                            ['label' => _e('subjects') ?? 'Subjects', 'url' => '#']
+                        ]);
+                        echo $breadcrumb->render();
+                    ?>
+                    
                     <div class="mb-6 md:mb-8">
                         <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('subjects_management'); ?></h2>
                         <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('subjects_management_description'); ?></p>
@@ -404,12 +415,17 @@ try {
                             <div id="statisticsContainer"></div>
                         </div>
 
+                        <!-- Filter Result Count (RF080) -->
+                        <div id="filterResultCount" class="px-4 py-2"></div>
+
                         <!-- Lista de materias -->
-                        <div class="divide-y divide-gray-200">
+                        <div id="materiasList" class="divide-y divide-gray-200">
                             <?php if (!empty($materias)): ?>
                                 <?php foreach ($materias as $materia): ?>
-                                    <article class="item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                                    <article class="materia-item item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
                                              data-item-id="<?php echo $materia['id_materia']; ?>"
+                                             data-nombre="<?php echo htmlspecialchars(strtolower($materia['nombre'])); ?>"
+                                             data-horas="<?php echo $materia['horas_semanales'] ?? ''; ?>"
                                              data-original-text=""
                                              data-available-labels="<?php 
                                                  $labels = [];
@@ -480,6 +496,28 @@ try {
                                 </div>
                             <?php endif; ?>
                         </div>
+
+                        <!-- Table Summary (RF083) -->
+                        <?php if (!empty($materias)): ?>
+                        <div class="bg-gray-50 border-t border-gray-200 px-4 py-3">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-sm">
+                                <div class="text-gray-600">
+                                    <strong>Total:</strong> <?php echo count($materias); ?> <?php _e('subjects'); ?>
+                                </div>
+                                <?php 
+                                    $totalHoras = array_sum(array_filter(array_column($materias, 'horas_semanales')));
+                                    $avgHoras = count($materias) > 0 ? round($totalHoras / count($materias), 1) : 0;
+                                ?>
+                                <div class="text-gray-600">
+                                    <strong>Total horas semanales:</strong> <?php echo $totalHoras; ?>h | 
+                                    <strong>Promedio:</strong> <?php echo $avgHoras; ?>h
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Pagination Container (RF082) -->
+                        <div id="paginationContainer"></div>
                     </div>
                     </div>
 
@@ -621,7 +659,45 @@ try {
         function closeMateriaModal() {
             document.getElementById('materiaModal').classList.add('hidden');
             clearErrors();
+            // RF078: Cancel button clears form fields
+            const form = document.getElementById('materiaForm');
+            if (form) {
+                form.reset();
+                document.getElementById('materiaId').value = '';
+                isEditMode = false;
+            }
         }
+
+        // RNF008: Keyboard navigation support
+        document.addEventListener('DOMContentLoaded', function() {
+            // Escape key to close modals
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const materiaModal = document.getElementById('materiaModal');
+                    if (materiaModal && !materiaModal.classList.contains('hidden')) {
+                        closeMateriaModal();
+                    }
+                    const pautaModal = document.getElementById('pautaModal');
+                    if (pautaModal && !pautaModal.classList.contains('hidden')) {
+                        closePautaModal();
+                    }
+                }
+            });
+            
+            // Enter key to submit forms
+            const materiaForm = document.getElementById('materiaForm');
+            if (materiaForm) {
+                materiaForm.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                        const submitButton = materiaForm.querySelector('button[type="submit"]');
+                        if (submitButton && document.activeElement === e.target) {
+                            e.preventDefault();
+                            handleMateriaFormSubmit(new Event('submit'));
+                        }
+                    }
+                });
+            }
+        });
 
         function editMateria(id) {
             isEditMode = true;
@@ -669,9 +745,15 @@ try {
             });
         }
 
-        function deleteMateria(id, nombre) {
+        async function deleteMateria(id, nombre) {
             const confirmMessage = `¿Está seguro de que desea eliminar la materia "${nombre}"?`;
-            if (confirm(confirmMessage)) {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_delete'); ?>',
+                confirmMessage,
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 const formData = new FormData();
                 formData.append('action', 'delete');
                 formData.append('id', id);
@@ -883,11 +965,16 @@ try {
 
             const logoutButton = document.getElementById('logoutButton');
             if (logoutButton) {
-                logoutButton.addEventListener('click', function(e) {
+                logoutButton.addEventListener('click', async function(e) {
                     e.preventDefault();
                     
-                    const confirmMessage = '<?php _e('confirm_logout'); ?>';
-                    if (confirm(confirmMessage)) {
+                    const confirmed = await showConfirmModal(
+                        '<?php _e('confirm_logout'); ?>',
+                        '<?php _e('confirm_logout_message'); ?>',
+                        '<?php _e('confirm'); ?>',
+                        '<?php _e('cancel'); ?>'
+                    );
+                    if (confirmed) {
                         const form = document.createElement('form');
                         form.method = 'POST';
                         form.action = '/src/controllers/LogoutController.php';
@@ -968,8 +1055,14 @@ try {
             }, 100);
         }
 
-        function deletePauta(id, nombre) {
-            if (confirm('<?php _e('confirm_delete_guideline'); ?>: ' + nombre + '?')) {
+        async function deletePauta(id, nombre) {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_delete'); ?>',
+                '<?php _e('confirm_delete_guideline'); ?>: ' + nombre + '?',
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 const formData = new FormData();
                 formData.append('action', 'delete_pauta');
                 formData.append('id', id);
@@ -1121,7 +1214,7 @@ try {
                     },
                     onBulkAction: function(action, selectedIds) {
                         // Handle bulk actions for subjects
-                        console.log('Bulk action:', action, 'Selected IDs:', selectedIds);
+                        // Bulk action executed
                     }
                 });
 
@@ -1131,6 +1224,126 @@ try {
                     itemSelector: '.item-row',
                     metaSelector: '.meta .text-muted',
                     entityType: 'materias'
+                });
+
+                // Initialize Pagination for Subjects (RF082)
+                const totalMaterias = <?php echo count($materias); ?>;
+                const paginationContainer = document.getElementById('paginationContainer');
+                
+                if (paginationContainer && totalMaterias > 0) {
+                    window.paginationManager = new PaginationManager({
+                        container: paginationContainer,
+                        currentPage: 1,
+                        perPage: 10,
+                        totalRecords: totalMaterias,
+                        onPageChange: function(page) {
+                            updateVisibleItems(page);
+                        },
+                        onPerPageChange: function(perPage) {
+                            updateVisibleItems(1);
+                        }
+                    });
+                    
+                    updateVisibleItems(1);
+                }
+
+                // Initialize Filter Manager for Subjects (RF080)
+                const filterResultCount = document.getElementById('filterResultCount');
+                if (filterResultCount) {
+                    window.filterManager = new FilterManager({
+                        container: subjectsContainer,
+                        resultCountContainer: filterResultCount,
+                        totalCount: totalMaterias,
+                        filteredCount: totalMaterias,
+                        onFilterChange: function(filters) {
+                            applyFilters(filters);
+                        }
+                    });
+                    
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.setAttribute('data-filter', 'search');
+                    }
+                    
+                    window.filterManager.init();
+                    window.filterManager.updateResultCount(totalMaterias, totalMaterias);
+                }
+            }
+        }
+
+        // Update visible items based on pagination
+        function updateVisibleItems(page) {
+            if (!window.paginationManager) return;
+            
+            const state = window.paginationManager.getState();
+            const allItems = Array.from(document.querySelectorAll('.materia-item'));
+            
+            const visibleItems = allItems.filter(item => {
+                const filters = window.filterManager ? window.filterManager.getFilters() : {};
+                let matches = true;
+                
+                if (filters.search && filters.search.trim() !== '') {
+                    const searchLower = filters.search.toLowerCase().trim();
+                    const nombre = item.dataset.nombre || '';
+                    const horas = item.dataset.horas || '';
+                    
+                    if (!nombre.includes(searchLower) && !horas.includes(searchLower)) {
+                        matches = false;
+                    }
+                }
+                
+                return matches;
+            });
+            
+            const startIndex = (state.currentPage - 1) * state.perPage;
+            const endIndex = startIndex + state.perPage;
+            
+            allItems.forEach(item => {
+                item.style.display = 'none';
+            });
+            
+            visibleItems.slice(startIndex, endIndex).forEach(item => {
+                item.style.display = 'flex';
+            });
+        }
+
+        // Apply filters and update counts
+        function applyFilters(filters) {
+            const allItems = document.querySelectorAll('.materia-item');
+            let visibleCount = 0;
+            
+            allItems.forEach(item => {
+                let matches = true;
+                
+                if (filters.search && filters.search.trim() !== '') {
+                    const searchLower = filters.search.toLowerCase().trim();
+                    const nombre = item.dataset.nombre || '';
+                    const horas = item.dataset.horas || '';
+                    
+                    if (!nombre.includes(searchLower) && !horas.includes(searchLower)) {
+                        matches = false;
+                    }
+                }
+                
+                if (matches) {
+                    item.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            if (window.filterManager) {
+                window.filterManager.updateResultCount(visibleCount, allItems.length);
+            }
+            
+            if (window.paginationManager) {
+                window.paginationManager.currentPage = 1;
+                window.paginationManager.updateTotalRecords(visibleCount);
+                setTimeout(() => updateVisibleItems(1), 0);
+            } else {
+                allItems.forEach(item => {
+                    item.style.display = 'flex';
                 });
             }
         }
@@ -1171,7 +1384,7 @@ try {
         <div class="modal-content p-8 w-full max-w-md mx-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="modalTitle" class="text-lg font-semibold text-gray-900"><?php _e('add_subject'); ?></h3>
-                <button onclick="closeMateriaModal()" class="text-gray-400 hover:text-gray-600" aria-label="<?php _e('close_modal'); ?>">
+                <button onclick="closeMateriaModal()" class="text-gray-400 hover:text-gray-600" aria-label="<?php _e('close_modal'); ?>" tabindex="0">
                     <span class="text-sm" aria-hidden="true">×</span>
                 </button>
             </div>

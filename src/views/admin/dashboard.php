@@ -261,11 +261,18 @@ try {
         </main>
     </div>
 
+    <script src="/js/toast.js"></script>
     <script src="/js/menu.js"></script>
     <script>
 
-        document.getElementById('logoutButton').addEventListener('click', function() {
-            if (confirm('<?php _e('confirm_logout'); ?>')) {
+        document.getElementById('logoutButton').addEventListener('click', async function() {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_logout'); ?>',
+                '<?php _e('confirm_logout_message'); ?>',
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         });

@@ -329,6 +329,7 @@ try {
         <input type="hidden" name="schedule_id" id="publishScheduleId">
     </form>
 
+    <script src="/js/toast.js"></script>
     <script>
         // Toast notification function
         function showToast(message, type = 'info') {
@@ -346,8 +347,14 @@ try {
             }, 3000);
         }
 
-        function approveRequest(requestId) {
-            if (confirm('¿Está seguro de que desea aprobar esta solicitud de publicación? Los horarios serán publicados inmediatamente.')) {
+        async function approveRequest(requestId) {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_publish'); ?>',
+                '¿Está seguro de que desea aprobar esta solicitud de publicación? Los horarios serán publicados inmediatamente.',
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 fetch('/admin/api/publish-request/approve?action=approve', {
                     method: 'POST',
                     headers: {
@@ -410,8 +417,14 @@ try {
             window.location.href = '/admin/view-schedules';
         }
 
-        function deletePublishedSchedule(publicationId) {
-            if (!confirm('¿Está seguro de que desea eliminar estos horarios publicados? Esta acción no se puede deshacer.')) {
+        async function deletePublishedSchedule(publicationId) {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_delete'); ?>',
+                '¿Está seguro de que desea eliminar estos horarios publicados? Esta acción no se puede deshacer.',
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (!confirmed) {
                 return;
             }
             
@@ -441,8 +454,14 @@ try {
             });
         }
 
-        function logout() {
-            if (confirm('<?php _e('confirm_logout'); ?>')) {
+        async function logout() {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_logout'); ?>',
+                '<?php _e('confirm_logout_message'); ?>',
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         }

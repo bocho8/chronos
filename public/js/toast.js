@@ -811,17 +811,7 @@ async function confirmConflict(message, options = {}) {
 window.showConfirmModal = showConfirmModal;
 window.confirmConflict = confirmConflict;
 
-// Test function for debugging
-window.testModal = async function() {
-    console.log('Testing modal...');
-    const result = await confirmConflict('Este es un mensaje de prueba', {
-        title: 'Prueba de Modal',
-        confirmText: 'Aceptar Prueba',
-        cancelText: 'Cancelar Prueba'
-    });
-    console.log('Modal result:', result);
-    return result;
-};
+// Test function removed - use showConfirmModal or confirmConflict directly in code
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = { ToastManager, toastManager };

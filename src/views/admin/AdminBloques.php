@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
+require_once __DIR__ . '/../../components/Breadcrumb.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Horario.php';
 
@@ -53,6 +54,8 @@ try {
     <title><?php _e('app_name'); ?> — <?php _e('admin_panel'); ?> · <?php _e('time_blocks_management'); ?></title>
     <link rel="stylesheet" href="/css/styles.css?v=<?php echo time(); ?>">
     <?php echo Sidebar::getStyles(); ?>
+    <script src="/js/pagination.js"></script>
+    <script src="/js/filter-manager.js"></script>
     <style>
         .time-display {
             font-family: var(--font-mono);
@@ -257,6 +260,14 @@ try {
             <!-- Contenido principal - Centrado -->
             <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-6xl mx-auto">
+                    <!-- Breadcrumbs (RF073) -->
+                    <?php 
+                        $breadcrumb = Breadcrumb::forAdmin([
+                            ['label' => _e('time_blocks_management') ?? 'Time Blocks Management', 'url' => '#']
+                        ]);
+                        echo $breadcrumb->render();
+                    ?>
+                    
                     <div class="mb-6 md:mb-8">
                         <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('time_blocks_management'); ?></h2>
                         <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('manage_time_blocks_description'); ?></p>
@@ -276,12 +287,18 @@ try {
                             </div>
                         </div>
 
+                        <!-- Filter Result Count (RF080) -->
+                        <div id="filterResultCount" class="px-4 py-2"></div>
+
                         <!-- Lista de bloques horarios -->
                         <div id="bloquesList" class="divide-y divide-gray-200">
                             <?php if (!empty($bloques)): ?>
                                 <?php foreach ($bloques as $bloque): ?>
-                                    <article class="item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
-                                             data-item-id="<?php echo $bloque['id_bloque']; ?>">
+                                    <article class="bloque-item item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                                             data-item-id="<?php echo $bloque['id_bloque']; ?>"
+                                             data-hora-inicio="<?php echo date('H:i', strtotime($bloque['hora_inicio'])); ?>"
+                                             data-hora-fin="<?php echo date('H:i', strtotime($bloque['hora_fin'])); ?>"
+                                             data-time-range="<?php echo htmlspecialchars(date('H:i', strtotime($bloque['hora_inicio'])) . '-' . date('H:i', strtotime($bloque['hora_fin']))); ?>">
                                         <div class="flex items-center">
                                             <div class="w-10 h-10 rounded-full bg-darkblue mr-3 flex items-center justify-center flex-shrink-0 text-white font-semibold">
                                                 <?php echo $bloque['id_bloque']; ?>
@@ -314,6 +331,34 @@ try {
                                 </div>
                             <?php endif; ?>
                         </div>
+
+                        <!-- Table Summary (RF083) -->
+                        <?php if (!empty($bloques)): ?>
+                        <div class="bg-gray-50 border-t border-gray-200 px-4 py-3">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-sm">
+                                <div class="text-gray-600">
+                                    <strong>Total:</strong> <?php echo count($bloques); ?> <?php _e('time_blocks'); ?>
+                                </div>
+                                <?php 
+                                    $totalMinutes = 0;
+                                    foreach ($bloques as $bloque) {
+                                        $start = strtotime($bloque['hora_inicio']);
+                                        $end = strtotime($bloque['hora_fin']);
+                                        $totalMinutes += ($end - $start) / 60;
+                                    }
+                                    $totalHours = round($totalMinutes / 60, 1);
+                                    $avgMinutes = count($bloques) > 0 ? round($totalMinutes / count($bloques)) : 0;
+                                ?>
+                                <div class="text-gray-600">
+                                    <strong>Total duración:</strong> <?php echo $totalHours; ?>h | 
+                                    <strong>Promedio por bloque:</strong> <?php echo $avgMinutes; ?> min
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Pagination Container (RF082) -->
+                        <div id="paginationContainer"></div>
                     </div>
                 </div>
             </section>
@@ -424,7 +469,14 @@ try {
         }
 
         async function deleteBloque(id, timeRange) {
-            if (confirm(`¿Estás seguro de que quieres eliminar el bloque horario "${timeRange}"?`)) {
+            const confirmMessage = `¿Estás seguro de que quieres eliminar el bloque horario "${timeRange}"?`;
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_delete'); ?>',
+                confirmMessage,
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 try {
                     const response = await fetch('/src/controllers/BloqueHandler.php', {
                         method: 'POST',
@@ -664,6 +716,46 @@ try {
             // Load bloques on page load
             loadBloques();
 
+            // Initialize Pagination (RF082)
+            const totalBloques = <?php echo count($bloques); ?>;
+            const paginationContainer = document.getElementById('paginationContainer');
+            
+            if (paginationContainer && totalBloques > 0) {
+                window.paginationManager = new PaginationManager({
+                    container: paginationContainer,
+                    currentPage: 1,
+                    perPage: 10,
+                    totalRecords: totalBloques,
+                    onPageChange: function(page) {
+                        updateVisibleItems(page);
+                    },
+                    onPerPageChange: function(perPage) {
+                        updateVisibleItems(1);
+                    }
+                });
+                
+                updateVisibleItems(1);
+            }
+
+            // Initialize Filter Manager (RF080)
+            const filterContainer = document.querySelector('.bg-white.rounded-lg.shadow-sm');
+            const filterResultCount = document.getElementById('filterResultCount');
+            
+            if (filterContainer && filterResultCount) {
+                window.filterManager = new FilterManager({
+                    container: filterContainer,
+                    resultCountContainer: filterResultCount,
+                    totalCount: totalBloques,
+                    filteredCount: totalBloques,
+                    onFilterChange: function(filters) {
+                        applyFilters(filters);
+                    }
+                });
+                
+                window.filterManager.init();
+                window.filterManager.updateResultCount(totalBloques, totalBloques);
+            }
+
 
             // Close modal when clicking outside
             document.addEventListener('click', function(event) {
@@ -673,6 +765,81 @@ try {
                 }
             });
         }); // End of DOMContentLoaded
+
+        // Update visible items based on pagination
+        function updateVisibleItems(page) {
+            if (!window.paginationManager) return;
+            
+            const state = window.paginationManager.getState();
+            const allItems = Array.from(document.querySelectorAll('.bloque-item'));
+            
+            const visibleItems = allItems.filter(item => {
+                const filters = window.filterManager ? window.filterManager.getFilters() : {};
+                let matches = true;
+                
+                if (filters.search && filters.search.trim() !== '') {
+                    const searchLower = filters.search.toLowerCase().trim();
+                    const timeRange = item.dataset.timeRange || '';
+                    
+                    if (!timeRange.includes(searchLower)) {
+                        matches = false;
+                    }
+                }
+                
+                return matches;
+            });
+            
+            const startIndex = (state.currentPage - 1) * state.perPage;
+            const endIndex = startIndex + state.perPage;
+            
+            allItems.forEach(item => {
+                item.style.display = 'none';
+            });
+            
+            visibleItems.slice(startIndex, endIndex).forEach(item => {
+                item.style.display = 'flex';
+            });
+        }
+
+        // Apply filters and update counts
+        function applyFilters(filters) {
+            const allItems = document.querySelectorAll('.bloque-item');
+            let visibleCount = 0;
+            
+            allItems.forEach(item => {
+                let matches = true;
+                
+                if (filters.search && filters.search.trim() !== '') {
+                    const searchLower = filters.search.toLowerCase().trim();
+                    const timeRange = item.dataset.timeRange || '';
+                    
+                    if (!timeRange.includes(searchLower)) {
+                        matches = false;
+                    }
+                }
+                
+                if (matches) {
+                    item.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            if (window.filterManager) {
+                window.filterManager.updateResultCount(visibleCount, allItems.length);
+            }
+            
+            if (window.paginationManager) {
+                window.paginationManager.currentPage = 1;
+                window.paginationManager.updateTotalRecords(visibleCount);
+                setTimeout(() => updateVisibleItems(1), 0);
+            } else {
+                allItems.forEach(item => {
+                    item.style.display = 'flex';
+                });
+            }
+        }
     </script>
 </body>
 </html>

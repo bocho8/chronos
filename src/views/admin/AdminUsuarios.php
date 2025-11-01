@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../helpers/Translation.php';
 require_once __DIR__ . '/../../helpers/AuthHelper.php';
 require_once __DIR__ . '/../../components/LanguageSwitcher.php';
 require_once __DIR__ . '/../../components/Sidebar.php';
+require_once __DIR__ . '/../../components/Breadcrumb.php';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Usuario.php';
 
@@ -49,6 +50,8 @@ function getUserInitials($nombre, $apellido) {
     <?php echo Sidebar::getStyles(); ?>
     <script src="/js/multiple-selection.js"></script>
     <script src="/js/status-labels.js"></script>
+    <script src="/js/pagination.js"></script>
+    <script src="/js/filter-manager.js"></script>
   <style type="text/css">
     .hamburger span {
       width: 25px;
@@ -292,6 +295,14 @@ function getUserInitials($nombre, $apellido) {
       <!-- Contenido principal - Centrado -->
       <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
         <div class="max-w-6xl mx-auto">
+          <!-- Breadcrumbs (RF073) -->
+          <?php 
+            $breadcrumb = Breadcrumb::forAdmin([
+                ['label' => _e('users_management') ?? 'Users Management', 'url' => '#']
+            ]);
+            echo $breadcrumb->render();
+          ?>
+          
           <div class="mb-6 md:mb-8">
             <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('users_management'); ?></h2>
             <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('users_management_description'); ?></p>
@@ -343,6 +354,9 @@ function getUserInitials($nombre, $apellido) {
               <!-- Statistics Container -->
               <div id="statisticsContainer"></div>
             </div>
+
+            <!-- Filter Result Count (RF080) -->
+            <div id="filterResultCount" class="px-4 py-2"></div>
 
             <!-- Lista de usuarios -->
             <div id="usuariosList" class="divide-y divide-gray-200">
@@ -422,6 +436,29 @@ function getUserInitials($nombre, $apellido) {
                 </div>
               <?php endif; ?>
             </div>
+
+            <!-- Table Summary (RF083) -->
+            <?php if (!empty($usuarios)): ?>
+            <div class="bg-gray-50 border-t border-gray-200 px-4 py-3">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-sm">
+                <div class="text-gray-600">
+                  <strong>Total:</strong> <?php echo count($usuarios); ?> <?php _e('users'); ?>
+                </div>
+                <?php 
+                  $usuariosConRoles = count(array_filter($usuarios, function($u) { 
+                    return isset($u['roles']) && $u['roles'] !== 'Sin roles' && !empty($u['roles']); 
+                  }));
+                ?>
+                <div class="text-gray-600">
+                  <strong>Con roles:</strong> <?php echo $usuariosConRoles; ?> | 
+                  <strong>Sin roles:</strong> <?php echo count($usuarios) - $usuariosConRoles; ?>
+                </div>
+              </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Pagination Container (RF082) -->
+            <div id="paginationContainer"></div>
           </div>
         </div>
       </section>
@@ -433,7 +470,7 @@ function getUserInitials($nombre, $apellido) {
     <div class="modal-content p-4 md:p-8 w-full max-w-sm md:max-w-md mx-auto">
       <div class="flex justify-between items-center mb-4 md:mb-6">
         <h3 id="modalTitle" class="text-base md:text-lg font-semibold text-gray-900"><?php _e('add_user'); ?></h3>
-        <button onclick="closeUsuarioModal()" class="text-gray-400 hover:text-gray-600" aria-label="<?php _e('close_modal'); ?>">
+        <button onclick="closeUsuarioModal()" class="text-gray-400 hover:text-gray-600" aria-label="<?php _e('close_modal'); ?>" tabindex="0">
           <span class="text-sm" aria-hidden="true">×</span>
         </button>
       </div>
@@ -561,7 +598,44 @@ function getUserInitials($nombre, $apellido) {
       const modal = document.getElementById('usuarioModal');
       modal.classList.add('hidden');
       clearAllErrors();
+      // RF078: Cancel button clears form fields
+      const form = document.getElementById('usuarioForm');
+      if (form) {
+        form.reset();
+        document.getElementById('id_usuario').value = '';
+        document.querySelectorAll('input[name="roles[]"]').forEach(checkbox => {
+          checkbox.checked = false;
+        });
+        isEditMode = false;
+      }
     }
+
+    // RNF008: Keyboard navigation support
+    document.addEventListener('DOMContentLoaded', function() {
+      // Escape key to close modal
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          const usuarioModal = document.getElementById('usuarioModal');
+          if (usuarioModal && !usuarioModal.classList.contains('hidden')) {
+            closeUsuarioModal();
+          }
+        }
+      });
+      
+      // Enter key to submit form (when focused on submit button or last input)
+      const usuarioForm = document.getElementById('usuarioForm');
+      if (usuarioForm) {
+        usuarioForm.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            const submitButton = usuarioForm.querySelector('button[type="submit"]');
+            if (submitButton && document.activeElement === e.target) {
+              e.preventDefault();
+              usuarioForm.requestSubmit();
+            }
+          }
+        });
+      }
+    });
 
     function editUsuario(id) {
       isEditMode = true;
@@ -618,9 +692,15 @@ function getUserInitials($nombre, $apellido) {
       });
     }
 
-    function deleteUsuario(id, nombre) {
+    async function deleteUsuario(id, nombre) {
       const confirmMessage = `¿Está seguro de que desea eliminar al usuario "${nombre}"?`;
-      if (confirm(confirmMessage)) {
+      const confirmed = await showConfirmModal(
+        '<?php _e('confirm_delete'); ?>',
+        confirmMessage,
+        '<?php _e('confirm'); ?>',
+        '<?php _e('cancel'); ?>'
+      );
+      if (confirmed) {
         const formData = new FormData();
         formData.append('action', 'delete');
         formData.append('id', id);
@@ -888,11 +968,16 @@ function getUserInitials($nombre, $apellido) {
 
       const logoutButton = document.getElementById('logoutButton');
       if (logoutButton) {
-        logoutButton.addEventListener('click', function(e) {
+        logoutButton.addEventListener('click', async function(e) {
           e.preventDefault();
           
-          const confirmMessage = '<?php _e('confirm_logout'); ?>';
-          if (confirm(confirmMessage)) {
+          const confirmed = await showConfirmModal(
+            '<?php _e('confirm_logout'); ?>',
+            '<?php _e('confirm_logout_message'); ?>',
+            '<?php _e('confirm'); ?>',
+            '<?php _e('cancel'); ?>'
+          );
+          if (confirmed) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/src/controllers/LogoutController.php';
@@ -946,7 +1031,135 @@ function getUserInitials($nombre, $apellido) {
         metaSelector: '.meta .text-muted',
         entityType: 'usuarios'
       });
+
+      // Initialize Pagination (RF082)
+      const totalUsuarios = <?php echo count($usuarios); ?>;
+      const paginationContainer = document.getElementById('paginationContainer');
+      
+      if (paginationContainer && totalUsuarios > 0) {
+        window.paginationManager = new PaginationManager({
+          container: paginationContainer,
+          currentPage: 1,
+          perPage: 10,
+          totalRecords: totalUsuarios,
+          onPageChange: function(page) {
+            updateVisibleItems(page);
+          },
+          onPerPageChange: function(perPage) {
+            updateVisibleItems(1);
+          }
+        });
+        
+        updateVisibleItems(1);
+      }
+
+      // Initialize Filter Manager (RF080)
+      const filterContainer = document.querySelector('.bg-white.rounded-lg.shadow-sm');
+      const filterResultCount = document.getElementById('filterResultCount');
+      
+      if (filterContainer && filterResultCount) {
+        window.filterManager = new FilterManager({
+          container: filterContainer,
+          resultCountContainer: filterResultCount,
+          totalCount: totalUsuarios,
+          filteredCount: totalUsuarios,
+          onFilterChange: function(filters) {
+            applyFilters(filters);
+          }
+        });
+        
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+          searchInput.setAttribute('data-filter', 'search');
+        }
+        
+        window.filterManager.init();
+        window.filterManager.updateResultCount(totalUsuarios, totalUsuarios);
+      }
     });
+
+    // Update visible items based on pagination
+    function updateVisibleItems(page) {
+      if (!window.paginationManager) return;
+      
+      const state = window.paginationManager.getState();
+      const allItems = Array.from(document.querySelectorAll('.usuario-item'));
+      
+      const visibleItems = allItems.filter(item => {
+        const filters = window.filterManager ? window.filterManager.getFilters() : {};
+        let matches = true;
+        
+        if (filters.search && filters.search.trim() !== '') {
+          const searchLower = filters.search.toLowerCase().trim();
+          const nombre = item.dataset.nombre || '';
+          const apellido = item.dataset.apellido || '';
+          const email = item.dataset.email || '';
+          const cedula = item.dataset.cedula || '';
+          
+          if (!nombre.includes(searchLower) && !apellido.includes(searchLower) && 
+              !email.includes(searchLower) && !cedula.includes(searchLower)) {
+            matches = false;
+          }
+        }
+        
+        return matches;
+      });
+      
+      const startIndex = (state.currentPage - 1) * state.perPage;
+      const endIndex = startIndex + state.perPage;
+      
+      allItems.forEach(item => {
+        item.style.display = 'none';
+      });
+      
+      visibleItems.slice(startIndex, endIndex).forEach(item => {
+        item.style.display = 'flex';
+      });
+    }
+
+    // Apply filters and update counts
+    function applyFilters(filters) {
+      const allItems = document.querySelectorAll('.usuario-item');
+      let visibleCount = 0;
+      
+      allItems.forEach(item => {
+        let matches = true;
+        
+        if (filters.search && filters.search.trim() !== '') {
+          const searchLower = filters.search.toLowerCase().trim();
+          const nombre = item.dataset.nombre || '';
+          const apellido = item.dataset.apellido || '';
+          const email = item.dataset.email || '';
+          const cedula = item.dataset.cedula || '';
+          
+          if (!nombre.includes(searchLower) && !apellido.includes(searchLower) && 
+              !email.includes(searchLower) && !cedula.includes(searchLower)) {
+            matches = false;
+          }
+        }
+        
+        if (matches) {
+          item.style.display = 'flex';
+          visibleCount++;
+        } else {
+          item.style.display = 'none';
+        }
+      });
+      
+      if (window.filterManager) {
+        window.filterManager.updateResultCount(visibleCount, allItems.length);
+      }
+      
+      if (window.paginationManager) {
+        window.paginationManager.currentPage = 1;
+        window.paginationManager.updateTotalRecords(visibleCount);
+        setTimeout(() => updateVisibleItems(1), 0);
+      } else {
+        allItems.forEach(item => {
+          item.style.display = 'flex';
+        });
+      }
+    }
 
     function searchUsuarios(searchTerm) {
       const usuarios = document.querySelectorAll('.usuario-item');

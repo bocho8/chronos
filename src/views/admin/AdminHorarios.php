@@ -409,9 +409,15 @@ try {
             });
         }
 
-        function deleteHorario(id) {
+        async function deleteHorario(id) {
             const confirmMessage = `¿Está seguro de que desea eliminar esta asignación de horario?`;
-            if (confirm(confirmMessage)) {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_delete'); ?>',
+                confirmMessage,
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 const formData = new FormData();
                 formData.append('action', 'delete');
                 formData.append('id', id);
@@ -518,11 +524,16 @@ try {
 
             const logoutButton = document.getElementById('logoutButton');
             if (logoutButton) {
-                logoutButton.addEventListener('click', function(e) {
+                logoutButton.addEventListener('click', async function(e) {
                     e.preventDefault();
                     
-                    const confirmMessage = '<?php _e('confirm_logout'); ?>';
-                    if (confirm(confirmMessage)) {
+                    const confirmed = await showConfirmModal(
+                        '<?php _e('confirm_logout'); ?>',
+                        '<?php _e('confirm_logout_message'); ?>',
+                        '<?php _e('confirm'); ?>',
+                        '<?php _e('cancel'); ?>'
+                    );
+                    if (confirmed) {
                         const form = document.createElement('form');
                         form.method = 'POST';
                         form.action = '/src/controllers/LogoutController.php';

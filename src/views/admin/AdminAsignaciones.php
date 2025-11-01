@@ -354,9 +354,15 @@ function getUserInitials($nombre, $apellido) {
             });
         }
 
-        function removeAsignacion(idDocente, idMateria, materiaNombre) {
+        async function removeAsignacion(idDocente, idMateria, materiaNombre) {
             const confirmMessage = `¿Está seguro de que desea remover la asignación de "${materiaNombre}"?`;
-            if (confirm(confirmMessage)) {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_delete'); ?>',
+                confirmMessage,
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 const formData = new FormData();
                 formData.append('action', 'delete');
                 formData.append('id_docente', idDocente);
@@ -382,8 +388,14 @@ function getUserInitials($nombre, $apellido) {
             }
         }
 
-        document.getElementById('logoutButton').addEventListener('click', function() {
-            if (confirm('<?php _e('confirm_logout'); ?>')) {
+        document.getElementById('logoutButton').addEventListener('click', async function() {
+            const confirmed = await showConfirmModal(
+                '<?php _e('confirm_logout'); ?>',
+                '<?php _e('confirm_logout_message'); ?>',
+                '<?php _e('confirm'); ?>',
+                '<?php _e('cancel'); ?>'
+            );
+            if (confirmed) {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         });
