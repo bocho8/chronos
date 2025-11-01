@@ -152,6 +152,11 @@ class Sidebar {
                         'icon' => '👨‍🏫'
                     ],
                     [
+                        'url' => '/admin/coordinators',
+                        'text' => 'coordinators',
+                        'icon' => '👔'
+                    ],
+                    [
                         'url' => '/admin/translations',
                         'text' => 'translations_management',
                         'icon' => '🌐'
@@ -193,7 +198,7 @@ class Sidebar {
                         'icon' => '📖'
                     ],
                     [
-                        'url' => '/src/views/admin/AdminBloques.php',
+                        'url' => '/admin/bloques',
                         'text' => 'time_blocks_management',
                         'icon' => '⏰'
                     ]

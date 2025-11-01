@@ -119,6 +119,14 @@ $router->group(['middleware' => ['auth']], function($router) {
             require __DIR__ . '/../views/admin/AdminGestionHorarios.php';
         });
         
+        $router->get('/bloques', function() {
+            require __DIR__ . '/../views/admin/AdminBloques.php';
+        });
+        
+        $router->get('/horarios', function() {
+            require __DIR__ . '/../views/admin/AdminHorarios.php';
+        });
+        
         $router->get('/view-schedules', function() {
             require __DIR__ . '/../views/admin/AdminScheduleViewer.php';
         });

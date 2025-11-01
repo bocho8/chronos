@@ -528,7 +528,7 @@ function getGroupInitials($nombre) {
 
         function viewGroupSchedule(id) {
             // Navigate to the admin schedule management page with the group ID
-            window.location.href = `/src/views/admin/AdminHorarios.php?grupo=${id}`;
+            window.location.href = `/admin/horarios?grupo=${id}`;
         }
 
         function closeGrupoModal() {
