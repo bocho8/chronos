@@ -353,6 +353,7 @@ return [
     'october' => 'October',
     'open' => 'Open',
     'other_school' => 'Other school',
+    'observaciones_predefinidas' => 'Predefined Observations',
     'over_16h' => 'Over 16h',
     'page_not_found' => 'Page not found',
     'parent_dashboard' => 'Tracking Panel',

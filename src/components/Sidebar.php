@@ -152,11 +152,6 @@ class Sidebar {
                         'icon' => '👨‍🏫'
                     ],
                     [
-                        'url' => '/coordinators',
-                        'text' => 'coordinators',
-                        'icon' => '👔'
-                    ],
-                    [
                         'url' => '/translations',
                         'text' => 'translations_management',
                         'icon' => '🌐'
@@ -233,6 +228,11 @@ class Sidebar {
                         'url' => $urls['teacher_availability'],
                         'text' => 'teacher_availability',
                         'icon' => '⏰'
+                    ],
+                    [
+                        'url' => '/observaciones-predefinidas',
+                        'text' => 'observaciones_predefinidas',
+                        'icon' => '📝'
                     ],
                     [
                         'url' => $urls['reports'],

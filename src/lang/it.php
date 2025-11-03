@@ -359,6 +359,7 @@ return [
     'october' => 'Ottobre',
     'open' => 'Apri',
     'other_school' => 'Altra scuola',
+    'observaciones_predefinidas' => 'Osservazioni Predefinite',
     'over_16h' => 'Piu di 16h',
     'page_not_found' => 'Pagina non trovata',
     'parent_dashboard' => 'Pannello Monitoraggio',

@@ -1036,6 +1036,9 @@
   .bg-gray-200 {
     background-color: var(--color-gray-200);
   }
+  .bg-gray-300 {
+    background-color: var(--color-gray-300);
+  }
   .bg-gray-400 {
     background-color: var(--color-gray-400);
   }
@@ -1341,6 +1344,9 @@
   .text-darktext {
     color: var(--color-darktext);
   }
+  .text-gray-300 {
+    color: var(--color-gray-300);
+  }
   .text-gray-400 {
     color: var(--color-gray-400);
   }
@@ -1422,6 +1428,9 @@
   .uppercase {
     text-transform: uppercase;
   }
+  .italic {
+    font-style: italic;
+  }
   .no-underline {
     text-decoration-line: none;
   }
@@ -1467,6 +1476,9 @@
   }
   .ring-black {
     --tw-ring-color: var(--color-black);
+  }
+  .ring-blue-200 {
+    --tw-ring-color: var(--color-blue-200);
   }
   .ring-darkblue {
     --tw-ring-color: var(--color-darkblue);
@@ -1595,6 +1607,13 @@
       }
     }
   }
+  .hover\:bg-gray-400 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-gray-400);
+      }
+    }
+  }
   .hover\:bg-gray-600 {
     &:hover {
       @media (hover: hover) {
@@ -1641,6 +1660,13 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-red-50);
+      }
+    }
+  }
+  .hover\:bg-red-200 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-red-200);
       }
     }
   }

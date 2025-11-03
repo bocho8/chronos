@@ -77,6 +77,17 @@ $router->group(['middleware' => ['auth']], function($router) {
             require __DIR__ . '/../views/admin/AdminReportes.php';
         });
 
+        // Predefined Observaciones Management - accessible by admin and coordinator
+        $router->get('/observaciones-predefinidas', function() {
+            require __DIR__ . '/../views/admin/AdminObservacionesPredefinidas.php';
+        });
+        $router->get('/api/observaciones-predefinidas', function() {
+            require __DIR__ . '/../controllers/ObservacionPredefinidaHandler.php';
+        });
+        $router->post('/api/observaciones-predefinidas', function() {
+            require __DIR__ . '/../controllers/ObservacionPredefinidaHandler.php';
+        });
+
         // API routes for shared resources
         $router->post('/api/assignments', 'Admin\AssignmentController@handleRequest');
     });
