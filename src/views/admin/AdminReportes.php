@@ -108,10 +108,17 @@ try {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col main-content">
+        <main class="flex-1 flex flex-col ml-0 md:ml-56 lg:ml-64 transition-all">
+            <!-- Mobile Sidebar Overlay -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden sm:hidden" onclick="toggleSidebar()"></div>
+            
             <!-- Header -->
-            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-                <div class="w-8"></div>
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder relative z-30">
+                <button id="sidebarToggle" class="sm:hidden p-2 rounded-md hover:bg-navy transition-colors text-white" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
                 
                 <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
                 <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
@@ -151,7 +158,7 @@ try {
             </header>
 
             <!-- Main Content -->
-            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
+            <section class="flex-1 p-3 sm:p-4 md:p-6 w-full overflow-x-hidden">
                 <div class="max-w-6xl mx-auto">
                     <!-- Page Header -->
                     <div class="mb-6 md:mb-8">
@@ -219,81 +226,81 @@ try {
                     </div>
 
                     <!-- Report Generation -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-8">
                         <!-- Quick Reports -->
-                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('quick_reports'); ?></h3>
-                            <div class="space-y-3">
-                                <button onclick="generateReport('teachers')" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-4 md:p-6">
+                            <h3 class="text-base md:text-lg font-medium text-gray-900 mb-4"><?php _e('quick_reports'); ?></h3>
+                            <div class="space-y-2 md:space-y-3">
+                                <button onclick="generateReport('teachers')" class="w-full text-left p-2 md:p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
                                     <div>
-                                        <p class="font-medium text-gray-900"><?php _e('teachers_report'); ?></p>
-                                        <p class="text-sm text-gray-500"><?php _e('teachers_report_description'); ?></p>
+                                        <p class="font-medium text-gray-900 text-sm md:text-base"><?php _e('teachers_report'); ?></p>
+                                        <p class="text-xs md:text-sm text-gray-500"><?php _e('teachers_report_description'); ?></p>
                                     </div>
                                 </button>
 
-                                <button onclick="generateReport('schedules')" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+                                <button onclick="generateReport('schedules')" class="w-full text-left p-2 md:p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
                                     <div>
-                                        <p class="font-medium text-gray-900"><?php _e('schedules_report'); ?></p>
-                                        <p class="text-sm text-gray-500"><?php _e('schedules_report_description'); ?></p>
+                                        <p class="font-medium text-gray-900 text-sm md:text-base"><?php _e('schedules_report'); ?></p>
+                                        <p class="text-xs md:text-sm text-gray-500"><?php _e('schedules_report_description'); ?></p>
                                     </div>
                                 </button>
 
-                                <button onclick="generateReport('subjects')" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
-                                    <span class="text-sm">📋</span>
+                                <button onclick="generateReport('subjects')" class="w-full text-left p-2 md:p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+                                    <span class="text-xs md:text-sm mr-2">📋</span>
                                     <div>
-                                        <p class="font-medium text-gray-900"><?php _e('subjects_report'); ?></p>
-                                        <p class="text-sm text-gray-500"><?php _e('subjects_report_description'); ?></p>
+                                        <p class="font-medium text-gray-900 text-sm md:text-base"><?php _e('subjects_report'); ?></p>
+                                        <p class="text-xs md:text-sm text-gray-500"><?php _e('subjects_report_description'); ?></p>
                                     </div>
                                 </button>
 
-                                <button onclick="generateReport('availability')" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
-                                    <span class="text-sm">📋</span>
+                                <button onclick="generateReport('availability')" class="w-full text-left p-2 md:p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+                                    <span class="text-xs md:text-sm mr-2">📋</span>
                                     <div>
-                                        <p class="font-medium text-gray-900"><?php _e('availability_report'); ?></p>
-                                        <p class="text-sm text-gray-500"><?php _e('availability_report_description'); ?></p>
+                                        <p class="font-medium text-gray-900 text-sm md:text-base"><?php _e('availability_report'); ?></p>
+                                        <p class="text-xs md:text-sm text-gray-500"><?php _e('availability_report_description'); ?></p>
                                     </div>
                                 </button>
                             </div>
                         </div>
 
                         <!-- System Overview -->
-                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('system_overview'); ?></h3>
-                            <div class="space-y-4">
+                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-4 md:p-6">
+                            <h3 class="text-base md:text-lg font-medium text-gray-900 mb-4"><?php _e('system_overview'); ?></h3>
+                            <div class="space-y-3 md:space-y-4">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-600"><?php _e('total_groups'); ?>:</span>
-                                    <span class="font-semibold"><?php echo $stats['total_grupos'] ?? 0; ?></span>
+                                    <span class="text-gray-600 text-sm md:text-base"><?php _e('total_groups'); ?>:</span>
+                                    <span class="font-semibold text-sm md:text-base"><?php echo $stats['total_grupos'] ?? 0; ?></span>
                                 </div>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-600"><?php _e('available_teachers'); ?>:</span>
-                                    <span class="font-semibold"><?php echo $stats['docentes_disponibles'] ?? 0; ?></span>
+                                    <span class="text-gray-600 text-sm md:text-base"><?php _e('available_teachers'); ?>:</span>
+                                    <span class="font-semibold text-sm md:text-base"><?php echo $stats['docentes_disponibles'] ?? 0; ?></span>
                                 </div>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-600"><?php _e('italian_subjects'); ?>:</span>
-                                    <span class="font-semibold"><?php echo $stats['materias_italiano'] ?? 0; ?></span>
+                                    <span class="text-gray-600 text-sm md:text-base"><?php _e('italian_subjects'); ?>:</span>
+                                    <span class="font-semibold text-sm md:text-base"><?php echo $stats['materias_italiano'] ?? 0; ?></span>
                                 </div>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-gray-600"><?php _e('active_schedules'); ?>:</span>
-                                    <span class="font-semibold"><?php echo $stats['total_horarios'] ?? 0; ?></span>
+                                    <span class="text-gray-600 text-sm md:text-base"><?php _e('active_schedules'); ?>:</span>
+                                    <span class="font-semibold text-sm md:text-base"><?php echo $stats['total_horarios'] ?? 0; ?></span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Recent Activity -->
-                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('recent_activity'); ?></h3>
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-4 md:p-6">
+                        <h3 class="text-base md:text-lg font-medium text-gray-900 mb-4"><?php _e('recent_activity'); ?></h3>
                         <?php if (!empty($recentActivity)): ?>
-                            <div class="space-y-4 max-h-96 overflow-y-auto">
+                            <div class="space-y-3 md:space-y-4 max-h-96 overflow-y-auto">
                                 <?php foreach ($recentActivity as $activity): ?>
-                                    <div class="flex items-start space-x-3">
+                                    <div class="flex items-start space-x-2 md:space-x-3">
                                         <div class="flex-shrink-0">
                                             <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                                                 <span class="text-gray-600 text-xs leading-none"></span>
                                             </div>
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-sm text-gray-900">
+                                            <p class="text-xs md:text-sm text-gray-900">
                                                 <span class="font-medium">
                                                     <?php echo htmlspecialchars($activity['nombre'] . ' ' . $activity['apellido']); ?>
                                                 </span>
@@ -363,6 +370,16 @@ try {
                 });
             }
         });
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar-container');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('sidebar-open');
+                overlay.classList.toggle('hidden');
+            }
+        }
     </script>
 </body>
 </html>

@@ -172,11 +172,17 @@ function getGroupInitials($nombre) {
         <?php echo $sidebar->render(); ?>
 
         <!-- Main -->
-        <main class="flex-1 flex flex-col main-content">
+        <main class="flex-1 flex flex-col ml-0 md:ml-56 lg:ml-64 transition-all">
+            <!-- Mobile Sidebar Overlay -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden sm:hidden" onclick="toggleSidebar()"></div>
+            
             <!-- Header -->
-            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-                <!-- Espacio para el botón de menú hamburguesa -->
-                <div class="w-8"></div>
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder relative z-30">
+                <button id="sidebarToggle" class="sm:hidden p-2 rounded-md hover:bg-navy transition-colors text-white" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
                 
                 <!-- Título centrado -->
                 <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
@@ -220,7 +226,7 @@ function getGroupInitials($nombre) {
             </header>
 
             <!-- Contenido principal - Centrado -->
-            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
+            <section class="flex-1 p-3 sm:p-4 md:p-6 w-full overflow-x-hidden">
                 <div class="max-w-6xl mx-auto">
                     <!-- Breadcrumbs (RF073) -->
                     <?php 
@@ -289,7 +295,7 @@ function getGroupInitials($nombre) {
                         <div id="gruposList" class="divide-y divide-gray-200">
                             <?php if (!empty($grupos)): ?>
                                 <?php foreach ($grupos as $grupo): ?>
-                                    <article class="grupo-item item-row flex items-center justify-between p-4 transition-colors hover:bg-lightbg" 
+                                    <article class="grupo-item item-row flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 md:p-4 gap-3 sm:gap-0 transition-colors hover:bg-lightbg" 
                                              data-item-id="<?php echo $grupo['id_grupo']; ?>"
                                              data-nombre="<?php echo htmlspecialchars(strtolower($grupo['nombre'])); ?>"
                                              data-nivel="<?php echo htmlspecialchars(strtolower($grupo['nivel'])); ?>"
@@ -327,17 +333,17 @@ function getGroupInitials($nombre) {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="flex items-center space-x-2">
+                                        <div class="flex flex-wrap items-center gap-2 sm:space-x-2">
                                             <button onclick="viewGroupSchedule(<?php echo $grupo['id_grupo']; ?>)" 
-                                                    class="text-green-600 hover:text-green-800 text-sm font-medium transition-colors">
+                                                    class="text-green-600 hover:text-green-800 text-xs md:text-sm font-medium transition-colors">
                                                 <?php _e('view_schedule'); ?>
                                             </button>
                                             <button onclick="editGrupo(<?php echo $grupo['id_grupo']; ?>)" 
-                                                    class="text-darkblue hover:text-navy text-sm font-medium transition-colors">
+                                                    class="text-darkblue hover:text-navy text-xs md:text-sm font-medium transition-colors">
                                                 <?php _e('edit'); ?>
                                             </button>
                                             <button onclick="deleteGrupo(<?php echo $grupo['id_grupo']; ?>, '<?php echo htmlspecialchars($grupo['nombre']); ?>', this)" 
-                                                    class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors">
+                                                    class="text-red-600 hover:text-red-800 text-xs md:text-sm font-medium transition-colors">
                                                 <?php _e('delete'); ?>
                                             </button>
                                         </div>

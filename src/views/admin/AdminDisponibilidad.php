@@ -190,10 +190,17 @@ function getUserInitials($nombre, $apellido) {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col main-content">
+        <main class="flex-1 flex flex-col ml-0 md:ml-56 lg:ml-64 transition-all">
+            <!-- Mobile Sidebar Overlay -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden sm:hidden" onclick="toggleSidebar()"></div>
+            
             <!-- Header -->
-            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-                <div class="w-8"></div>
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder relative z-30">
+                <button id="sidebarToggle" class="sm:hidden p-2 rounded-md hover:bg-navy transition-colors text-white" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
                 
                 <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
                 <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
@@ -233,7 +240,7 @@ function getUserInitials($nombre, $apellido) {
             </header>
 
             <!-- Contenido principal -->
-            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
+            <section class="flex-1 p-3 sm:p-4 md:p-6 w-full overflow-x-hidden">
                 <div class="max-w-6xl mx-auto">
                     <div class="mb-6 md:mb-8">
                         <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('teacher_availability'); ?></h2>
@@ -241,10 +248,10 @@ function getUserInitials($nombre, $apellido) {
                     </div>
 
                     <!-- Selector de docente -->
-                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6 mb-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4"><?php _e('select_teacher'); ?></h3>
-                        <div class="flex gap-4">
-                            <select id="docenteSelect" class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue">
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-4 md:p-6 mb-6">
+                        <h3 class="text-base md:text-lg font-medium text-gray-900 mb-4"><?php _e('select_teacher'); ?></h3>
+                        <div class="flex flex-col sm:flex-row gap-3 md:gap-4">
+                            <select id="docenteSelect" class="flex-1 px-3 py-2 text-sm md:text-base border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue">
                                 <option value=""><?php _e('select_teacher'); ?></option>
                                 <?php foreach ($docentes as $docente): ?>
                                     <option value="<?php echo $docente['id_docente']; ?>" 
@@ -254,7 +261,7 @@ function getUserInitials($nombre, $apellido) {
                                 <?php endforeach; ?>
                             </select>
                             <button onclick="loadDocenteDisponibilidad()" 
-                                    class="px-4 py-2 bg-darkblue text-white rounded-md hover:bg-navy transition-colors">
+                                    class="px-4 py-2 text-sm md:text-base bg-darkblue text-white rounded-md hover:bg-navy transition-colors whitespace-nowrap">
                                 <?php _e('load'); ?>
                             </button>
                         </div>
@@ -262,18 +269,19 @@ function getUserInitials($nombre, $apellido) {
 
                     <?php if ($selectedDocente): ?>
                     <!-- Información del docente seleccionado -->
-                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6 mb-6">
+                    <div class="bg-white rounded-lg shadow-sm border border-lightborder p-4 md:p-6 mb-6">
                         <div class="flex items-center">
-                            <div class="w-12 h-12 rounded-full bg-darkblue mr-4 flex items-center justify-center text-white font-semibold">
+                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-darkblue mr-3 md:mr-4 flex items-center justify-center text-white font-semibold text-sm md:text-base flex-shrink-0">
                                 <?php echo getUserInitials($selectedDocente['nombre'], $selectedDocente['apellido']); ?>
                             </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900">
+                            <div class="min-w-0 flex-1">
+                                <h3 class="text-base md:text-lg font-semibold text-gray-900 truncate">
                                     <?php echo htmlspecialchars($selectedDocente['nombre'] . ' ' . $selectedDocente['apellido']); ?>
                                 </h3>
-                                <p class="text-gray-600">
-                                    <?php echo htmlspecialchars($selectedDocente['email']); ?> | 
-                                    CI: <?php echo htmlspecialchars($selectedDocente['cedula']); ?>
+                                <p class="text-sm md:text-base text-gray-600 break-words">
+                                    <span class="block sm:inline"><?php echo htmlspecialchars($selectedDocente['email']); ?></span>
+                                    <span class="hidden sm:inline"> | </span>
+                                    <span class="block sm:inline">CI: <?php echo htmlspecialchars($selectedDocente['cedula']); ?></span>
                                 </p>
                             </div>
                         </div>

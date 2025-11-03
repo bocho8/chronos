@@ -105,11 +105,17 @@ try {
             background: white !important;
             border-radius: 12px !important;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-            max-width: 500px !important;
+            max-width: 90vw !important;
             width: 100% !important;
             max-height: 90vh !important;
             overflow-y: auto !important;
             animation: modalSlideIn 0.3s ease-out !important;
+        }
+        
+        @media (min-width: 640px) {
+            #observacionModal .modal-content {
+                max-width: 500px !important;
+            }
         }
         
         @keyframes modalSlideIn {
@@ -217,10 +223,17 @@ try {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col main-content">
+        <main class="flex-1 flex flex-col ml-0 md:ml-56 lg:ml-64 transition-all">
+            <!-- Mobile Sidebar Overlay -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden sm:hidden" onclick="toggleSidebar()"></div>
+            
             <!-- Header -->
-            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-                <div class="w-8"></div>
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder relative z-30">
+                <button id="sidebarToggle" class="sm:hidden p-2 rounded-md hover:bg-navy transition-colors text-white" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
                 
                 <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block">
                     <?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> 
@@ -259,7 +272,7 @@ try {
             </header>
 
             <!-- Contenido principal -->
-            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
+            <section class="flex-1 p-3 sm:p-4 md:p-6 w-full overflow-x-hidden">
                 <div class="max-w-6xl mx-auto">
                     <div class="mb-6 md:mb-8">
                         <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('observaciones_predefinidas'); ?></h2>
@@ -723,6 +736,16 @@ try {
                 window.location.href = '/src/controllers/LogoutController.php';
             }
         });
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar-container');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('sidebar-open');
+                overlay.classList.toggle('hidden');
+            }
+        }
     </script>
 </body>
 </html>

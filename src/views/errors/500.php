@@ -39,12 +39,12 @@ $languageSwitcher->handleLanguageChange();
         </div>
     </header>
 
-    <main class="flex items-center justify-center min-h-[calc(100vh-60px)] p-6">
-        <div class="text-center max-w-md mx-auto">
-            <div class="mb-8">
-                <h1 class="text-9xl font-bold text-red-600 mb-4">500</h1>
-                <h2 class="text-3xl font-bold text-gray-800 mb-4"><?php _e('error_500_heading'); ?></h2>
-                <p class="text-lg text-gray-600 mb-8"><?php _e('error_500_message'); ?></p>
+    <main class="flex items-center justify-center min-h-[calc(100vh-60px)] p-4 md:p-6">
+        <div class="text-center max-w-md mx-auto w-full">
+            <div class="mb-6 md:mb-8">
+                <h1 class="text-6xl md:text-9xl font-bold text-red-600 mb-4">500</h1>
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4"><?php _e('error_500_heading'); ?></h2>
+                <p class="text-base md:text-lg text-gray-600 mb-6 md:mb-8 px-4"><?php _e('error_500_message'); ?></p>
             </div>
             
             <div class="space-y-4">

@@ -95,15 +95,15 @@ function generateScheduleTable($horario, $timeBlocks) {
     }
 
     $html = '<div class="overflow-x-auto">
-                <table class="w-full border-collapse">
+                <table class="w-full border-collapse min-w-[600px]">
                     <thead>
                         <tr>
-                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300" style="width: 100px; min-width: 100px;">Hora</th>
-                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300">Lunes</th>
-                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300">Martes</th>
-                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300">Miércoles</th>
-                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300">Jueves</th>
-                            <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300">Viernes</th>
+                            <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm" style="width: 100px; min-width: 100px;">Hora</th>
+                            <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm">Lunes</th>
+                            <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm">Martes</th>
+                            <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm">Miércoles</th>
+                            <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm">Jueves</th>
+                            <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm">Viernes</th>
                         </tr>
                     </thead>
                     <tbody>';
@@ -112,13 +112,13 @@ function generateScheduleTable($horario, $timeBlocks) {
     
     foreach ($timeBlocks as $bloque) {
         $html .= '<tr>
-                    <th class="bg-[#34495e] text-white p-2 text-center font-semibold border border-gray-300" style="width: 100px; min-width: 100px;">
+                    <th class="bg-[#34495e] text-white p-1.5 md:p-2 text-center font-semibold border border-gray-300 text-xs md:text-sm" style="width: 100px; min-width: 100px;">
                         ' . substr($bloque['hora_inicio'], 0, 5) . ' – ' . substr($bloque['hora_fin'], 0, 5) . '
                     </th>';
         
         foreach ($dias as $dia) {
             $assignment = getAssignmentForBlock($horario, $dia, $bloque['id_bloque']);
-            $html .= '<td class="border border-gray-300 p-2 text-center" style="min-width: 120px; width: 120px;">';
+            $html .= '<td class="border border-gray-300 p-1.5 md:p-2 text-center text-xs md:text-sm" style="min-width: 120px; width: 120px;">';
             
             if ($assignment) {
                 $html .= '<div class="bg-blue-100 text-blue-800 p-2 rounded text-xs">

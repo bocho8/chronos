@@ -188,11 +188,17 @@ try {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col main-content">
+        <main class="flex-1 flex flex-col ml-0 md:ml-56 lg:ml-64 transition-all">
+            <!-- Mobile Sidebar Overlay -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden sm:hidden" onclick="toggleSidebar()"></div>
+            
             <!-- Header -->
-            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-                <!-- Espacio para el botón de menú hamburguesa -->
-                <div class="w-8"></div>
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder relative z-30">
+                <button id="sidebarToggle" class="sm:hidden p-2 rounded-md hover:bg-navy transition-colors text-white" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
                 
                 <!-- Título centrado -->
                 <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
@@ -236,7 +242,7 @@ try {
             </header>
 
             <!-- Contenido principal - Centrado -->
-            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
+            <section class="flex-1 p-3 sm:p-4 md:p-6 w-full overflow-x-hidden">
                 <div class="max-w-6xl mx-auto">
                     <div class="mb-6 md:mb-8">
                         <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5">
@@ -278,12 +284,12 @@ try {
                             <table class="w-full border-collapse">
                                 <thead>
                                     <tr>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('time'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('monday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('tuesday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('wednesday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('thursday'); ?></th>
-                                        <th class="bg-darkblue text-white p-3 text-center font-semibold border border-gray-300"><?php _e('friday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('time'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('monday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('tuesday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('wednesday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('thursday'); ?></th>
+                                        <th class="bg-darkblue text-white p-2 md:p-3 text-center font-semibold border border-gray-300 text-xs md:text-sm"><?php _e('friday'); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -292,11 +298,11 @@ try {
                                     foreach ($bloques as $bloque): 
                                     ?>
                                         <tr>
-                                            <th class="bg-[#34495e] text-white p-2 text-center font-semibold border border-gray-300">
+                                            <th class="bg-[#34495e] text-white p-1 md:p-2 text-center font-semibold border border-gray-300 text-xs md:text-sm">
                                                 <?php echo date('H:i', strtotime($bloque['hora_inicio'])) . ' – ' . date('H:i', strtotime($bloque['hora_fin'])); ?>
                                             </th>
                                             <?php foreach ($dias as $dia): ?>
-                                                <td class="horario-cell text-center font-medium p-2 border border-gray-300 cursor-pointer hover:bg-gray-50" 
+                                                <td class="horario-cell text-center font-medium p-1 md:p-2 border border-gray-300 cursor-pointer hover:bg-gray-50 text-xs md:text-sm" 
                                                     data-bloque="<?php echo $bloque['id_bloque']; ?>" 
                                                     data-dia="<?php echo $dia; ?>">
                                                     <?php 

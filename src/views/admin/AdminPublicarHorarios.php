@@ -146,10 +146,17 @@ try {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col main-content">
+        <main class="flex-1 flex flex-col ml-0 md:ml-56 lg:ml-64 transition-all">
+            <!-- Mobile Sidebar Overlay -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden sm:hidden" onclick="toggleSidebar()"></div>
+            
             <!-- Header -->
-            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-                <div class="w-8"></div>
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder relative z-30">
+                <button id="sidebarToggle" class="sm:hidden p-2 rounded-md hover:bg-navy transition-colors text-white" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
                 
                 <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('schedule_publication'); ?></div>
                 <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('publication'); ?></div>
@@ -189,7 +196,7 @@ try {
             </header>
 
             <!-- Main Content -->
-            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
+            <section class="flex-1 p-3 sm:p-4 md:p-6 w-full overflow-x-hidden">
                 <div class="max-w-6xl mx-auto">
                     <!-- Page Header -->
                     <div class="mb-6 md:mb-8">
@@ -225,42 +232,42 @@ try {
                         <?php else: ?>
                             <div class="grid gap-4">
                                 <?php foreach ($pendingRequests as $request): ?>
-                                    <div class="schedule-card bg-white rounded-lg p-6">
-                                        <div class="flex justify-between items-start">
+                                    <div class="schedule-card bg-white rounded-lg p-4 md:p-6">
+                                        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
                                             <div class="flex-1">
-                                                <div class="flex items-center mb-2">
-                                                    <h4 class="text-lg font-semibold text-gray-900 mr-3">
+                                                <div class="flex flex-col sm:flex-row sm:items-center mb-2 gap-2 sm:gap-3">
+                                                    <h4 class="text-base md:text-lg font-semibold text-gray-900">
                                                         Solicitud de Publicación
                                                     </h4>
-                                                    <span class="unpublished-badge">Pendiente de Aprobación</span>
+                                                    <span class="unpublished-badge self-start sm:self-center">Pendiente de Aprobación</span>
                                                 </div>
-                                                <p class="text-gray-600 mb-2">
+                                                <p class="text-sm md:text-base text-gray-600 mb-2">
                                                     <strong>Solicitado por:</strong> <?php echo htmlspecialchars($request['solicitante_nombre'] . ' ' . $request['solicitante_apellido']); ?>
                                                 </p>
-                                                <p class="text-gray-600 mb-2">
+                                                <p class="text-sm md:text-base text-gray-600 mb-2">
                                                     <strong>Fecha de solicitud:</strong> <?php echo date('d/m/Y H:i', strtotime($request['fecha_solicitud'])); ?>
                                                 </p>
-                                                <p class="text-gray-600 mb-4">
+                                                <p class="text-sm md:text-base text-gray-600 mb-4">
                                                     <strong>Descripción:</strong> Solicitud de publicación de todos los horarios del sistema
                                                 </p>
                                             </div>
-                                            <div class="flex space-x-3">
+                                            <div class="flex flex-col sm:flex-row gap-2 sm:space-x-3">
                                                 <button 
                                                     onclick="viewSchedulePreview(<?php echo $request['id_publicacion']; ?>)"
-                                                    class="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
-                                                    <span class="text-sm">👁️</span>
+                                                    class="px-3 md:px-4 py-2 text-xs md:text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                                                    <span class="text-xs md:text-sm">👁️</span>
                                                     Ver Vista Previa
                                                 </button>
                                                 <button 
                                                     onclick="approveRequest(<?php echo $request['id_solicitud']; ?>)"
-                                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                                                    <span class="text-sm">✅</span>
+                                                    class="px-3 md:px-4 py-2 text-xs md:text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                                    <span class="text-xs md:text-sm">✅</span>
                                                     <?php _e('approve_publish_request'); ?>
                                                 </button>
                                                 <button 
                                                     onclick="rejectRequest(<?php echo $request['id_solicitud']; ?>)"
-                                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                                                    <span class="text-sm">❌</span>
+                                                    class="px-3 md:px-4 py-2 text-xs md:text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                                                    <span class="text-xs md:text-sm">❌</span>
                                                     <?php _e('reject_publish_request'); ?>
                                                 </button>
                                             </div>
@@ -282,33 +289,33 @@ try {
                         <?php else: ?>
                             <div class="grid gap-4">
                                 <?php foreach ($publishedSchedules as $schedule): ?>
-                                    <div class="schedule-card bg-white rounded-lg p-6">
-                                        <div class="flex justify-between items-start">
+                                    <div class="schedule-card bg-white rounded-lg p-4 md:p-6">
+                                        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
                                             <div class="flex-1">
-                                                <div class="flex items-center mb-2">
-                                                    <h4 class="text-lg font-semibold text-gray-900 mr-3">
+                                                <div class="flex flex-col sm:flex-row sm:items-center mb-2 gap-2 sm:gap-3">
+                                                    <h4 class="text-base md:text-lg font-semibold text-gray-900">
                                                         Horario - <?php echo htmlspecialchars($schedule['nombre'] ?? 'Sin nombre'); ?>
                                                     </h4>
-                                                    <span class="published-badge">Publicado</span>
+                                                    <span class="published-badge self-start sm:self-center">Publicado</span>
                                                 </div>
-                                                <p class="text-gray-600 mb-2">
+                                                <p class="text-sm md:text-base text-gray-600 mb-2">
                                                     <strong>Publicado:</strong> <?php echo date('d/m/Y H:i', strtotime($schedule['fecha_publicacion'] ?? 'now')); ?>
                                                 </p>
-                                                <p class="text-gray-600 mb-4">
+                                                <p class="text-sm md:text-base text-gray-600 mb-4">
                                                     <strong>Descripción:</strong> <?php echo htmlspecialchars($schedule['descripcion'] ?? 'Horario publicado'); ?>
                                                 </p>
                                             </div>
-                                            <div class="flex space-x-3">
+                                            <div class="flex flex-col sm:flex-row gap-2 sm:space-x-3">
                                                 <button 
                                                     onclick="viewPublishedSchedules()"
-                                                    class="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
-                                                    <span class="text-sm">👁️</span>
+                                                    class="px-3 md:px-4 py-2 text-xs md:text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                                                    <span class="text-xs md:text-sm">👁️</span>
                                                     Ver Horarios
                                                 </button>
                                                 <button 
                                                     onclick="deletePublishedSchedule(<?php echo $schedule['id_publicacion']; ?>)"
-                                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                                                    <span class="text-sm">🗑️</span>
+                                                    class="px-3 md:px-4 py-2 text-xs md:text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                                                    <span class="text-xs md:text-sm">🗑️</span>
                                                     Eliminar
                                                 </button>
                                             </div>
@@ -463,6 +470,16 @@ try {
             );
             if (confirmed) {
                 window.location.href = '/src/controllers/LogoutController.php';
+            }
+        }
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar-container');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('sidebar-open');
+                overlay.classList.toggle('hidden');
             }
         }
     </script>

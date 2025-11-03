@@ -845,11 +845,17 @@ try {
     <div class="flex min-h-screen">
         <?php echo $sidebar->render(); ?>
 
-        <main class="flex-1 flex flex-col main-content">
+        <main class="flex-1 flex flex-col ml-0 md:ml-56 lg:ml-64 transition-all">
+            <!-- Mobile Sidebar Overlay -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden sm:hidden" onclick="toggleSidebar()"></div>
+            
             <!-- Header -->
-            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-                <!-- Espacio para el botón de menú hamburguesa -->
-                <div class="w-8"></div>
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder relative z-30">
+                <button id="sidebarToggle" class="sm:hidden p-2 rounded-md hover:bg-navy transition-colors text-white" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
                 
                 <!-- Título centrado -->
                 <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
@@ -893,7 +899,7 @@ try {
             </header>
 
             <!-- Contenido principal - Centrado -->
-            <section class="flex-1 px-3 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
+            <section class="flex-1 p-3 sm:p-4 md:p-6 w-full overflow-x-hidden">
                 <div class="max-w-7xl mx-auto">
                     <!-- Header de la página -->
                     <div class="mb-6 md:mb-8">
@@ -935,17 +941,17 @@ try {
                             <div class="mb-4">
                                 <div class="relative mb-3">
                                     <input type="text" id="sidebarSearch" placeholder="Buscar materia o docente..." 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-darkblue focus:border-darkblue">
+                                           class="w-full px-2 md:px-3 py-1.5 md:py-2 border border-gray-300 rounded-md text-xs md:text-sm focus:ring-darkblue focus:border-darkblue">
                                 </div>
                                 
-                                <div class="flex gap-2 mb-3">
-                                    <button id="filterAll" class="px-3 py-1 text-xs bg-darkblue text-white rounded hover:bg-blue-800">
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    <button id="filterAll" class="px-2 md:px-3 py-1 text-xs bg-darkblue text-white rounded hover:bg-blue-800 whitespace-nowrap">
                                         Todos
                                     </button>
-                                    <button id="filterAvailable" class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50">
+                                    <button id="filterAvailable" class="px-2 md:px-3 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50 whitespace-nowrap">
                                         Disponibles
                                     </button>
-                                    <button id="filterBySubject" class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50">
+                                    <button id="filterBySubject" class="px-2 md:px-3 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50 whitespace-nowrap">
                                         Por Materia
                                     </button>
                                 </div>
@@ -964,22 +970,22 @@ try {
                     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
                         <!-- Header del panel -->
                         <div class="p-4 md:p-6 border-b border-lightborder bg-gray-50">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="font-medium text-darktext"><?php _e('schedules'); ?></h3>
-                                <div class="text-sm text-muted">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
+                                <h3 class="font-medium text-darktext text-sm md:text-base"><?php _e('schedules'); ?></h3>
+                                <div class="text-xs md:text-sm text-muted">
                                     <?php _e('click_available_slot'); ?>
                                 </div>
                             </div>
                             
                             <!-- Controles de vista -->
-                            <div class="flex gap-2 mb-4">
-                                <button id="viewNormal" class="px-3 py-1 text-sm bg-darkblue text-white rounded hover:bg-blue-800">
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <button id="viewNormal" class="px-2 md:px-3 py-1 text-xs md:text-sm bg-darkblue text-white rounded hover:bg-blue-800 whitespace-nowrap">
                                     Vista Normal
                                 </button>
-                                <button id="viewConflicts" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50">
+                                <button id="viewConflicts" class="px-2 md:px-3 py-1 text-xs md:text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50 whitespace-nowrap">
                                     Ver Conflictos
                                 </button>
-                                <button id="viewComparison" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50">
+                                <button id="viewComparison" class="px-2 md:px-3 py-1 text-xs md:text-sm text-gray-600 hover:text-gray-800 border border-lightborder rounded hover:bg-gray-50 whitespace-nowrap">
                                     Comparar Grupos
                                 </button>
                                 <?php if ($canRequestPublish): ?>
@@ -987,15 +993,15 @@ try {
                                 $buttonDisabled = $publishStatus === 'pendiente' ? 'disabled' : '';
                                 $buttonText = $publishStatus === 'pendiente' ? 'request_publish_pending' : 'request_publish_schedules';
                                 $buttonClass = $publishStatus === 'pendiente' 
-                                    ? 'px-3 py-1 text-sm bg-gray-400 text-white rounded cursor-not-allowed flex items-center' 
-                                    : 'px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center cursor-pointer';
+                                    ? 'px-2 md:px-3 py-1 text-xs md:text-sm bg-gray-400 text-white rounded cursor-not-allowed flex items-center whitespace-nowrap' 
+                                    : 'px-2 md:px-3 py-1 text-xs md:text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center cursor-pointer whitespace-nowrap';
                                 ?>
                                 <button 
                                     id="btnRequestPublish" 
                                     class="<?php echo $buttonClass; ?>"
                                     <?php echo $buttonDisabled; ?>
                                     onclick="requestPublish()">
-                                    <span class="mr-1">📢</span>
+                                    <span class="mr-1 text-xs md:text-sm">📢</span>
                                     <?php _e($buttonText); ?>
                                 </button>
                                 <?php endif; ?>
@@ -2759,6 +2765,16 @@ try {
         document.addEventListener('DOMContentLoaded', function() {
             checkScheduleChanges();
         });
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar-container');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('sidebar-open');
+                overlay.classList.toggle('hidden');
+            }
+        }
     </script>
 </body>
 </html>

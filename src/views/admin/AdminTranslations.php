@@ -55,12 +55,61 @@ if (!AuthHelper::checkSessionTimeout()) {
         }
         .translation-table td {
             vertical-align: top;
-            padding: 1.5rem 1rem;
+            padding: 0.75rem 0.5rem;
             min-height: 60px;
         }
         .translation-table th {
-            padding: 1rem;
+            padding: 0.5rem;
             min-height: 50px;
+        }
+        
+        @media (min-width: 768px) {
+            .translation-table td {
+                padding: 1.5rem 1rem;
+            }
+            .translation-table th {
+                padding: 1rem;
+            }
+        }
+        
+        .stat-card {
+            padding: 0.75rem;
+        }
+        
+        @media (min-width: 768px) {
+            .stat-card {
+                padding: 1rem;
+            }
+        }
+        
+        .stat-text-sm {
+            font-size: 0.75rem;
+        }
+        
+        @media (min-width: 768px) {
+            .stat-text-sm {
+                font-size: 0.875rem;
+            }
+        }
+        
+        .stat-text-lg {
+            font-size: 1.25rem;
+        }
+        
+        @media (min-width: 768px) {
+            .stat-text-lg {
+                font-size: 1.5rem;
+            }
+        }
+        
+        .stat-text-xs {
+            font-size: 0.625rem;
+        }
+        
+        @media (min-width: 768px) {
+            .stat-text-xs {
+                font-size: 0.75rem;
+            }
         }
         .translation-input {
             width: 100%;
@@ -197,41 +246,41 @@ if (!AuthHelper::checkSessionTimeout()) {
 
                     <!-- Statistics Dashboard -->
                     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
-                        <div class="p-6">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div style="background: linear-gradient(to right, #2563eb, #1d4ed8); color: white; border-radius: 0.5rem; padding: 1rem;">
+                        <div class="p-4 md:p-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                                <div class="stat-card" style="background: linear-gradient(to right, #2563eb, #1d4ed8); color: white; border-radius: 0.5rem;">
                                     <div class="flex items-center justify-between">
                                         <div>
-                                            <p style="color: white; font-size: 0.875rem; font-weight: 500;"><?php _e('spanish'); ?></p>
-                                            <p style="color: white; font-size: 1.5rem; font-weight: bold;"><?php echo isset($statistics['es']['completion_percentage']) ? $statistics['es']['completion_percentage'] : '0'; ?>%</p>
-                                            <p style="color: white; font-size: 0.75rem; opacity: 0.9;"><?php echo isset($statistics['es']['total_keys']) ? $statistics['es']['total_keys'] : '0'; ?> <?php _e('total_keys'); ?></p>
+                                            <p class="stat-text-sm" style="color: white; font-weight: 500;"><?php _e('spanish'); ?></p>
+                                            <p class="stat-text-lg" style="color: white; font-weight: bold;"><?php echo isset($statistics['es']['completion_percentage']) ? $statistics['es']['completion_percentage'] : '0'; ?>%</p>
+                                            <p class="stat-text-xs" style="color: white; opacity: 0.9;"><?php echo isset($statistics['es']['total_keys']) ? $statistics['es']['total_keys'] : '0'; ?> <?php _e('total_keys'); ?></p>
                                         </div>
-                                        <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                                            <span class="text-2xl">🇪🇸</span>
+                                        <div class="w-12 h-12 md:w-16 md:h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <span class="text-xl md:text-2xl">🇪🇸</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div style="background: linear-gradient(to right, #dc2626, #b91c1c); color: white; border-radius: 0.5rem; padding: 1rem;">
+                                <div class="stat-card" style="background: linear-gradient(to right, #dc2626, #b91c1c); color: white; border-radius: 0.5rem;">
                                     <div class="flex items-center justify-between">
                                         <div>
-                                            <p style="color: white; font-size: 0.875rem; font-weight: 500;"><?php _e('english'); ?></p>
-                                            <p style="color: white; font-size: 1.5rem; font-weight: bold;"><?php echo isset($statistics['en']['completion_percentage']) ? $statistics['en']['completion_percentage'] : '0'; ?>%</p>
-                                            <p style="color: white; font-size: 0.75rem; opacity: 0.9;"><?php echo isset($statistics['en']['total_keys']) ? $statistics['en']['total_keys'] : '0'; ?> <?php _e('total_keys'); ?></p>
+                                            <p class="stat-text-sm" style="color: white; font-weight: 500;"><?php _e('english'); ?></p>
+                                            <p class="stat-text-lg" style="color: white; font-weight: bold;"><?php echo isset($statistics['en']['completion_percentage']) ? $statistics['en']['completion_percentage'] : '0'; ?>%</p>
+                                            <p class="stat-text-xs" style="color: white; opacity: 0.9;"><?php echo isset($statistics['en']['total_keys']) ? $statistics['en']['total_keys'] : '0'; ?> <?php _e('total_keys'); ?></p>
                                         </div>
-                                        <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                                            <span class="text-2xl">🇺🇸</span>
+                                        <div class="w-12 h-12 md:w-16 md:h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <span class="text-xl md:text-2xl">🇺🇸</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div style="background: linear-gradient(to right, #16a34a, #15803d); color: white; border-radius: 0.5rem; padding: 1rem;">
+                                <div class="stat-card" style="background: linear-gradient(to right, #16a34a, #15803d); color: white; border-radius: 0.5rem;">
                                     <div class="flex items-center justify-between">
                                         <div>
-                                            <p style="color: white; font-size: 0.875rem; font-weight: 500;"><?php _e('italian'); ?></p>
-                                            <p style="color: white; font-size: 1.5rem; font-weight: bold;"><?php echo isset($statistics['it']['completion_percentage']) ? $statistics['it']['completion_percentage'] : '0'; ?>%</p>
-                                            <p style="color: white; font-size: 0.75rem; opacity: 0.9;"><?php echo isset($statistics['it']['total_keys']) ? $statistics['it']['total_keys'] : '0'; ?> <?php _e('total_keys'); ?></p>
+                                            <p class="stat-text-sm" style="color: white; font-weight: 500;"><?php _e('italian'); ?></p>
+                                            <p class="stat-text-lg" style="color: white; font-weight: bold;"><?php echo isset($statistics['it']['completion_percentage']) ? $statistics['it']['completion_percentage'] : '0'; ?>%</p>
+                                            <p class="stat-text-xs" style="color: white; opacity: 0.9;"><?php echo isset($statistics['it']['total_keys']) ? $statistics['it']['total_keys'] : '0'; ?> <?php _e('total_keys'); ?></p>
                                         </div>
-                                        <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                                            <span class="text-2xl">🇮🇹</span>
+                                        <div class="w-12 h-12 md:w-16 md:h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <span class="text-xl md:text-2xl">🇮🇹</span>
                                         </div>
                                     </div>
                                 </div>
@@ -241,21 +290,21 @@ if (!AuthHelper::checkSessionTimeout()) {
 
                     <!-- Search and Filters -->
                     <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-lightborder mb-8">
-                        <div class="p-6">
-                            <div class="flex flex-col md:flex-row gap-4">
+                        <div class="p-4 md:p-6">
+                            <div class="flex flex-col md:flex-row gap-3 md:gap-4">
                                 <div class="flex-1">
                                     <input type="text" id="searchInput" placeholder="<?php _e('search_translations'); ?>" 
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                           class="w-full px-3 md:px-4 py-2 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 </div>
-                                <div class="flex gap-2">
-                                    <select id="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <select id="statusFilter" class="px-3 md:px-4 py-2 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                         <option value=""><?php _e('all_status'); ?></option>
                                         <option value="complete"><?php _e('complete'); ?></option>
                                         <option value="missing"><?php _e('missing'); ?></option>
                                         <option value="partial"><?php _e('partial'); ?></option>
                                         <option value="spanish-error">Spanish Errors</option>
                                     </select>
-                                    <button onclick="refreshTranslations()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                                    <button onclick="refreshTranslations()" class="bg-gray-600 text-white px-3 md:px-4 py-2 text-sm md:text-base rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap">
                                         <?php _e('refresh'); ?>
                                     </button>
                                 </div>
@@ -269,22 +318,22 @@ if (!AuthHelper::checkSessionTimeout()) {
                             <table class="min-w-full translation-table">
                             <thead>
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">
+                                    <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px] md:w-64">
                                         <?php _e('translation_key'); ?>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider translation-cell">
+                                    <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider translation-cell min-w-[150px]">
                                         <?php _e('spanish'); ?> (ES)
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider translation-cell">
+                                    <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider translation-cell min-w-[150px]">
                                         <?php _e('english'); ?> (EN)
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider translation-cell">
+                                    <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider translation-cell min-w-[150px]">
                                         <?php _e('italian'); ?> (IT)
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                                    <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 md:w-24">
                                         <?php _e('status'); ?>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                                    <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16 md:w-20">
                                         <?php _e('actions'); ?>
                                     </th>
                                 </tr>

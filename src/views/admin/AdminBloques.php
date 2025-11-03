@@ -89,11 +89,17 @@ try {
             background: white !important;
             border-radius: 12px !important;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-            max-width: 500px !important;
+            max-width: 90vw !important;
             width: 100% !important;
             max-height: 90vh !important;
             overflow-y: auto !important;
             animation: modalSlideIn 0.3s ease-out !important;
+        }
+        
+        @media (min-width: 640px) {
+            #bloqueModal .modal-content {
+                max-width: 500px !important;
+            }
         }
         
         @keyframes modalSlideIn {
@@ -210,11 +216,17 @@ try {
         <?php echo $sidebar->render(); ?>
         
         <!-- Main Content -->
-        <main class="flex-1 flex flex-col main-content">
+        <main class="flex-1 flex flex-col ml-0 md:ml-56 lg:ml-64 transition-all">
+            <!-- Mobile Sidebar Overlay -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden sm:hidden" onclick="toggleSidebar()"></div>
+            
             <!-- Header -->
-            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-                <!-- Espacio para el botón de menú hamburguesa -->
-                <div class="w-8"></div>
+            <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder relative z-30">
+                <button id="sidebarToggle" class="sm:hidden p-2 rounded-md hover:bg-navy transition-colors text-white" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
                 
                 <!-- Título centrado -->
                 <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
@@ -258,7 +270,7 @@ try {
             </header>
 
             <!-- Contenido principal - Centrado -->
-            <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
+            <section class="flex-1 p-3 sm:p-4 md:p-6 w-full overflow-x-hidden">
                 <div class="max-w-6xl mx-auto">
                     <!-- Breadcrumbs (RF073) -->
                     <?php 

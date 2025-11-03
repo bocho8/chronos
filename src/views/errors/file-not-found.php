@@ -42,15 +42,15 @@ $requestedFile = $_GET['file'] ?? 'unknown';
         </div>
     </header>
 
-    <main class="flex items-center justify-center min-h-[calc(100vh-60px)] p-6">
-        <div class="text-center max-w-md mx-auto">
-            <div class="mb-8">
-                <div class="text-6xl mb-4">📁</div>
-                <h1 class="text-4xl font-bold text-gray-800 mb-4"><?php _e('error_file_not_found_heading'); ?></h1>
-                <p class="text-lg text-gray-600 mb-4"><?php _e('error_file_not_found_message'); ?></p>
+    <main class="flex items-center justify-center min-h-[calc(100vh-60px)] p-4 md:p-6">
+        <div class="text-center max-w-md mx-auto w-full">
+            <div class="mb-6 md:mb-8">
+                <div class="text-4xl md:text-6xl mb-4">📁</div>
+                <h1 class="text-2xl md:text-4xl font-bold text-gray-800 mb-4"><?php _e('error_file_not_found_heading'); ?></h1>
+                <p class="text-base md:text-lg text-gray-600 mb-4 px-4"><?php _e('error_file_not_found_message'); ?></p>
                 <?php if ($requestedFile !== 'unknown'): ?>
-                <div class="bg-gray-100 p-3 rounded-lg mb-4">
-                    <code class="text-sm text-gray-700"><?php echo htmlspecialchars($requestedFile); ?></code>
+                <div class="bg-gray-100 p-3 rounded-lg mb-4 mx-4">
+                    <code class="text-xs md:text-sm text-gray-700 break-all"><?php echo htmlspecialchars($requestedFile); ?></code>
                 </div>
                 <?php endif; ?>
             </div>

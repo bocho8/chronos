@@ -160,7 +160,7 @@ function getTeacherAssignments($teacherId, $assignments) {
   border-radius: 12px !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
   max-height: 90vh !important;
-  max-width: 500px !important;
+  max-width: 90vw !important;
   width: 100% !important;
   overflow-y: auto !important;
   margin: 0 auto !important;
@@ -168,6 +168,12 @@ function getTeacherAssignments($teacherId, $assignments) {
   transform: none !important;
   top: auto !important;
   left: auto !important;
+}
+
+@media (min-width: 640px) {
+  #docenteModal .modal-content {
+    max-width: 500px !important;
+  }
 }
 
 #docenteModal button[type="submit"],
@@ -218,11 +224,17 @@ function getTeacherAssignments($teacherId, $assignments) {
         <?php echo $sidebar->render(); ?>
 
     <!-- Main -->
-    <main class="flex-1 flex flex-col main-content">
+    <main class="flex-1 flex flex-col ml-0 md:ml-56 lg:ml-64 transition-all">
+      <!-- Mobile Sidebar Overlay -->
+      <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden sm:hidden" onclick="toggleSidebar()"></div>
+      
       <!-- Header -->
-      <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
-        <!-- Espacio para el botón de menú hamburguesa -->
-        <div class="w-8"></div>
+      <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder relative z-30">
+        <button id="sidebarToggle" class="sm:hidden p-2 rounded-md hover:bg-navy transition-colors text-white" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
         
         <!-- Título centrado -->
         <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
@@ -266,7 +278,7 @@ function getTeacherAssignments($teacherId, $assignments) {
       </header>
 
       <!-- Contenido principal - Centrado -->
-      <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
+      <section class="flex-1 p-3 sm:p-4 md:p-6 w-full overflow-x-hidden">
         <div class="max-w-6xl mx-auto">
           <!-- Breadcrumbs (RF073) -->
           <?php 
@@ -533,24 +545,24 @@ function getTeacherAssignments($teacherId, $assignments) {
   </div>
 
   <!-- Modal para gestionar asignaciones -->
-  <div id="assignmentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 8px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px;">
-        <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #111827;"><?php _e('manage_assignments'); ?></h3>
-        <button onclick="closeAssignmentModal()" style="background: none; border: none; font-size: 24px; color: #6b7280; cursor: pointer; padding: 5px;">×</button>
+  <div id="assignmentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: white; border-radius: 8px; padding: 1rem; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem;">
+        <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: #111827;"><?php _e('manage_assignments'); ?></h3>
+        <button onclick="closeAssignmentModal()" style="background: none; border: none; font-size: 1.5rem; color: #6b7280; cursor: pointer; padding: 0.25rem;">×</button>
       </div>
 
-      <div style="margin-bottom: 20px;">
-        <h4 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 500; color: #374151;" id="teacherNameDisplay"></h4>
+      <div style="margin-bottom: 1rem;">
+        <h4 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; font-weight: 500; color: #374151;" id="teacherNameDisplay"></h4>
         
         <!-- Formulario para agregar nueva asignación -->
-        <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #e5e7eb;">
-          <h5 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 500; color: #374151;"><?php _e('add_new_assignment'); ?></h5>
-          <form id="assignmentForm" onsubmit="handleAssignmentSubmit(event)" style="display: flex; gap: 10px;">
+        <div style="background: #f9fafb; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; border: 1px solid #e5e7eb;">
+          <h5 style="margin: 0 0 0.5rem 0; font-size: 0.75rem; font-weight: 500; color: #374151;"><?php _e('add_new_assignment'); ?></h5>
+          <form id="assignmentForm" onsubmit="handleAssignmentSubmit(event)" style="display: flex; flex-direction: column; gap: 0.5rem;">
             <input type="hidden" id="assignment_teacher_id" name="teacher_id" value="">
             
             <select id="assignment_subject_id" name="subject_id" required
-                    style="flex: 1; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+                    style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem;">
               <option value=""><?php _e('select_subject'); ?></option>
               <?php foreach ($materias as $materia): ?>
                 <option value="<?php echo $materia['id_materia']; ?>">
@@ -560,7 +572,7 @@ function getTeacherAssignments($teacherId, $assignments) {
             </select>
             
             <button type="submit" 
-                    style="padding: 8px 16px; background: #059669; color: white; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; white-space: nowrap;">
+                    style="padding: 0.5rem 1rem; background: #059669; color: white; border: none; border-radius: 4px; font-size: 0.875rem; cursor: pointer; white-space: nowrap; width: 100%;">
               <?php _e('assign'); ?>
             </button>
           </form>
@@ -568,7 +580,7 @@ function getTeacherAssignments($teacherId, $assignments) {
 
         <!-- Lista de asignaciones actuales -->
         <div>
-          <h5 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 500; color: #374151;"><?php _e('current_assignments'); ?></h5>
+          <h5 style="margin: 0 0 0.625rem 0; font-size: 0.875rem; font-weight: 500; color: #374151;"><?php _e('current_assignments'); ?></h5>
           <div id="assignmentsList" style="display: flex; flex-direction: column; gap: 8px;">
             <!-- Las asignaciones se cargarán dinámicamente -->
           </div>

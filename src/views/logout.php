@@ -61,28 +61,28 @@ $userName = AuthHelper::getUserDisplayName() ?: 'Usuario';
     </header>
 
     <!-- Main Content -->
-    <main class="flex items-center justify-center min-h-[calc(100vh-60px)] p-6">
+    <main class="flex items-center justify-center min-h-[calc(100vh-60px)] p-4 md:p-6">
         <div class="w-full flex justify-center">
-            <section class="bg-card rounded-3xl p-10 md:px-16 md:py-10 w-full max-w-[500px] shadow-lg text-center">
+            <section class="bg-card rounded-2xl md:rounded-3xl p-6 md:p-10 lg:px-16 lg:py-10 w-full max-w-[500px] shadow-lg text-center">
                 <div class="mb-6">
-                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-sm">📋</span>
+                    <div class="w-12 h-12 md:w-16 md:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-xs md:text-sm">📋</span>
                     </div>
-                    <h2 class="text-2xl md:text-[28px] font-extrabold text-navy mb-2"><?php _e('logout'); ?></h2>
-                    <p class="text-gray-600 mb-6">
+                    <h2 class="text-xl md:text-2xl lg:text-[28px] font-extrabold text-navy mb-2"><?php _e('logout'); ?></h2>
+                    <p class="text-sm md:text-base text-gray-600 mb-6">
                         <?php echo sprintf(__("logout_confirm_user"), htmlspecialchars($userName)); ?>
                     </p>
                 </div>
 
-                <div class="space-y-4">
-                    <form method="POST" action="/src/controllers/LogoutController.php" class="inline-block">
+                <div class="space-y-3 md:space-y-4">
+                    <form method="POST" action="/src/controllers/LogoutController.php" class="inline-block w-full">
                         <input type="hidden" name="action" value="logout">
-                        <button type="submit" class="w-full h-11 px-4 py-2.5 rounded-lg border-0 font-bold cursor-pointer bg-red-600 text-white hover:bg-red-700 transition-colors">
+                        <button type="submit" class="w-full h-10 md:h-11 px-4 py-2 md:py-2.5 rounded-lg border-0 font-bold cursor-pointer bg-red-600 text-white hover:bg-red-700 transition-colors text-sm md:text-base">
                             <?php _e('logout'); ?>
                         </button>
                     </form>
                     
-                    <a href="javascript:history.back()" class="block w-full h-11 px-4 py-2.5 rounded-lg border border-gray-300 font-bold cursor-pointer bg-white text-gray-700 hover:bg-gray-50 transition-colors text-center">
+                    <a href="javascript:history.back()" class="block w-full h-10 md:h-11 px-4 py-2 md:py-2.5 rounded-lg border border-gray-300 font-bold cursor-pointer bg-white text-gray-700 hover:bg-gray-50 transition-colors text-center text-sm md:text-base">
                         <?php _e('cancel'); ?>
                     </a>
                 </div>

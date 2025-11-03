@@ -109,7 +109,7 @@ try {
             background: white !important;
             border-radius: 8px !important;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-            max-width: 600px !important;
+            max-width: 90vw !important;
             width: calc(100% - 2rem) !important;
             margin: 1rem !important;
             max-height: calc(100vh - 2rem) !important;
@@ -122,6 +122,7 @@ try {
                 border-radius: 12px !important;
                 width: 100% !important;
                 margin: 0 !important;
+                max-width: 600px !important;
             }
         }
         
