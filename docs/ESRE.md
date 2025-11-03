@@ -85,375 +85,901 @@ El sistema debe implementar un sistema de auditoría completo para todas las ope
 
 ### 3.4. Requerimientos Funcionales
 
-#### 3.4.1 Gestión de Horarios
+#### 3.4.1 Gestión de Autenticación y Sesiones
 
 **RF001**
 
-El sistema debe verificar todos los grupos y docentes considerando las restricciones de disponibilidad docente, las asignaturas impartidas y las reglas de distribución ANEP, garantizando que cada docente tenga asignaciones compatibles con su disponibilidad registrada.
+El sistema debe permitir a los usuarios autenticarse mediante cédula (CI) y contraseña.
 
 **RF002**
 
-El sistema debe aplicar las reglas de distribución de horas al generar los horarios, distribuyendo las materias con 1-2 horas semanales en máximo 2 días, las materias con 3-4 horas semanales en máximo 3 días, y las materias con 5 o más horas semanales en máximo 4 días, registrando cada asignación con su justificación correspondiente.
+El sistema debe validar las credenciales contra la base de datos antes de permitir el acceso.
 
 **RF003**
 
-El sistema debe permitir al coordinador editar manualmente los horarios generados mediante una interfaz de calendario semanal.
+El sistema debe asignar automáticamente los roles del usuario según su perfil en la base de datos tras una autenticación exitosa.
 
 **RF004**
 
-El sistema debe permitir al usuario seleccionar, al crear o modificar una materia, cuál de las pautas de inspección específicas de ANEP aplica desde una lista predefinida.
+El sistema debe permitir a los usuarios cerrar sesión mediante un botón o enlace dedicado.
 
 **RF005**
 
-El sistema debe permitir al usuario seleccionar si una materia se impartirá en conjunto con otra mediante un campo booleano.
+El sistema debe proteger todas las rutas excepto login requiriendo autenticación válida para acceder.
 
 **RF006**
 
-El sistema debe solicitar al usuario el grupo con el que se compartirá la materia cuando se seleccione que se impartirá en conjunto.
+El sistema debe mostrar un mensaje de error genérico ("Credenciales incorrectas") en caso de fallo de autenticación para prevenir ataques de fuerza bruta.
 
 **RF007**
 
-El sistema debe permitir a usuarios autorizados (coordinador, administrador) crear los horarios mediante un botón en la interfaz.
+El sistema debe cerrar automáticamente la sesión después de 30 minutos de inactividad mostrando una alerta 5 minutos antes del cierre.
+
+#### 3.4.2 Gestión de Usuarios y Roles
+
+**RF008**
+
+El sistema debe permitir a usuarios con rol ADMIN crear nuevos usuarios mediante un formulario que incluya: CI nombre apellido email teléfono y contraseña.
 
 **RF009**
 
-El sistema debe permitir a usuarios autorizados consultar (ver) los horarios en formato tabular.
+El sistema debe permitir a usuarios con rol ADMIN visualizar una lista de todos los usuarios del sistema en formato tabular.
 
 **RF010**
 
-El sistema debe permitir a usuarios autorizados eliminar horarios obsoletos o incorrectos previa confirmación.
+El sistema debe permitir a usuarios con rol ADMIN ver los detalles completos de un usuario específico.
 
 **RF011**
 
-El sistema debe detectar automáticamente conflictos de horario (docente doble asignado) y mostrarlos con códigos de color (rojo: crítico, amarillo: advertencia).
+El sistema debe permitir a usuarios con rol ADMIN editar la información de un usuario existente excepto la CI.
 
 **RF012**
 
-El sistema debe permitir resolución manual de conflictos de horarios.
+El sistema debe permitir a usuarios con rol ADMIN eliminar usuarios previa confirmación.
 
-#### 3.4.2 Gestión de Docentes y Disponibilidad
+**RF013**
+
+El sistema debe permitir a usuarios con rol ADMIN asignar uno o múltiples roles a un usuario (ADMIN DIRECTOR COORDINADOR DOCENTE PADRE).
+
+**RF014**
+
+El sistema debe soportar los siguientes roles: ADMIN (Acceso completo) DIRECTOR (Añadir docentes materias y publicar horarios) COORDINADOR (Gestionar horarios disponibilidad docente observaciones predefinidas) DOCENTE (Gestionar su propia disponibilidad y ver horarios publicados) PADRE (Ver horarios publicados de sus hijos).
+
+**RF015**
+
+El sistema debe validar que la CI ingresada sea única en el sistema.
 
 **RF016**
 
-El sistema debe permitir al docente registrar las asignaturas que imparte seleccionando de una lista predefinida.
+El sistema debe encriptar todas las contraseñas usando bcrypt antes de almacenarlas.
+
+**RF017**
+
+El sistema debe permitir buscar usuarios por CI nombre apellido o email.
+
+#### 3.4.3 Gestión de Docentes
 
 **RF018**
 
-El sistema debe permitir al docente registrar sus franjas horarias disponibles para cada día de lunes a viernes mediante un calendario interactivo.
+El sistema debe permitir a usuarios con rol ADMIN o DIRECTOR crear nuevos docentes mediante un formulario que incluya: información del usuario asociado si trabaja en otro liceo y otros datos relevantes.
 
 **RF019**
 
-El sistema debe permitir al docente indicar si trabaja en otros liceos mediante un campo booleano.
+El sistema debe permitir a usuarios autorizados visualizar una lista de todos los docentes con información relevante: nombre apellido materias que imparte porcentaje de margen observaciones.
 
 **RF020**
 
-El sistema debe permitir al docente registrar el nombre de cada liceo en el que trabaja cuando la opción anterior esté marcada como verdadera.
+El sistema debe permitir ver los detalles completos de un docente incluyendo: información personal materias asignadas disponibilidad carga horaria observaciones.
 
 **RF021**
 
-El sistema debe registrar automáticamente la fecha de envío de las aspiraciones horarias de cada docente con timestamp preciso.
+El sistema debe permitir a usuarios con rol ADMIN editar la información de un docente existente.
 
 **RF022**
 
-El sistema debe calcular el porcentaje de margen de cada docente como la relación entre horas disponibles y horas asignadas, mostrando el resultado con dos decimales.
+El sistema debe permitir a usuarios con rol ADMIN eliminar docentes previa confirmación y eliminando en cascada las relaciones asociadas.
 
 **RF023**
 
-El sistema debe mostrar el porcentaje de margen de cada docente en la lista de docentes.
+El sistema debe permitir indicar si un docente trabaja en otro liceo mediante un campo booleano.
 
 **RF024**
 
-El sistema debe permitir filtrar la lista de docentes según el número de observaciones registradas (0, 1-2, 3-5, 6+).
+El sistema debe permitir registrar el nombre de cada liceo en el que trabaja un docente cuando la opción anterior esté marcada.
 
 **RF025**
 
-El sistema debe permitir ordenar la lista de docentes según su prioridad, determinada por si trabaja en otro liceo o por su porcentaje de margen.
+El sistema debe calcular automáticamente el porcentaje de margen de cada docente como la relación entre horas disponibles y horas asignadas mostrando el resultado con dos decimales.
 
 **RF026**
 
-El sistema debe permitir al docente seleccionar observaciones predefinidas sobre su disponibilidad desde una lista desplegable.
+El sistema debe mostrar el porcentaje de margen de cada docente en la lista de docentes.
 
 **RF027**
 
-El sistema debe permitir al docente describir el motivo de sus observaciones en un campo de texto libre de máximo 500 caracteres.
+El sistema debe permitir filtrar la lista de docentes según el número de observaciones registradas (0 1-2 3-5 6+).
 
 **RF028**
 
-El sistema debe mostrar simultáneamente, para cada docente, el porcentaje de margen, las observaciones y los motivos registrados en una vista consolidada.
+El sistema debe permitir ordenar la lista de docentes según su prioridad determinada por si trabaja en otro liceo o por su porcentaje de margen.
 
 **RF029**
 
-El sistema debe permitir visualizar la carga horaria total de todas las materias de un docente seleccionado en horas.
+El sistema debe permitir asignar materias que un docente imparte mediante selección múltiple de una lista predefinida.
 
 **RF030**
 
-El sistema debe permitir visualizar, para cada grupo, los docentes asignados, las materias que imparten y la carga horaria correspondiente en formato tabular.
+El sistema debe permitir visualizar la carga horaria total de todas las materias de un docente seleccionado en horas.
 
 **RF031**
 
-El sistema debe permitir a usuarios autorizados modificar los datos de un docente mediante formularios de edición.
+El sistema debe permitir visualizar para cada grupo los docentes asignados las materias que imparten y la carga horaria correspondiente en formato tabular.
+
+**RF032**
+
+El sistema debe permitir buscar docentes por nombre apellido CI o materias que imparte.
 
 **RF033**
 
-El sistema debe permitir al docente visualizar su disponibilidad horaria sin la posibilidad de gestionarla directamente, si así está definido en su rol.
+El sistema debe permitir a un docente visualizar sus horarios asignados en formato tabular o calendario.
 
 **RF034**
 
-El sistema debe incluir siempre una observación predefinida llamada "Otro", que permita al docente especificar texto libre al seleccionarla.
+El sistema debe permitir al rol DOCENTE visualizar los horarios publicados en formato tabular.
+
+#### 3.4.4 Gestión de Disponibilidad Docente
 
 **RF035**
 
-El sistema debe incluir siempre una observación predefinida llamada "Otro Liceo", que permita al docente especificar el nombre de los liceos correspondientes al seleccionarla.
+El sistema debe permitir al docente registrar sus franjas horarias disponibles para cada día de lunes a viernes mediante un calendario interactivo.
 
 **RF036**
 
-El sistema debe permitir al rol Coordinador crear nuevas observaciones predefinidas mediante un formulario de gestión.
+El sistema debe proporcionar una interfaz de calendario semanal donde el docente puede marcar/desmarcar bloques horarios como disponibles o no disponibles.
 
 **RF037**
 
-El sistema debe permitir al rol Coordinador leer el listado completo de observaciones predefinidas en formato tabular.
+El sistema debe registrar automáticamente la fecha de envío de las aspiraciones horarias de cada docente con timestamp preciso.
 
 **RF038**
 
-El sistema debe permitir al rol Coordinador actualizar el texto de observaciones predefinidas existentes mediante formularios de edición.
+El sistema debe permitir al docente visualizar su disponibilidad horaria registrada.
 
 **RF039**
 
-El sistema debe permitir al rol Coordinador eliminar observaciones predefinidas, excepto las observaciones "Otro" y "Otro Liceo", previa confirmación.
+El sistema debe permitir al docente editar su disponibilidad horaria en cualquier momento.
 
 **RF040**
 
-El sistema debe registrar constancias de trabajo en otra institución para docentes con más de 16 horas asignadas, generando un documento PDF con la información del docente.
+El sistema debe permitir a usuarios con rol ADMIN gestionar la disponibilidad de todos los docentes desde la sección correspondiente.
 
 **RF041**
 
-El sistema debe registrar constancias de actividades justificadas para docentes con más de 16 horas asignadas, generando un documento PDF con la información del docente.
-
-#### 3.4.3 Administración de Usuarios y Permisos
+El sistema debe permitir a usuarios con rol COORDINADOR gestionar la disponibilidad docente mediante formularios de edición.
 
 **RF042**
 
-El sistema debe soportar los roles de usuario: Administrador, Dirección, Coordinador, Docente y Padre.
+El sistema debe verificar la disponibilidad del docente antes de asignar un horario mostrando advertencias si el docente no está disponible.
 
 **RF043**
 
-El sistema debe permitir al rol Dirección añadir nuevos docentes mediante un formulario de registro.
+El sistema debe resaltar visualmente los bloques horarios disponibles del docente en la interfaz de gestión de horarios.
 
 **RF044**
 
-El sistema debe permitir al rol Dirección añadir nuevas materias mediante un formulario de registro.
+El sistema debe permitir visualizar la disponibilidad combinada de múltiples docentes cuando se selecciona una materia que puede ser impartida por varios docentes.
+
+#### 3.4.5 Gestión de Materias y Asignaturas
 
 **RF045**
 
-El sistema debe permitir al rol Dirección publicar los horarios generados mediante un botón de confirmación.
+El sistema debe permitir a usuarios con rol ADMIN o DIRECTOR crear nuevas materias mediante un formulario que incluya: nombre horas semanales pauta ANEP asociada si se imparte en conjunto y grupo compartido si aplica.
+
+**RF046**
+
+El sistema debe permitir visualizar una lista de todas las materias del sistema con información relevante: nombre horas semanales pauta ANEP docentes asignados.
 
 **RF047**
 
-El sistema debe permitir al rol Coordinador editar horarios mediante una interfaz de calendario semanal.
+El sistema debe permitir ver los detalles completos de una materia incluyendo: información básica pauta ANEP grupos asignados docentes que la imparten horas semanales.
 
 **RF048**
 
-El sistema debe permitir al rol Coordinador gestionar la disponibilidad docente mediante formularios de edición.
+El sistema debe permitir a usuarios con rol ADMIN editar la información de una materia existente.
 
 **RF049**
 
-El sistema debe asignar roles a los usuarios según su autenticación al ingresar, validando las credenciales contra la base de datos.
+El sistema debe permitir a usuarios con rol ADMIN eliminar materias previa confirmación y validando que no tenga asignaciones activas.
 
 **RF050**
 
-El sistema debe permitir al rol Docente gestionar su propia disponibilidad horaria mediante un calendario interactivo.
+El sistema debe permitir al usuario seleccionar al crear o modificar una materia cuál de las pautas de inspección específicas de ANEP aplica desde una lista predefinida.
 
 **RF051**
 
-El sistema debe permitir al rol Docente visualizar los horarios publicados en formato tabular.
+El sistema debe permitir al usuario seleccionar si una materia se impartirá en conjunto con otra mediante un campo booleano.
 
 **RF052**
 
-El sistema debe permitir al rol Padre visualizar los horarios publicados únicamente para sus hijos mediante un selector de estudiante.
+El sistema debe solicitar al usuario el grupo con el que se compartirá la materia cuando se seleccione que se impartirá en conjunto.
 
 **RF053**
 
-El sistema debe permitir al rol Coordinador visualizar la asignación de grupos a docentes y las materias que imparten en formato tabular.
+El sistema debe permitir marcar una materia como perteneciente al programa italiano mediante un campo booleano.
 
 **RF054**
 
-El sistema debe permitir al rol Coordinador editar la asignación de grupos a docentes y las materias que imparten mediante formularios de edición.
+El sistema debe validar que las horas semanales de una materia sean un número positivo mayor que cero.
 
 **RF055**
 
-El sistema debe impedir al rol Coordinador crear nuevas asignaciones de grupos a docentes o materias, ocultando los botones correspondientes.
+El sistema debe permitir asignar materias a grupos específicos mediante el módulo de asignaciones.
+
+**RF056**
+
+El sistema debe permitir buscar materias por nombre o por pauta ANEP asociada.
+
+#### 3.4.6 Gestión de Grupos
 
 **RF057**
 
-El sistema debe impedir al rol Coordinador publicar horarios, mostrando un mensaje de error si intenta hacerlo.
+El sistema debe permitir a usuarios con rol ADMIN crear nuevos grupos mediante un formulario que incluya: nombre y nivel.
+
+**RF058**
+
+El sistema debe permitir visualizar una lista de todos los grupos del sistema con información relevante: nombre nivel número de estudiantes materias asignadas.
+
+**RF059**
+
+El sistema debe permitir ver los detalles completos de un grupo incluyendo: información básica materias asignadas docentes asignados horario completo.
 
 **RF060**
 
-El sistema debe permitir únicamente al rol Dirección añadir nuevas materias, validando el rol antes de mostrar el formulario.
+El sistema debe permitir a usuarios con rol ADMIN editar la información de un grupo existente.
 
 **RF061**
 
-El sistema debe impedir al rol Coordinador añadir nuevas materias, ocultando la opción del menú.
-
-#### 3.4.4 Interfaz de Usuario
-
-##### 3.4.4.1 Requerimientos Generales de la Interfaz
+El sistema debe permitir a usuarios con rol ADMIN eliminar grupos previa confirmación y validando que no tenga asignaciones activas.
 
 **RF062**
 
-El sistema debe proporcionar una interfaz web accesible desde navegadores Chrome 90+, Firefox 88+, Safari 14+, y Edge 90+.
+El sistema debe permitir asignar materias a un grupo mediante el módulo de asignaciones grupo-materia.
 
 **RF063**
 
-El sistema debe mostrar todos los textos en el idioma seleccionado (español, inglés, italiano).
+El sistema debe permitir asignar padres a grupos (para visualizar horarios de sus hijos).
 
 **RF064**
 
-El sistema debe mantener un diseño visual consistente (colores, fuentes, iconos) en todas las pantallas utilizando un sistema de diseño unificado.
+El sistema debe permitir visualizar el horario completo de un grupo en formato tabular o calendario.
 
 **RF065**
 
-El sistema debe cerrar automáticamente la sesión del usuario después de 30 minutos de inactividad, mostrando una alerta 5 minutos antes.
+El sistema debe permitir buscar grupos por nombre o nivel.
 
-##### 3.4.4.2 Requerimientos de Responsividad y Accesibilidad
+#### 3.4.7 Gestión de Horarios
+
+**RF066**
+
+El sistema debe permitir a usuarios autorizados (COORDINADOR ADMIN) crear nuevas asignaciones de horario especificando: grupo docente materia bloque horario y día de la semana.
 
 **RF067**
 
-El sistema debe permitir el acceso a la interfaz desde dispositivos de escritorio (1024px+) y móviles (320px-768px).
+El sistema debe generar automáticamente horarios completos considerando: restricciones de disponibilidad docente asignaturas impartidas por cada docente reglas de distribución ANEP carga horaria semanal de cada materia y porcentaje de margen de cada docente.
 
 **RF068**
 
-El sistema debe adaptar automáticamente el diseño de la interfaz al tamaño de pantalla del dispositivo (diseño responsive) utilizando CSS Grid y Flexbox.
+El sistema debe verificar todos los grupos y docentes considerando las restricciones de disponibilidad docente las asignaturas impartidas y las reglas de distribución ANEP garantizando que cada docente tenga asignaciones compatibles con su disponibilidad registrada.
 
 **RF069**
 
-El sistema debe ser usable en dispositivos móviles sin necesidad de zoom o scroll horizontal para contenido esencial.
+El sistema debe aplicar las reglas de distribución de horas al generar los horarios: Materias con 1-2 horas semanales máximo 2 días Materias con 3-4 horas semanales máximo 3 días Materias con 5+ horas semanales máximo 4 días.
 
 **RF070**
 
-El sistema debe cumplir con los estándares de accesibilidad WCAG 2.1 nivel AA para usuarios con discapacidades, incluyendo contraste mínimo 4.5:1, etiquetas ARIA, y navegación por teclado.
-
-##### 3.4.4.3 Requerimientos de Navegación y Menús
+El sistema debe permitir al coordinador editar manualmente los horarios generados mediante una interfaz de calendario semanal con funcionalidad de arrastrar y soltar.
 
 **RF071**
 
-El sistema debe permitir la navegación entre secciones mediante un menú principal lateral o superior.
+El sistema debe proporcionar una vista de calendario semanal para la edición manual de horarios con arrastrar y soltar mostrando días de la semana (Lunes a Viernes) y bloques horarios.
 
 **RF072**
 
-El sistema debe mostrar menús y opciones según el rol autenticado del usuario, ocultando funciones no autorizadas.
+El sistema debe permitir a usuarios autorizados consultar (ver) los horarios en formato tabular con columnas para días de la semana y filas para bloques horarios.
 
 **RF073**
 
-El sistema debe proporcionar una ruta de navegación (breadcrumbs) en páginas con múltiples niveles, mostrando la jerarquía completa.
+El sistema debe permitir visualizar horarios filtrados por grupo específico.
 
 **RF074**
 
-El sistema debe incluir un botón de "Inicio" o "Dashboard" para volver a la página principal desde cualquier sección.
-
-##### 3.4.4.4 Requerimientos de Formularios y Validación
+El sistema debe permitir visualizar horarios filtrados por docente específico.
 
 **RF075**
 
-El sistema debe validar los datos ingresados en formularios (campos obligatorios, formatos de email, teléfono) antes de enviarlos al servidor.
+El sistema debe permitir visualizar horarios filtrados por materia específica.
 
 **RF076**
 
-El sistema debe mostrar mensajes de error específicos y contextuales cuando falla una validación de formulario, indicando el campo exacto y la corrección necesaria.
+El sistema debe permitir a usuarios autorizados eliminar asignaciones de horario obsoletas o incorrectas previa confirmación.
 
 **RF077**
 
-El sistema debe previsualizar los datos seleccionados en campos de elección múltiple (materias, docentes) en una lista desplegable.
+El sistema debe permitir modificar una asignación de horario existente (cambiar docente bloque día o materia).
 
 **RF078**
 
-El sistema debe permitir la cancelación de operaciones de formulario con un botón "Cancelar" que limpie los campos y regrese a la vista anterior.
+El sistema debe permitir intercambiar (swap) dos asignaciones de horario entre sí.
 
-##### 3.4.4.5 Requerimientos de Tablas y Visualización de Datos
+**RF079**
+
+El sistema debe permitir mover rápidamente una asignación de horario a otro bloque o día mediante una operación de arrastrar y soltar.
 
 **RF080**
 
-El sistema debe permitir aplicar múltiples filtros simultáneamente en las tablas, mostrando el número de resultados filtrados.
+El sistema debe permitir crear rápidamente una asignación de horario mediante un formulario contextual que aparezca al hacer clic en una celda vacía del calendario.
+
+**RF081**
+
+El sistema debe proporcionar una función de selección automática de docente que escoja el docente más adecuado para una materia y horario basándose en: disponibilidad carga de trabajo historial de enseñanza conflictos.
 
 **RF082**
 
-El sistema debe implementar paginación en tablas con más de 10 registros, mostrando opciones de 10, 25, 50 registros por página.
+El sistema debe resaltar visualmente en el calendario los bloques donde el docente seleccionado está disponible.
 
 **RF083**
 
-El sistema debe mostrar resúmenes o totales en la parte inferior de las tablas cuando sea aplicable (total de horas, promedio de carga).
+El sistema debe validar que las asignaciones de una materia no excedan las horas semanales requeridas.
 
-##### 3.4.4.6 Requerimientos de Mensajes y Feedback
+**RF084**
+
+El sistema debe permitir filtrar la vista de horarios por múltiples criterios simultáneamente (grupo docente materia día).
 
 **RF085**
 
-El sistema debe mostrar mensajes de confirmación mediante modales antes de ejecutar operaciones críticas (eliminación de registros), con botones "Confirmar" y "Cancelar".
+El sistema debe permitir buscar asignaciones de horario por docente materia o grupo.
 
 **RF086**
 
-El sistema debe mostrar mensajes de éxito (verde) o error (rojo) después de operaciones de creación, edición o eliminación de registros, con detalles claros y auto-ocultación después de 5 segundos.
+El sistema debe permitir seleccionar un grupo específico para visualizar su horario completo en la interfaz de gestión.
 
-##### 3.4.4.7 Requerimientos Específicos por Rol en la Interfaz
+#### 3.4.8 Detección y Resolución de Conflictos
+
+**RF087**
+
+El sistema debe detectar automáticamente cuando un grupo tiene múltiples clases asignadas en el mismo bloque horario y día.
+
+**RF088**
+
+El sistema debe detectar automáticamente cuando un docente está asignado a múltiples clases en el mismo bloque horario y día.
 
 **RF089**
 
-El sistema debe mostrar al rol Administrador opciones para crear, leer, actualizar y eliminar registros de docentes, materias y horarios en el menú principal.
+El sistema debe detectar cuando una asignación de horario está en un bloque donde el docente no está disponible.
 
 **RF090**
 
-El sistema debe mostrar al rol Dirección opciones para añadir nuevos docentes, añadir nuevas materias y publicar horarios en el menú principal.
+El sistema debe detectar cuando una materia excede las horas semanales asignadas en un grupo.
 
 **RF091**
 
-El sistema debe ocultar al rol Coordinador las opciones de añadir docentes, añadir materias y publicar horarios en el menú principal.
+El sistema debe detectar cuando una asignación no cumple con las pautas de distribución ANEP asociadas a la materia.
 
 **RF092**
 
-El sistema debe mostrar al rol Coordinador opciones para generar horarios, editar horarios y gestionar disponibilidad docente en el menú principal.
+El sistema debe clasificar los conflictos según severidad: Error (crítico) - Conflicto de grupo o docente (rojo) Advertencia (warning) - Conflictos de disponibilidad o carga horaria (amarillo) Información (info) - No cumple recomendaciones ANEP (azul).
 
 **RF093**
 
-El sistema debe mostrar al rol Docente opciones para gestionar su disponibilidad horaria y visualizar horarios publicados en el menú principal.
+El sistema debe mostrar los conflictos detectados con códigos de color en la interfaz: rojo para críticos amarillo para advertencias azul para información.
 
 **RF094**
 
-El sistema debe mostrar al rol Padre opciones para visualizar horarios publicados de sus hijos en el menú principal.
+El sistema debe resaltar visualmente las celdas del calendario que contienen conflictos durante la edición con tooltip explicativo.
 
 **RF095**
 
-El sistema debe adaptar el dashboard inicial para cada rol, mostrando solo la información relevante (para Docente: su horario y disponibilidad; para Coordinador: estadísticas de generación).
-
-##### 3.4.4.8 Requerimientos de Gestión de Horarios en la Interfaz
+El sistema debe verificar conflictos antes de crear una nueva asignación de horario y prevenir la creación si hay conflictos críticos.
 
 **RF096**
 
-El sistema debe presentar los horarios en una tabla con columnas para días de la semana (Lunes a Viernes) y filas para bloques horarios, utilizando fuente Arial 12pt, contraste mínimo 4.5:1, y celdas con dimensiones mínimas de 120px de ancho y 40px de alto.
+El sistema debe permitir resolución manual de conflictos de horarios permitiendo al usuario decidir si continuar a pesar de las advertencias.
 
 **RF097**
 
-El sistema debe permitir la visualización de horarios por grupo, por docente o por materia mediante pestañas o selectores.
+El sistema debe proporcionar sugerencias para resolver conflictos como: buscar horarios alternativos para el grupo buscar docentes alternativos actualizar disponibilidad del docente.
 
 **RF098**
 
-El sistema debe permitir la impresión de horarios en formato optimizado para papel A4, con márgenes de 1cm.
+El sistema debe mostrar un resumen de todos los conflictos detectados en el horario actual con contadores por tipo de conflicto.
 
 **RF099**
 
-El sistema debe resaltar visualmente los conflictos de horario (superposiciones) en rojo durante la edición, con tooltip explicativo.
+El sistema debe permitir validar un horario completo y generar un reporte de todos los conflictos encontrados.
 
 **RF100**
 
-El sistema debe proporcionar una vista de calendario semanal para la edición manual de horarios, con arrastrar y soltar.
-
-##### 3.4.4.9 Requerimientos de Acceso y Autenticación
+El sistema debe permitir forzar una asignación a pesar de conflictos no críticos (advertencias) previa confirmación del usuario.
 
 **RF101**
 
-El sistema debe proporcionar una página de login con campos de usuario y contraseña, y un botón "Iniciar sesión".
+El sistema debe detectar y mostrar conflictos en tiempo real mientras el usuario edita el horario.
+
+#### 3.4.9 Publicación de Horarios
 
 **RF102**
 
-El sistema debe mostrar un mensaje de error genérico ("Credenciales incorrectas") en el login para evitar ataques de fuerza bruta.
+El sistema debe permitir a usuarios con rol COORDINADOR o ADMIN crear una solicitud de publicación del horario actual.
+
+**RF103**
+
+El sistema debe generar automáticamente un snapshot (captura) del estado actual de todos los horarios al crear una solicitud de publicación.
+
+**RF104**
+
+El sistema debe generar un hash único del estado de los horarios para verificar la integridad del snapshot.
+
+**RF105**
+
+El sistema debe gestionar los siguientes estados para las solicitudes de publicación: Pendiente (Solicitud creada esperando aprobación) Aprobado (Solicitud aprobada por DIRECTOR horario publicado) Rechazado (Solicitud rechazada por DIRECTOR).
+
+**RF106**
+
+El sistema debe permitir a usuarios con rol DIRECTOR aprobar una solicitud de publicación pendiente.
+
+**RF107**
+
+El sistema debe permitir a usuarios con rol DIRECTOR rechazar una solicitud de publicación opcionalmente agregando notas explicativas.
+
+**RF108**
+
+El sistema debe permitir a usuarios con rol DIRECTOR publicar horarios directamente sin necesidad de solicitud previa.
+
+**RF109**
+
+El sistema debe desactivar automáticamente todas las publicaciones anteriores al activar una nueva publicación.
+
+**RF110**
+
+El sistema debe permitir a todos los usuarios autorizados ver los horarios publicados en formato de solo lectura.
+
+**RF111**
+
+El sistema debe permitir a coordinadores ver el estado de sus solicitudes de publicación pendientes.
+
+**RF112**
+
+El sistema debe permitir a directores ver una lista de todas las solicitudes de publicación pendientes.
+
+**RF113**
+
+El sistema debe registrar automáticamente quién y cuándo aprobó o rechazó una solicitud de publicación.
+
+**RF114**
+
+El sistema debe permitir a usuarios con rol DIRECTOR eliminar una publicación activa previa confirmación.
+
+**RF115**
+
+El sistema debe impedir al rol COORDINADOR publicar horarios directamente mostrando un mensaje de error si intenta hacerlo.
+
+#### 3.4.10 Gestión de Asignaciones
+
+**RF116**
+
+El sistema debe permitir asignar docentes a materias que imparten mediante el módulo de asignaciones.
+
+**RF117**
+
+El sistema debe permitir asignar materias a grupos específicos con horas semanales determinadas.
+
+**RF118**
+
+El sistema debe permitir visualizar todas las asignaciones de docentes a materias en formato tabular.
+
+**RF119**
+
+El sistema debe permitir visualizar todas las asignaciones de materias a grupos en formato tabular.
+
+**RF120**
+
+El sistema debe permitir eliminar asignaciones de docentes a materias previa confirmación.
+
+**RF121**
+
+El sistema debe permitir eliminar asignaciones de materias a grupos previa confirmación.
+
+**RF122**
+
+El sistema debe permitir editar las horas semanales de una materia en un grupo específico.
+
+**RF123**
+
+El sistema debe validar que no se puedan crear asignaciones duplicadas (mismo docente-materia o grupo-materia).
+
+**RF124**
+
+El sistema debe permitir asignar un docente a múltiples materias y una materia a múltiples grupos.
+
+**RF125**
+
+El sistema debe impedir al rol COORDINADOR crear nuevas asignaciones ocultando los botones correspondientes.
+
+**RF126**
+
+El sistema debe permitir al rol COORDINADOR editar asignaciones existentes mediante formularios de edición.
+
+#### 3.4.11 Gestión de Coordinadores
+
+**RF127**
+
+El sistema debe permitir a usuarios con rol ADMIN crear nuevos coordinadores asignando el rol COORDINADOR a un usuario existente.
+
+**RF128**
+
+El sistema debe permitir visualizar una lista de todos los coordinadores del sistema.
+
+**RF129**
+
+El sistema debe permitir ver los detalles completos de un coordinador.
+
+**RF130**
+
+El sistema debe permitir a usuarios con rol ADMIN editar la información de un coordinador.
+
+**RF131**
+
+El sistema debe permitir a usuarios con rol ADMIN eliminar el rol de coordinador de un usuario previa confirmación.
+
+**RF132**
+
+El sistema debe proporcionar un dashboard específico para coordinadores con acceso a: gestión de horarios disponibilidad docente observaciones predefinidas.
+
+#### 3.4.12 Gestión de Padres y Estudiantes
+
+**RF133**
+
+El sistema debe permitir a usuarios con rol ADMIN crear nuevos padres asignando el rol PADRE a un usuario existente.
+
+**RF134**
+
+El sistema debe permitir asignar padres a grupos específicos (para que puedan ver horarios de sus hijos).
+
+**RF135**
+
+El sistema debe permitir visualizar una lista de todos los padres del sistema con sus grupos asignados.
+
+**RF136**
+
+El sistema debe permitir al rol PADRE visualizar los horarios publicados únicamente para los grupos asignados mediante un selector de estudiante/grupo.
+
+**RF137**
+
+El sistema debe proporcionar un dashboard específico para padres con acceso a: visualización de horarios de sus hijos.
+
+**RF138**
+
+El sistema debe permitir ver los detalles completos de un padre incluyendo grupos asignados.
+
+**RF139**
+
+El sistema debe permitir a usuarios con rol ADMIN editar la información de un padre y sus asignaciones a grupos.
+
+**RF140**
+
+El sistema debe permitir a usuarios con rol ADMIN eliminar el rol de padre de un usuario previa confirmación.
+
+#### 3.4.13 Gestión de Observaciones
+
+**RF141**
+
+El sistema debe permitir al docente registrar observaciones sobre su disponibilidad seleccionando observaciones predefinidas desde una lista desplegable.
+
+**RF142**
+
+El sistema debe permitir al docente describir el motivo de sus observaciones en un campo de texto libre de máximo 500 caracteres.
+
+**RF143**
+
+El sistema debe incluir siempre una observación predefinida llamada "Otro" que permita al docente especificar texto libre al seleccionarla.
+
+**RF144**
+
+El sistema debe incluir siempre una observación predefinida llamada "Otro Liceo" que permita al docente especificar el nombre de los liceos correspondientes al seleccionarla.
+
+**RF145**
+
+El sistema debe mostrar simultáneamente para cada docente el porcentaje de margen las observaciones y los motivos registrados en una vista consolidada.
+
+**RF146**
+
+El sistema debe permitir al rol COORDINADOR crear nuevas observaciones predefinidas mediante un formulario de gestión.
+
+**RF147**
+
+El sistema debe permitir al rol COORDINADOR leer el listado completo de observaciones predefinidas en formato tabular.
+
+**RF148**
+
+El sistema debe permitir al rol COORDINADOR actualizar el texto de observaciones predefinidas existentes mediante formularios de edición.
+
+**RF149**
+
+El sistema debe permitir al rol COORDINADOR eliminar observaciones predefinidas excepto las observaciones "Otro" y "Otro Liceo" previa confirmación.
+
+**RF150**
+
+El sistema debe distinguir entre observaciones predefinidas del sistema (no eliminables) y observaciones personalizadas (eliminables).
+
+**RF151**
+
+El sistema debe permitir activar o desactivar observaciones predefinidas sin eliminarlas.
+
+#### 3.4.14 Gestión de Bloques Horarios
+
+**RF152**
+
+El sistema debe permitir visualizar una lista de todos los bloques horarios del sistema con: ID hora de inicio hora de fin.
+
+**RF153**
+
+El sistema debe permitir a usuarios con rol ADMIN crear nuevos bloques horarios especificando hora de inicio y hora de fin.
+
+**RF154**
+
+El sistema debe permitir a usuarios con rol ADMIN editar bloques horarios existentes.
+
+**RF155**
+
+El sistema debe permitir a usuarios con rol ADMIN eliminar bloques horarios previa confirmación y validando que no tenga asignaciones activas.
+
+**RF156**
+
+El sistema debe validar que la hora de fin sea posterior a la hora de inicio en un bloque horario.
+
+**RF157**
+
+El sistema debe incluir bloques horarios predeterminados al inicializar la base de datos.
+
+#### 3.4.15 Gestión de Pautas ANEP
+
+**RF158**
+
+El sistema debe permitir a usuarios con rol ADMIN crear nuevas pautas ANEP especificando: nombre días mínimos días máximos condiciones especiales.
+
+**RF159**
+
+El sistema debe permitir visualizar una lista de todas las pautas ANEP del sistema.
+
+**RF160**
+
+El sistema debe permitir a usuarios con rol ADMIN editar pautas ANEP existentes.
+
+**RF161**
+
+El sistema debe permitir a usuarios con rol ADMIN eliminar pautas ANEP previa confirmación y validando que no esté asociada a materias.
+
+**RF162**
+
+El sistema debe validar que los días máximos sean mayores o iguales a los días mínimos y que ambos sean mayores que cero.
+
+**RF163**
+
+El sistema debe permitir definir condiciones especiales en las pautas ANEP como: no días consecutivos solo horario de mañana solo horario de tarde.
+
+**RF164**
+
+El sistema debe permitir asociar una pauta ANEP a una materia al crear o editar la materia.
+
+#### 3.4.16 Reportes y Estadísticas
+
+**RF165**
+
+El sistema debe permitir generar reportes de docentes con información: nombre apellido materias carga horaria porcentaje de margen observaciones.
+
+**RF166**
+
+El sistema debe permitir generar reportes de grupos con información: nombre nivel materias asignadas docentes asignados carga horaria total.
+
+**RF167**
+
+El sistema debe permitir generar reportes de horarios en formato tabular o de calendario.
+
+**RF168**
+
+El sistema debe proporcionar estadísticas generales del sistema: total de usuarios docentes grupos materias asignaciones de horario.
+
+**RF169**
+
+El sistema debe permitir generar un reporte de todos los conflictos detectados en los horarios actuales.
+
+**RF170**
+
+El sistema debe permitir generar reportes de disponibilidad docente.
+
+**RF171**
+
+El sistema debe mostrar en los dashboards estadísticas relevantes según el rol del usuario.
+
+#### 3.4.17 Interfaz de Usuario
+
+##### 3.4.17.1 Requerimientos Generales de la Interfaz
+
+**RF172**
+
+El sistema debe proporcionar una interfaz web accesible desde navegadores Chrome 90+ Firefox 88+ Safari 14+ y Edge 90+.
+
+**RF173**
+
+El sistema debe adaptar automáticamente el diseño de la interfaz al tamaño de pantalla del dispositivo (diseño responsive) utilizando CSS Grid y Flexbox soportando dispositivos de escritorio (1024px+) y móviles (320px-768px).
+
+**RF174**
+
+El sistema debe permitir la navegación entre secciones mediante un menú principal lateral o superior.
+
+**RF175**
+
+El sistema debe mostrar menús y opciones según el rol autenticado del usuario ocultando funciones no autorizadas.
+
+**RF176**
+
+El sistema debe proporcionar una ruta de navegación (breadcrumbs) en páginas con múltiples niveles mostrando la jerarquía completa.
+
+**RF177**
+
+El sistema debe adaptar el dashboard inicial para cada rol mostrando solo la información relevante.
+
+##### 3.4.17.2 Requerimientos de Formularios y Validación
+
+**RF178**
+
+El sistema debe validar los datos ingresados en formularios (campos obligatorios formatos de email teléfono) antes de enviarlos al servidor.
+
+**RF179**
+
+El sistema debe mostrar mensajes de error específicos y contextuales cuando falla una validación de formulario indicando el campo exacto y la corrección necesaria.
+
+**RF180**
+
+El sistema debe mostrar mensajes de confirmación mediante modales antes de ejecutar operaciones críticas (eliminación de registros) con botones "Confirmar" y "Cancelar".
+
+**RF181**
+
+El sistema debe mostrar mensajes de éxito (verde) o error (rojo) después de operaciones de creación edición o eliminación de registros con detalles claros y auto-ocultación después de 5 segundos.
+
+##### 3.4.17.3 Requerimientos de Tablas y Visualización de Datos
+
+**RF182**
+
+El sistema debe permitir aplicar múltiples filtros simultáneamente en las tablas mostrando el número de resultados filtrados.
+
+**RF183**
+
+El sistema debe implementar paginación en tablas con más de 10 registros mostrando opciones de 10 25 50 registros por página.
+
+**RF184**
+
+El sistema debe mostrar resúmenes o totales en la parte inferior de las tablas cuando sea aplicable (total de horas promedio de carga).
+
+**RF185**
+
+El sistema debe permitir arrastrar y soltar asignaciones de horario en el calendario semanal para reordenarlas.
+
+**RF186**
+
+El sistema debe permitir seleccionar múltiples elementos en listas para realizar operaciones en lote.
+
+**RF187**
+
+El sistema debe implementar auto-guardado para cambios en formularios extensos evitando pérdida de datos.
+
+##### 3.4.17.4 Requerimientos de Accesibilidad
+
+**RF188**
+
+El sistema debe cumplir con los estándares de accesibilidad WCAG 2.1 nivel AA para usuarios con discapacidades incluyendo contraste mínimo 4.5:1 etiquetas ARIA y navegación por teclado.
+
+**RF189**
+
+El sistema debe permitir navegación completa por teclado (Tab Enter Escape) en todas las funcionalidades.
+
+**RF190**
+
+El sistema debe soportar zoom hasta 200% sin pérdida de funcionalidad.
+
+**RF191**
+
+El sistema debe permitir la impresión de horarios en formato optimizado para papel A4 con márgenes de 1cm.
+
+#### 3.4.18 Traducciones y Multiidioma
+
+**RF192**
+
+El sistema debe permitir a los usuarios seleccionar el idioma de la interfaz entre: Español Inglés Italiano.
+
+**RF193**
+
+El sistema debe mantener la selección de idioma del usuario durante toda la sesión.
+
+**RF194**
+
+El sistema debe mostrar todos los textos de la interfaz en el idioma seleccionado.
+
+**RF195**
+
+El sistema debe permitir a usuarios con rol ADMIN gestionar las traducciones del sistema mediante una interfaz de administración.
+
+**RF196**
+
+El sistema debe permitir agregar nuevas claves de traducción y sus valores en cada idioma.
+
+**RF197**
+
+El sistema debe permitir editar traducciones existentes.
+
+**RF198**
+
+El sistema debe detectar y mostrar claves de traducción que faltan en algún idioma.
+
+**RF199**
+
+El sistema debe proporcionar estadísticas de cobertura de traducciones por idioma.
+
+**RF200**
+
+El sistema debe permitir exportar traducciones para edición externa.
+
+#### 3.4.19 Operaciones en Lote
+
+**RF201**
+
+El sistema debe permitir eliminar múltiples asignaciones de horario seleccionadas en una sola operación.
+
+**RF202**
+
+El sistema debe permitir copiar múltiples asignaciones de horario en lote (funcionalidad en desarrollo).
+
+**RF203**
+
+El sistema debe permitir mover múltiples asignaciones de horario en lote (funcionalidad en desarrollo).
+
+**RF204**
+
+El sistema debe permitir editar propiedades comunes de múltiples asignaciones de horario seleccionadas.
+
+**RF205**
+
+El sistema debe permitir seleccionar múltiples elementos mediante checkboxes o selección de rango.
+
+**RF206**
+
+El sistema debe solicitar confirmación antes de ejecutar operaciones en lote que modifiquen múltiples registros.
+
+**RF207**
+
+El sistema debe mostrar un reporte después de una operación en lote indicando cuántos elementos se procesaron exitosamente y cuántos fallaron.
+
+#### 3.4.20 Registro de Actividad (Logging)
+
+**RF208**
+
+El sistema debe registrar todos los accesos de usuarios autenticados en un log.
+
+**RF209**
+
+El sistema debe registrar todas las modificaciones críticas (creación edición eliminación) de entidades importantes (horarios docentes materias) en un log auditable.
+
+**RF210**
+
+El sistema debe registrar en cada entrada de log: timestamp usuario acción resultado y detalles relevantes.
+
+**RF211**
+
+El sistema debe permitir a usuarios con rol ADMIN consultar los logs del sistema con filtros por usuario fecha acción.
+
+**RF212**
+
+El sistema debe permitir exportar logs para análisis externo.
 
 ### 3.5.5 Requerimientos No Funcionales
 
