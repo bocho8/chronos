@@ -36,9 +36,21 @@ class ToastManager {
         if (!this.container) {
             this.container = document.createElement('div');
             this.container.id = 'toastContainer';
-            this.container.className = 'fixed top-4 right-4 z-50 space-y-2';
             document.body.appendChild(this.container);
         }
+        
+        // Always apply inline styles to ensure consistent positioning
+        // Inline styles have high specificity and will override most CSS
+        // Explicitly set bottom and left to auto to prevent bottom-left positioning
+        this.container.style.position = 'fixed';
+        this.container.style.top = '1rem';
+        this.container.style.right = '1rem';
+        this.container.style.bottom = 'auto';
+        this.container.style.left = 'auto';
+        this.container.style.zIndex = '50';
+        this.container.style.display = 'flex';
+        this.container.style.flexDirection = 'column';
+        this.container.style.gap = '0.5rem';
         
         // Create confirmation modal container
         this.createConfirmModal();
@@ -337,6 +349,19 @@ class ToastManager {
         .toast-action-btn.primary:hover {
             background: rgba(255, 255, 255, 0.3);
             border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Toast Container Positioning - Ensure top-right positioning */
+        #toastContainer {
+            position: fixed !important;
+            top: 1rem !important;
+            right: 1rem !important;
+            bottom: auto !important;
+            left: auto !important;
+            z-index: 50 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0.5rem !important;
         }
 
         /* Queue Indicator */
