@@ -545,7 +545,19 @@ try {
             
             // Get current assignments for this group
             fetch('/api/group-subjects?action=get_group_subjects&id_grupo=' + id_grupo)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        return response.text().then(text => {
+                            console.error('Non-JSON response:', text);
+                            throw new Error('Server returned non-JSON response');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         const select = document.getElementById('edit_subjectSelect');
@@ -577,7 +589,7 @@ try {
                 .catch(error => {
                     console.error('Error:', error);
                     if (typeof showToast === 'function') {
-                        showToast('Error de conexión', 'error');
+                        showToast('Error de conexión: ' + error.message, 'error');
                     }
                 });
         }

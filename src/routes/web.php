@@ -190,6 +190,7 @@ $router->group(['middleware' => ['auth']], function($router) {
         
         // Group Subject Assignment Routes
         $router->get('/group-subjects', 'Admin\GroupSubjectController@index');
+        $router->get('/api/group-subjects', 'Admin\GroupSubjectController@handleRequest');
         $router->post('/api/group-subjects', 'Admin\GroupSubjectController@handleRequest');
 
         // Translation Management Routes
