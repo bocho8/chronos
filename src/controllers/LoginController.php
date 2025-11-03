@@ -141,7 +141,7 @@ class LoginController {
     private function getRoleRedirectUrl($role) {
         return match ($role) {
             'ADMIN' => '/admin/dashboard',
-            'DIRECTOR' => '/director/dashboard',
+            'DIRECTOR' => '/admin/dashboard', // Directors use admin dashboard
             'COORDINADOR' => '/coordinator/dashboard',
             'DOCENTE' => '/teacher/dashboard',
             'PADRE' => '/parent/dashboard',

@@ -41,18 +41,18 @@ class RouteHelper
     public static function getAdminUrls()
     {
         return [
-            'users' => '/admin/users',
-            'teachers' => '/admin/teachers',
-            'subjects' => '/admin/subjects',
-            'schedules' => '/admin/schedules',
-            'schedule_management' => '/admin/gestion-horarios',
-            'groups' => '/admin/groups',
-            'publish_schedules' => '/admin/schedules',
-            'teacher_availability' => '/admin/availability',
-            'subject_assignments' => '/admin/assignments',
-            'reports' => '/admin/reports',
-            'students' => '/admin/users', // Students are managed in users section
-            'student_schedules' => '/admin/schedules' // Will be handled by controller
+            'users' => '/users',
+            'teachers' => '/teachers',
+            'subjects' => '/subjects',
+            'schedules' => '/schedules',
+            'schedule_management' => '/gestion-horarios',
+            'groups' => '/groups',
+            'publish_schedules' => '/schedules',
+            'teacher_availability' => '/availability',
+            'subject_assignments' => '/assignments',
+            'reports' => '/reports',
+            'students' => '/users', // Students are managed in users section
+            'student_schedules' => '/schedules' // Will be handled by controller
         ];
     }
     
@@ -64,9 +64,9 @@ class RouteHelper
         return [
             'teachers' => '/coordinator/teachers',
             'calendar' => '/coordinator/calendar',
-            'teacher_availability' => '/admin/availability',
-            'subject_assignments' => '/admin/assignments',
-            'reports' => '/admin/reports'
+            'teacher_availability' => '/availability',
+            'subject_assignments' => '/assignments',
+            'reports' => '/reports'
         ];
     }
     

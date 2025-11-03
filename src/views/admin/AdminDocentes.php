@@ -604,7 +604,7 @@ function getTeacherAssignments($teacherId, $assignments) {
             isEditMode = true;
             document.getElementById('modalTitle').textContent = '<?php _e('edit_teacher'); ?>';
             
-            fetch(`/admin/teachers/${id}/edit`, {
+            fetch(`/teachers/${id}/edit`, {
                 method: 'GET'
             })
             .then(response => response.json())
@@ -648,7 +648,7 @@ function getTeacherAssignments($teacherId, $assignments) {
             );
             
             if (confirmed) {
-                fetch(`/admin/teachers/${id}`, {
+                fetch(`/teachers/${id}`, {
                     method: 'DELETE'
                 })
                 .then(response => response.json())
@@ -720,8 +720,8 @@ function getTeacherAssignments($teacherId, $assignments) {
             }
             
             const url = isEditMode 
-                ? `/admin/teachers/${document.getElementById('id_docente').value}`
-                : '/admin/teachers';
+                ? `/teachers/${document.getElementById('id_docente').value}`
+                : '/teachers';
             const method = isEditMode ? 'PUT' : 'POST';
             
             let requestBody;
@@ -913,7 +913,7 @@ function getTeacherAssignments($teacherId, $assignments) {
         }
 
         function loadTeacherAssignments(teacherId) {
-            fetch(`/admin/assignments?teacher_id=${teacherId}`)
+            fetch(`/assignments?teacher_id=${teacherId}`)
                 .then(response => response.json())
                 .then(data => {
                     const assignmentsList = document.getElementById('assignmentsList');
@@ -950,7 +950,7 @@ function getTeacherAssignments($teacherId, $assignments) {
             const teacherId = formData.get('teacher_id');
             const subjectId = formData.get('subject_id');
             
-            fetch('/admin/assignments', {
+            fetch('/assignments', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -997,7 +997,7 @@ function getTeacherAssignments($teacherId, $assignments) {
                 '<?php _e('cancel'); ?>'
             );
             if (confirmed) {
-                fetch(`/admin/assignments/${assignmentId}`, {
+                fetch(`/assignments/${assignmentId}`, {
                     method: 'DELETE'
                 })
                 .then(response => response.json())

@@ -476,7 +476,7 @@ try {
                 const formData = new FormData(this);
                 formData.append('action', 'assign_subjects');
                 
-                fetch('/admin/api/group-subjects', {
+                fetch('/api/group-subjects', {
                     method: 'POST',
                     body: formData
                 })
@@ -510,7 +510,7 @@ try {
                     const formData = new FormData(this);
                     formData.append('action', 'assign_subjects');
                     
-                    fetch('/admin/api/group-subjects', {
+                    fetch('/api/group-subjects', {
                         method: 'POST',
                         body: formData
                     })
@@ -544,7 +544,7 @@ try {
             document.getElementById('edit_grupo_nombre').textContent = nombre;
             
             // Get current assignments for this group
-            fetch('/admin/api/group-subjects?action=get_group_subjects&id_grupo=' + id_grupo)
+            fetch('/api/group-subjects?action=get_group_subjects&id_grupo=' + id_grupo)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {

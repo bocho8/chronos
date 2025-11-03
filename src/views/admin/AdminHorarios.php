@@ -255,7 +255,7 @@ try {
                         </p>
                         <?php if ($grupoFiltrado): ?>
                             <div class="mb-4">
-                                <a href="/admin/horarios" class="text-darkblue hover:text-navy text-sm font-medium">
+                                <a href="/horarios" class="text-darkblue hover:text-navy text-sm font-medium">
                                     ← <?php _e('view_all_schedules'); ?>
                                 </a>
                             </div>

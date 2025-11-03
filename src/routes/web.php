@@ -52,12 +52,37 @@ $router->get('/file-not-found', function() {
 
 $router->group(['middleware' => ['auth']], function($router) {
 
+    // Role-specific dashboards - keep prefixes
     $router->group(['prefix' => '/admin', 'middleware' => ['admin']], function($router) {
-
         $router->get('/dashboard', function() {
             require __DIR__ . '/../views/admin/dashboard.php';
         });
+    });
 
+    // Shared routes - accessible by admin and coordinator (no prefix)
+    $router->group(['middleware' => ['adminOrCoordinator']], function($router) {
+        $router->get('/availability', function() {
+            require __DIR__ . '/../views/admin/AdminDisponibilidad.php';
+        });
+
+        $router->get('/assignments', 'Admin\AssignmentController@index');
+        $router->get('/assignments/create', 'Admin\AssignmentController@create');
+        $router->post('/assignments', 'Admin\AssignmentController@store');
+        $router->get('/assignments/{id}', 'Admin\AssignmentController@show');
+        $router->get('/assignments/{id}/edit', 'Admin\AssignmentController@edit');
+        $router->put('/assignments/{id}', 'Admin\AssignmentController@update');
+        $router->delete('/assignments/{id}', 'Admin\AssignmentController@destroy');
+
+        $router->get('/reports', function() {
+            require __DIR__ . '/../views/admin/AdminReportes.php';
+        });
+
+        // API routes for shared resources
+        $router->post('/api/assignments', 'Admin\AssignmentController@handleRequest');
+    });
+
+    // Admin-only routes - no prefix but admin middleware
+    $router->group(['middleware' => ['admin']], function($router) {
         $router->get('/teachers', function() {
             require __DIR__ . '/../views/admin/AdminDocentes.php';
         });
@@ -68,14 +93,6 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->put('/teachers/{id}', 'Admin\TeacherController@update');
         $router->delete('/teachers/{id}', 'Admin\TeacherController@destroy');
         $router->get('/teachers/search', 'Admin\TeacherController@search');
-
-        $router->get('/assignments', 'Admin\AssignmentController@index');
-        $router->get('/assignments/create', 'Admin\AssignmentController@create');
-        $router->post('/assignments', 'Admin\AssignmentController@store');
-        $router->get('/assignments/{id}', 'Admin\AssignmentController@show');
-        $router->get('/assignments/{id}/edit', 'Admin\AssignmentController@edit');
-        $router->put('/assignments/{id}', 'Admin\AssignmentController@update');
-        $router->delete('/assignments/{id}', 'Admin\AssignmentController@destroy');
 
         $router->get('/subjects', 'Admin\SubjectController@index');
         $router->get('/subjects/create', 'Admin\SubjectController@create');
@@ -156,25 +173,6 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->put('/coordinators/{id}', 'Admin\CoordinatorController@update');
         $router->delete('/coordinators/{id}', 'Admin\CoordinatorController@destroy');
 
-
-        $router->get('/reports', function() {
-            require __DIR__ . '/../views/admin/AdminReportes.php';
-        });
-
-        $router->get('/availability', function() {
-            require __DIR__ . '/../views/admin/AdminDisponibilidad.php';
-        });
-
-        $router->post('/api/teachers', 'Admin\TeacherController@handleRequest');
-        $router->post('/api/assignments', 'Admin\AssignmentController@handleRequest');
-        $router->post('/api/subjects', 'Admin\SubjectController@handleRequest');
-        $router->post('/api/groups', 'Admin\GroupController@handleRequest');
-        $router->post('/api/schedules', function() {
-            require __DIR__ . '/../controllers/HorarioHandler.php';
-        });
-        $router->post('/api/users', 'Admin\UserController@handleRequest');
-        $router->post('/api/coordinators', 'Admin\CoordinatorController@handleRequest');
-        
         // Parent Assignment Routes
         $router->get('/parent-assignments', 'Admin\ParentAssignmentController@index');
         $router->post('/api/parent-assignments', 'Admin\ParentAssignmentController@handleRequest');
@@ -204,6 +202,16 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->get('/translations/detect-spanish', 'Admin\TranslationController@detectSpanishErrors');
         $router->post('/translations/clear-all-spanish', 'Admin\TranslationController@clearAllSpanish');
         
+        // API routes for admin-only resources
+        $router->post('/api/teachers', 'Admin\TeacherController@handleRequest');
+        $router->post('/api/subjects', 'Admin\SubjectController@handleRequest');
+        $router->post('/api/groups', 'Admin\GroupController@handleRequest');
+        $router->post('/api/schedules', function() {
+            require __DIR__ . '/../controllers/HorarioHandler.php';
+        });
+        $router->post('/api/users', 'Admin\UserController@handleRequest');
+        $router->post('/api/coordinators', 'Admin\CoordinatorController@handleRequest');
+        
         // Publish Request API Routes
         $router->post('/api/publish-request/create', function() {
             require __DIR__ . '/../controllers/PublishRequestHandler.php';
@@ -219,6 +227,7 @@ $router->group(['middleware' => ['auth']], function($router) {
         });
     });
 
+    // Coordinator-specific routes - keep prefix for role-specific views
     $router->group(['prefix' => '/coordinator', 'middleware' => ['coordinator']], function($router) {
         
         $router->get('/dashboard', function() {
@@ -234,6 +243,7 @@ $router->group(['middleware' => ['auth']], function($router) {
         });
     });
 
+    // Teacher-specific routes - keep prefix for personal views
     $router->group(['prefix' => '/teacher', 'middleware' => ['teacher']], function($router) {
         
         $router->get('/dashboard', function() {
@@ -249,6 +259,7 @@ $router->group(['middleware' => ['auth']], function($router) {
         });
     });
 
+    // Parent-specific routes - keep prefix
     $router->group(['prefix' => '/parent', 'middleware' => ['parent']], function($router) {
         
         $router->get('/dashboard', function() {
@@ -271,5 +282,6 @@ $router->middleware('director', RoleMiddleware::director());
 $router->middleware('coordinator', RoleMiddleware::coordinator());
 $router->middleware('teacher', RoleMiddleware::teacher());
 $router->middleware('parent', RoleMiddleware::parent());
+$router->middleware('adminOrCoordinator', RoleMiddleware::adminOrCoordinator());
 
 $router->dispatch();

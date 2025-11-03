@@ -526,7 +526,7 @@ try {
         function changeGroup() {
             const groupId = document.getElementById('group-selector').value;
             if (groupId) {
-                window.location.href = '/admin/view-schedules?group=' + groupId;
+                window.location.href = '/view-schedules?group=' + groupId;
             }
         }
         

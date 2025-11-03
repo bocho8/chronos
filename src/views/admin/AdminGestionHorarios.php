@@ -2694,7 +2694,7 @@ try {
                 return;
             }
             
-            fetch('/admin/api/publish-request/create?action=create', {
+            fetch('/api/publish-request/create?action=create', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2743,7 +2743,7 @@ try {
         
         // Monitor for schedule changes (this would be called after any schedule modification)
         function checkScheduleChanges() {
-            fetch('/admin/api/publish-request/status?action=status')
+            fetch('/api/publish-request/status?action=status')
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.status !== 'pendiente') {

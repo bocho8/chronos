@@ -355,7 +355,7 @@ try {
                 '<?php _e('cancel'); ?>'
             );
             if (confirmed) {
-                fetch('/admin/api/publish-request/approve?action=approve', {
+                fetch('/api/publish-request/approve?action=approve', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -382,7 +382,7 @@ try {
         function rejectRequest(requestId) {
             const reason = prompt('¿Por qué desea rechazar esta solicitud? (opcional):');
             if (reason !== null) {
-                fetch('/admin/api/publish-request/reject?action=reject', {
+                fetch('/api/publish-request/reject?action=reject', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -409,12 +409,12 @@ try {
 
         function viewSchedulePreview(publicationId) {
             // Redirect to read-only schedule viewer with specific publication
-            window.location.href = '/admin/view-schedules?publication_id=' + publicationId;
+            window.location.href = '/view-schedules?publication_id=' + publicationId;
         }
 
         function viewPublishedSchedules() {
             // Redirect to schedule viewer for published schedules
-            window.location.href = '/admin/view-schedules';
+            window.location.href = '/view-schedules';
         }
 
         async function deletePublishedSchedule(publicationId) {

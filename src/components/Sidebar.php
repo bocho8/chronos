@@ -152,12 +152,12 @@ class Sidebar {
                         'icon' => '👨‍🏫'
                     ],
                     [
-                        'url' => '/admin/coordinators',
+                        'url' => '/coordinators',
                         'text' => 'coordinators',
                         'icon' => '👔'
                     ],
                     [
-                        'url' => '/admin/translations',
+                        'url' => '/translations',
                         'text' => 'translations_management',
                         'icon' => '🌐'
                     ]
@@ -188,17 +188,17 @@ class Sidebar {
                         'icon' => '👥'
                     ],
                     [
-                        'url' => '/admin/parent-assignments',
+                        'url' => '/parent-assignments',
                         'text' => 'parent_group_assignment',
                         'icon' => '👨‍👩‍👧‍👦'
                     ],
                     [
-                        'url' => '/admin/group-subjects',
+                        'url' => '/group-subjects',
                         'text' => 'group_subject_assignment',
                         'icon' => '📖'
                     ],
                     [
-                        'url' => '/admin/bloques',
+                        'url' => '/bloques',
                         'text' => 'time_blocks_management',
                         'icon' => '⏰'
                     ]

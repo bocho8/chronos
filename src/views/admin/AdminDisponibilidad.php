@@ -314,7 +314,7 @@ function getUserInitials($nombre, $apellido) {
         function loadDocenteDisponibilidad() {
             const docenteId = document.getElementById('docenteSelect').value;
             if (docenteId) {
-                window.location.href = `/admin/availability?docente=${docenteId}`;
+                window.location.href = `/availability?docente=${docenteId}`;
             }
         }
 

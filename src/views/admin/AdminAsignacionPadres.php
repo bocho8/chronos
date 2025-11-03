@@ -476,7 +476,7 @@ try {
                 const formData = new FormData(this);
                 formData.append('action', 'assign_groups');
                 
-                fetch('/admin/api/parent-assignments', {
+                fetch('/api/parent-assignments', {
                     method: 'POST',
                     body: formData
                 })
@@ -511,7 +511,7 @@ try {
                     formData.append('action', 'assign_groups');
                     formData.append('replace', 'true');
                     
-                    fetch('/admin/api/parent-assignments', {
+                    fetch('/api/parent-assignments', {
                         method: 'POST',
                         body: formData
                     })
@@ -545,7 +545,7 @@ try {
             document.getElementById('edit_padre_nombre').textContent = nombre;
             
             // Get current assignments for this parent
-            fetch('/admin/api/parent-assignments?action=get_parent_groups&id_padre=' + id_padre)
+            fetch('/api/parent-assignments?action=get_parent_groups&id_padre=' + id_padre)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {

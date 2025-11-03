@@ -357,7 +357,7 @@ if (!AuthHelper::checkSessionTimeout()) {
 
         async function loadTranslations() {
             try {
-                const response = await fetch('/admin/translations/all');
+                const response = await fetch('/translations/all');
                 const data = await response.json();
                 
                 if (data.success) {
@@ -425,7 +425,7 @@ if (!AuthHelper::checkSessionTimeout()) {
                 submitBtn.textContent = 'Creating...';
 
                 // Server-side format validation (authoritative)
-                const validateRes = await fetch('/admin/translations/validate-key', {
+                const validateRes = await fetch('/translations/validate-key', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ key })
@@ -440,7 +440,7 @@ if (!AuthHelper::checkSessionTimeout()) {
                 }
 
                 // Create empty Spanish entry
-                const createRes = await fetch('/admin/translations/update', {
+                const createRes = await fetch('/translations/update', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ key: key, language: 'es', value: '' })
@@ -632,7 +632,7 @@ if (!AuthHelper::checkSessionTimeout()) {
 
         async function saveTranslation(key, language, value) {
             try {
-                const response = await fetch('/admin/translations/update', {
+                const response = await fetch('/translations/update', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -717,7 +717,7 @@ if (!AuthHelper::checkSessionTimeout()) {
 
             try {
                 // Fill English
-                const enResponse = await fetch('/admin/translations/fill-missing', {
+                const enResponse = await fetch('/translations/fill-missing', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -729,7 +729,7 @@ if (!AuthHelper::checkSessionTimeout()) {
                 });
 
                 // Fill Italian
-                const itResponse = await fetch('/admin/translations/fill-missing', {
+                const itResponse = await fetch('/translations/fill-missing', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -755,7 +755,7 @@ if (!AuthHelper::checkSessionTimeout()) {
         }
 
         function exportTranslations(format) {
-            const url = `/admin/translations/export?format=${format}`;
+            const url = `/translations/export?format=${format}`;
             window.open(url, '_blank');
         }
 
@@ -765,7 +765,7 @@ if (!AuthHelper::checkSessionTimeout()) {
 
         async function updateStatistics() {
             try {
-                const response = await fetch('/admin/translations/statistics');
+                const response = await fetch('/translations/statistics');
                 const data = await response.json();
                 
                 if (data.success) {
@@ -830,7 +830,7 @@ if (!AuthHelper::checkSessionTimeout()) {
 
         async function detectSpanishErrors() {
             try {
-                const response = await fetch('/admin/translations/detect-spanish');
+                const response = await fetch('/translations/detect-spanish');
                 const data = await response.json();
                 
                 if (data.success) {
@@ -886,7 +886,7 @@ if (!AuthHelper::checkSessionTimeout()) {
                 button.disabled = true;
 
                 // Call the bulk clear endpoint
-                const response = await fetch('/admin/translations/clear-all-spanish', {
+                const response = await fetch('/translations/clear-all-spanish', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
