@@ -36,6 +36,7 @@ class ScheduleDragDropManager {
             startTime: 0
         };
         this.dragEventsSetup = false;
+        this.userManuallyCollapsed = false; // Track if user manually collapsed
         
         this.init();
         
@@ -62,6 +63,11 @@ class ScheduleDragDropManager {
         window.clearStuckOperation = () => {
             console.log('🔧 Manually clearing stuck operation:', this.operationInProgress.type);
             this.endOperation();
+        };
+        
+        // Override global toggleSidebar function if it exists (to avoid conflicts)
+        window.toggleScheduleSidebar = () => {
+            this.toggleSidebar();
         };
     }
 
@@ -99,6 +105,7 @@ class ScheduleDragDropManager {
         const sidebarCollapsed = localStorage.getItem('scheduleSidebarCollapsed') === 'true';
         if (sidebarCollapsed) {
             this.collapseSidebar();
+            this.userManuallyCollapsed = true; // Assume it was manually collapsed if saved as collapsed
         }
         
         // Load assignment filter
@@ -128,8 +135,13 @@ class ScheduleDragDropManager {
 
     collapseSidebar() {
         const sidebarContent = document.getElementById('sidebarContent');
+        const sidebarContainer = sidebarContent?.closest('.bg-white.rounded-lg.shadow-sm.border');
+        
         if (sidebarContent) {
             sidebarContent.style.display = 'none';
+            if (sidebarContainer) {
+                sidebarContainer.classList.add('sidebar-collapsed');
+            }
         }
     }
 
@@ -190,10 +202,42 @@ class ScheduleDragDropManager {
     }
 
     setupSidebarToggle() {
-        // Set up the sidebar toggle button
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', this.toggleSidebar.bind(this));
+        // Wait for DOM to be ready and set up the sidebar toggle button
+        // Specifically target the toggle button in the assignments sidebar
+        const setupToggle = () => {
+            // Find the assignments sidebar container first
+            const assignmentsSidebar = document.querySelector('#assignmentsList')?.closest('.bg-white.rounded-lg.shadow-sm.border');
+            if (!assignmentsSidebar) {
+                setTimeout(setupToggle, 100);
+                return;
+            }
+            
+            // Find the toggle button within the assignments sidebar
+            const sidebarToggle = assignmentsSidebar.querySelector('#sidebarToggle');
+            if (sidebarToggle) {
+                // Remove onclick attribute if it exists (to prevent global function interference)
+                sidebarToggle.removeAttribute('onclick');
+                
+                // Remove any existing listeners by cloning
+                const newToggle = sidebarToggle.cloneNode(true);
+                sidebarToggle.parentNode.replaceChild(newToggle, sidebarToggle);
+                
+                // Add click listener with bound context
+                const boundToggle = this.toggleSidebar.bind(this);
+                newToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    boundToggle();
+                });
+            } else {
+                setTimeout(setupToggle, 100);
+            }
+        };
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupToggle);
+        } else {
+            setupToggle();
         }
     }
 
@@ -220,11 +264,37 @@ class ScheduleDragDropManager {
     toggleSidebar() {
         // Find the sidebar content element directly
         const sidebarContent = document.getElementById('sidebarContent');
-        if (sidebarContent) {
-            // Toggle visibility directly
-            const isCollapsed = sidebarContent.style.display === 'none';
-            sidebarContent.style.display = isCollapsed ? 'block' : 'none';
-            this.savePreferences('scheduleSidebarCollapsed', !isCollapsed);
+        const sidebarContainer = sidebarContent?.closest('.bg-white.rounded-lg.shadow-sm.border');
+        
+        if (!sidebarContent) {
+            console.error('Sidebar content not found');
+            return;
+        }
+        
+        // Check if collapsed by checking computed style (handles CSS !important)
+        const computedStyle = window.getComputedStyle(sidebarContent);
+        const isCollapsed = computedStyle.display === 'none' || 
+                          sidebarContainer?.classList.contains('sidebar-collapsed') ||
+                          sidebarContent.style.display === 'none';
+        
+        if (isCollapsed) {
+            // Expand sidebar
+            sidebarContent.style.display = 'block';
+            sidebarContent.style.setProperty('display', 'block', 'important');
+            if (sidebarContainer) {
+                sidebarContainer.classList.remove('sidebar-collapsed');
+            }
+            this.userManuallyCollapsed = false;
+            this.savePreferences('scheduleSidebarCollapsed', 'false');
+        } else {
+            // Collapse sidebar
+            sidebarContent.style.display = 'none';
+            sidebarContent.style.setProperty('display', 'none', 'important');
+            if (sidebarContainer) {
+                sidebarContainer.classList.add('sidebar-collapsed');
+            }
+            this.userManuallyCollapsed = true;
+            this.savePreferences('scheduleSidebarCollapsed', 'true');
         }
     }
 
@@ -234,13 +304,13 @@ class ScheduleDragDropManager {
             return;
         }
 
-
         try {
             // Add cache-busting parameter to ensure fresh data
             const timestamp = Date.now();
-            const response = await fetch(`/src/controllers/HorarioHandler.php?action=get_available_assignments&grupo_id=${this.currentGroupId}&_t=${timestamp}`);
-            const data = await response.json();
+            const url = `/src/controllers/HorarioHandler.php?action=get_available_assignments&grupo_id=${this.currentGroupId}&_t=${timestamp}`;
             
+            const response = await fetch(url);
+            const data = await response.json();
             
             if (data.success) {
                 this.assignments = data.data || [];
@@ -262,7 +332,6 @@ class ScheduleDragDropManager {
             return;
         }
 
-
         if (this.assignments.length === 0) {
             container.innerHTML = '<div class="text-center text-gray-500 text-sm py-8">No hay materias asignadas a este grupo<br><small>Configure las materias del grupo primero</small></div>';
             return;
@@ -273,7 +342,8 @@ class ScheduleDragDropManager {
         
         if (isGrouped) {
             // New grouped format - render directly
-            container.innerHTML = this.assignments.map(assignment => this.createGroupedAssignmentCard(assignment)).join('');
+            const html = this.assignments.map(assignment => this.createGroupedAssignmentCard(assignment)).join('');
+            container.innerHTML = html;
         } else {
             // Old format - group by subject first
             const groupedAssignments = this.groupAssignmentsBySubject(this.assignments);
@@ -285,6 +355,22 @@ class ScheduleDragDropManager {
         
         // Apply current filter after loading assignments
         this.applyCurrentFilter();
+        
+        // Ensure sidebar is visible when assignments are loaded (only if user hasn't manually collapsed)
+        const sidebarContent = document.getElementById('sidebarContent');
+        const sidebarContainer = sidebarContent?.closest('.bg-white.rounded-lg.shadow-sm.border');
+        
+        if (sidebarContent && this.assignments.length > 0 && !this.userManuallyCollapsed) {
+            // Only auto-expand if there are assignments and user hasn't manually collapsed
+            if (sidebarContent.style.display === 'none') {
+                sidebarContent.style.display = 'block';
+                if (sidebarContainer) {
+                    sidebarContainer.classList.remove('sidebar-collapsed');
+                }
+                // Update preference so it stays open
+                this.savePreferences('scheduleSidebarCollapsed', 'false');
+            }
+        }
     }
 
     groupAssignmentsBySubject(assignments) {
@@ -1689,7 +1775,14 @@ class ScheduleDragDropManager {
             
             switch (this.currentFilter) {
                 case 'filterAvailable':
-                    shouldShow = assignment.querySelector('.availability-available') !== null;
+                    // For grouped assignments, check if not disabled and has available hours
+                    if (assignment.dataset.isGrouped === 'true') {
+                        shouldShow = assignment.dataset.isDisabled !== 'true' && 
+                                    assignment.dataset.autoSelectable === 'true';
+                    } else {
+                        // For old format, check for availability-available class
+                        shouldShow = assignment.querySelector('.availability-available') !== null;
+                    }
                     break;
                 case 'filterBySubject':
                     shouldShow = true;
