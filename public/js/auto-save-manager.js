@@ -27,7 +27,6 @@ class AutoSaveManager {
         // Bind methods
         this.save = this.save.bind(this);
         this.debounce = this.debounce.bind(this);
-        this.preventDuplicates = this.preventDuplicates.bind(this);
         this.showSaveIndicator = this.showSaveIndicator.bind(this);
         this.retryWithBackoff = this.retryWithBackoff.bind(this);
         
