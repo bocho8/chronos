@@ -551,6 +551,23 @@ function getUserInitials($nombre, $apellido) {
         </div>
 
         <div>
+          <label for="confirmar_contrasena" class="block text-sm font-medium text-gray-700 mb-2"><?php _e('confirm_password'); ?> <span id="confirmPasswordRequired" class="text-red-500" style="display: none;">*</span></label>
+          <div class="relative">
+            <input type="password" id="confirmar_contrasena" name="confirmar_contrasena" minlength="8" maxlength="255"
+                   class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:ring-darkblue focus:border-darkblue sm:text-sm"
+                   placeholder="<?php _e('confirm_password_placeholder'); ?>" aria-describedby="confirmar_contrasenaError confirmar_contrasenaHelp">
+            <button type="button" id="toggleConfirmPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors" aria-label="<?php _e('toggle_password_visibility'); ?>">
+              <svg id="confirmPasswordIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </button>
+          </div>
+          <p id="confirmar_contrasenaHelp" class="text-xs text-gray-500 mt-1"><?php _e('confirm_password_help'); ?></p>
+          <p id="confirmar_contrasenaError" class="text-xs text-red-600 mt-1" role="alert" aria-live="polite"></p>
+        </div>
+
+        <div>
           <label class="block text-sm font-medium text-gray-700 mb-2"><?php _e('roles'); ?> <span class="text-red-500">*</span></label>
           <div class="space-y-2" role="group" aria-labelledby="roles-label">
             <?php foreach ($roles as $role): ?>
@@ -595,7 +612,9 @@ function getUserInitials($nombre, $apellido) {
       });
       
       document.getElementById('passwordRequired').style.display = 'inline';
+      document.getElementById('confirmPasswordRequired').style.display = 'inline';
       document.getElementById('contrasena').required = true;
+      document.getElementById('confirmar_contrasena').required = true;
       
       clearAllErrors();
       
@@ -654,7 +673,10 @@ function getUserInitials($nombre, $apellido) {
       document.getElementById('modalTitle').textContent = '<?php _e('edit_user'); ?>';
       
       document.getElementById('passwordRequired').style.display = 'none';
+      document.getElementById('confirmPasswordRequired').style.display = 'none';
       document.getElementById('contrasena').required = false;
+      document.getElementById('confirmar_contrasena').required = false;
+      document.getElementById('confirmar_contrasena').value = '';
       
       const formData = new FormData();
       formData.append('action', 'get');
@@ -784,11 +806,29 @@ function getUserInitials($nombre, $apellido) {
       }
       
       const contrasena = document.getElementById('contrasena').value;
+      const confirmarContrasena = document.getElementById('confirmar_contrasena').value;
       if (!isEditMode && (!contrasena || contrasena.length < 8)) {
         showFieldError('contrasena', '<?php _e('password_required_min_length'); ?>');
         isValid = false;
       } else if (contrasena && contrasena.length < 8) {
         showFieldError('contrasena', '<?php _e('password_min_length'); ?>');
+        isValid = false;
+      }
+      
+      // Validate password confirmation
+      if (contrasena) {
+        if (!confirmarContrasena) {
+          showFieldError('confirmar_contrasena', '<?php _e('password_required_min_length'); ?>');
+          isValid = false;
+        } else if (confirmarContrasena.length < 8) {
+          showFieldError('confirmar_contrasena', '<?php _e('password_min_length'); ?>');
+          isValid = false;
+        } else if (contrasena !== confirmarContrasena) {
+          showFieldError('confirmar_contrasena', '<?php _e('form_password_mismatch'); ?>');
+          isValid = false;
+        }
+      } else if (!isEditMode && !confirmarContrasena) {
+        showFieldError('confirmar_contrasena', '<?php _e('password_required_min_length'); ?>');
         isValid = false;
       }
       
@@ -838,6 +878,24 @@ function getUserInitials($nombre, $apellido) {
       } else {
         passwordInput.type = 'password';
         passwordIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+        `;
+      }
+    }
+
+    function toggleConfirmPasswordVisibility() {
+      const confirmPasswordInput = document.getElementById('confirmar_contrasena');
+      const confirmPasswordIcon = document.getElementById('confirmPasswordIcon');
+      
+      if (confirmPasswordInput.type === 'password') {
+        confirmPasswordInput.type = 'text';
+        confirmPasswordIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+        `;
+      } else {
+        confirmPasswordInput.type = 'password';
+        confirmPasswordIcon.innerHTML = `
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
         `;
@@ -899,6 +957,32 @@ function getUserInitials($nombre, $apellido) {
           } else if (value && value.length < 8) {
             showFieldError('contrasena', '<?php _e('password_min_length'); ?>');
           }
+          // Check password match when password field changes
+          const confirmPassword = document.getElementById('confirmar_contrasena').value;
+          if (value && confirmPassword && value !== confirmPassword) {
+            showFieldError('confirmar_contrasena', '<?php _e('form_password_mismatch'); ?>');
+          } else if (value && confirmPassword && value === confirmPassword) {
+            // Clear error if passwords match
+            const confirmErrorElement = document.getElementById('confirmar_contrasenaError');
+            if (confirmErrorElement) {
+              confirmErrorElement.textContent = '';
+            }
+            const confirmInputElement = document.getElementById('confirmar_contrasena');
+            if (confirmInputElement) {
+              confirmInputElement.classList.remove('error-input');
+            }
+          }
+          break;
+          
+        case 'confirmar_contrasena':
+          const password = document.getElementById('contrasena').value;
+          if (!isEditMode && password && (!value || value.length < 8)) {
+            showFieldError('confirmar_contrasena', '<?php _e('password_required_min_length'); ?>');
+          } else if (value && value.length < 8) {
+            showFieldError('confirmar_contrasena', '<?php _e('password_min_length'); ?>');
+          } else if (password && value && password !== value) {
+            showFieldError('confirmar_contrasena', '<?php _e('form_password_mismatch'); ?>');
+          }
           break;
       }
     }
@@ -945,6 +1029,11 @@ function getUserInitials($nombre, $apellido) {
       const togglePasswordBtn = document.getElementById('togglePassword');
       if (togglePasswordBtn) {
         togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
+      }
+
+      const toggleConfirmPasswordBtn = document.getElementById('toggleConfirmPassword');
+      if (toggleConfirmPasswordBtn) {
+        toggleConfirmPasswordBtn.addEventListener('click', toggleConfirmPasswordVisibility);
       }
 
       const formInputs = document.querySelectorAll('#usuarioForm input, #usuarioForm select');
