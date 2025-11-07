@@ -219,7 +219,7 @@ try {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
-                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block flex-1"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block flex-1"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e(AuthHelper::getCurrentUserRoleTranslationKey()); ?>)</div>
                 <div class="text-white text-sm font-semibold text-center sm:hidden flex-1"><?php _e('welcome'); ?></div>
                 <div class="flex items-center">
                     <?php echo $languageSwitcher->render('', 'mr-4'); ?>
@@ -233,7 +233,7 @@ try {
                         <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block" id="userMenu">
                             <div class="px-4 py-2 text-sm text-gray-700 border-b">
                                 <div class="font-medium"><?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?></div>
-                                <div class="text-gray-500"><?php _e('role_admin'); ?></div>
+                                <div class="text-gray-500"><?php _e(AuthHelper::getCurrentUserRoleTranslationKey()); ?></div>
                             </div>
                             <a href="/src/views/logout.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><?php _e('logout'); ?></a>
                         </div>

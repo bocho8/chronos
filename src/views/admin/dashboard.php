@@ -68,7 +68,7 @@ try {
             <header class="bg-darkblue px-4 md:px-6 h-[60px] flex justify-between items-center shadow-sm border-b border-lightborder">
                 <div class="w-8"></div>
                 
-                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e('role_admin'); ?>)</div>
+                <div class="text-white text-lg md:text-xl font-semibold text-center hidden sm:block"><?php _e('welcome'); ?>, <?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?> (<?php _e(AuthHelper::getCurrentUserRoleTranslationKey()); ?>)</div>
                 <div class="text-white text-sm font-semibold text-center sm:hidden"><?php _e('welcome'); ?></div>
                 
                 <div class="flex items-center">
@@ -85,7 +85,7 @@ try {
                         <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block" id="userMenu">
                             <div class="px-4 py-2 text-sm text-gray-700 border-b">
                                 <div class="font-medium"><?php echo htmlspecialchars(AuthHelper::getUserDisplayName()); ?></div>
-                                <div class="text-gray-500"><?php _e('role_admin'); ?></div>
+                                <div class="text-gray-500"><?php _e(AuthHelper::getCurrentUserRoleTranslationKey()); ?></div>
                             </div>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" id="profileLink">
                                 <span class="inline mr-2 text-xs">👤</span>

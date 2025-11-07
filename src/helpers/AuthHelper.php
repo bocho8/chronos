@@ -84,6 +84,21 @@ class AuthHelper {
         };
     }
     
+    /**
+     * Get the translation key for the current user's role
+     */
+    public static function getCurrentUserRoleTranslationKey() {
+        $role = self::getCurrentUserRole();
+        return match ($role) {
+            'ADMIN' => 'role_admin',
+            'DIRECTOR' => 'role_director',
+            'COORDINADOR' => 'role_coordinator',
+            'DOCENTE' => 'role_teacher',
+            'PADRE' => 'role_parent',
+            default => 'role_admin'
+        };
+    }
+    
     public static function logout($destroySession = true) {
         try {
             if (self::isLoggedIn()) {
