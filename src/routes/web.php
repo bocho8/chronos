@@ -98,8 +98,8 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->post('/api/assignments', 'Admin\AssignmentController@handleRequest');
     });
 
-    // Admin-only routes - no prefix but admin or director middleware
-    $router->group(['middleware' => ['adminOrDirector']], function($router) {
+    // Routes accessible by admin, director or coordinator (except publication)
+    $router->group(['middleware' => ['adminOrDirectorOrCoordinator']], function($router) {
         $router->get('/teachers', function() {
             require __DIR__ . '/../views/admin/AdminDocentes.php';
         });
@@ -126,7 +126,68 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->get('/groups/{id}/edit', 'Admin\GroupController@edit');
         $router->put('/groups/{id}', 'Admin\GroupController@update');
         $router->delete('/groups/{id}', 'Admin\GroupController@destroy');
+        
+        $router->get('/bloques', function() {
+            require __DIR__ . '/../views/admin/AdminBloques.php';
+        });
+        
+        $router->get('/horarios', function() {
+            require __DIR__ . '/../views/admin/AdminHorarios.php';
+        });
+        
+        $router->get('/view-schedules', function() {
+            require __DIR__ . '/../views/admin/AdminScheduleViewer.php';
+        });
+        
+        $router->get('/test-schedule-viewer', function() {
+            require __DIR__ . '/../views/admin/TestScheduleViewer.php';
+        });
+        
+        $router->get('/simple-test', function() {
+            require __DIR__ . '/../views/admin/SimpleTest.php';
+        });
 
+        // Coordinator Management Routes
+        $router->get('/coordinators', 'Admin\CoordinatorController@index');
+        $router->get('/coordinators/create', 'Admin\CoordinatorController@create');
+        $router->post('/coordinators', 'Admin\CoordinatorController@store');
+        $router->get('/coordinators/{id}', 'Admin\CoordinatorController@show');
+        $router->get('/coordinators/{id}/edit', 'Admin\CoordinatorController@edit');
+        $router->put('/coordinators/{id}', 'Admin\CoordinatorController@update');
+        $router->delete('/coordinators/{id}', 'Admin\CoordinatorController@destroy');
+
+        // Parent Assignment Routes
+        $router->get('/parent-assignments', 'Admin\ParentAssignmentController@index');
+        $router->get('/api/parent-assignments', 'Admin\ParentAssignmentController@handleRequest');
+        $router->post('/api/parent-assignments', 'Admin\ParentAssignmentController@handleRequest');
+        
+        // Group Subject Assignment Routes
+        $router->get('/group-subjects', 'Admin\GroupSubjectController@index');
+        $router->get('/api/group-subjects', 'Admin\GroupSubjectController@handleRequest');
+        $router->post('/api/group-subjects', 'Admin\GroupSubjectController@handleRequest');
+        
+        // API routes for shared resources
+        $router->post('/api/teachers', 'Admin\TeacherController@handleRequest');
+        $router->post('/api/subjects', 'Admin\SubjectController@handleRequest');
+        $router->post('/api/groups', 'Admin\GroupController@handleRequest');
+        $router->post('/api/coordinators', 'Admin\CoordinatorController@handleRequest');
+    });
+
+    // User management routes - only for admin and director (not coordinator)
+    $router->group(['middleware' => ['adminOrDirector']], function($router) {
+        $router->get('/users', 'Admin\UserController@index');
+        $router->get('/users/create', 'Admin\UserController@create');
+        $router->post('/users', 'Admin\UserController@store');
+        $router->get('/users/{id}', 'Admin\UserController@show');
+        $router->get('/users/{id}/edit', 'Admin\UserController@edit');
+        $router->put('/users/{id}', 'Admin\UserController@update');
+        $router->delete('/users/{id}', 'Admin\UserController@destroy');
+        
+        $router->post('/api/users', 'Admin\UserController@handleRequest');
+    });
+
+    // Schedule publication routes - only for admin and director (not coordinator)
+    $router->group(['middleware' => ['adminOrDirector']], function($router) {
         $router->get('/schedules', function() {
             require __DIR__ . '/../views/admin/AdminPublicarHorarios.php';
         });
@@ -153,62 +214,9 @@ $router->group(['middleware' => ['auth']], function($router) {
             require __DIR__ . '/../views/admin/AdminGestionHorarios.php';
         });
         
-        $router->get('/bloques', function() {
-            require __DIR__ . '/../views/admin/AdminBloques.php';
-        });
-        
-        $router->get('/horarios', function() {
-            require __DIR__ . '/../views/admin/AdminHorarios.php';
-        });
-        
-        $router->get('/view-schedules', function() {
-            require __DIR__ . '/../views/admin/AdminScheduleViewer.php';
-        });
-        
-        $router->get('/test-schedule-viewer', function() {
-            require __DIR__ . '/../views/admin/TestScheduleViewer.php';
-        });
-        
-        $router->get('/simple-test', function() {
-            require __DIR__ . '/../views/admin/SimpleTest.php';
-        });
-
-        $router->get('/users', 'Admin\UserController@index');
-        $router->get('/users/create', 'Admin\UserController@create');
-        $router->post('/users', 'Admin\UserController@store');
-        $router->get('/users/{id}', 'Admin\UserController@show');
-        $router->get('/users/{id}/edit', 'Admin\UserController@edit');
-        $router->put('/users/{id}', 'Admin\UserController@update');
-        $router->delete('/users/{id}', 'Admin\UserController@destroy');
-
-        // Coordinator Management Routes
-        $router->get('/coordinators', 'Admin\CoordinatorController@index');
-        $router->get('/coordinators/create', 'Admin\CoordinatorController@create');
-        $router->post('/coordinators', 'Admin\CoordinatorController@store');
-        $router->get('/coordinators/{id}', 'Admin\CoordinatorController@show');
-        $router->get('/coordinators/{id}/edit', 'Admin\CoordinatorController@edit');
-        $router->put('/coordinators/{id}', 'Admin\CoordinatorController@update');
-        $router->delete('/coordinators/{id}', 'Admin\CoordinatorController@destroy');
-
-        // Parent Assignment Routes
-        $router->get('/parent-assignments', 'Admin\ParentAssignmentController@index');
-        $router->get('/api/parent-assignments', 'Admin\ParentAssignmentController@handleRequest');
-        $router->post('/api/parent-assignments', 'Admin\ParentAssignmentController@handleRequest');
-        
-        // Group Subject Assignment Routes
-        $router->get('/group-subjects', 'Admin\GroupSubjectController@index');
-        $router->get('/api/group-subjects', 'Admin\GroupSubjectController@handleRequest');
-        $router->post('/api/group-subjects', 'Admin\GroupSubjectController@handleRequest');
-        
-        // API routes for admin-only resources
-        $router->post('/api/teachers', 'Admin\TeacherController@handleRequest');
-        $router->post('/api/subjects', 'Admin\SubjectController@handleRequest');
-        $router->post('/api/groups', 'Admin\GroupController@handleRequest');
         $router->post('/api/schedules', function() {
             require __DIR__ . '/../controllers/HorarioHandler.php';
         });
-        $router->post('/api/users', 'Admin\UserController@handleRequest');
-        $router->post('/api/coordinators', 'Admin\CoordinatorController@handleRequest');
         
         // Publish Request API Routes
         $router->post('/api/publish-request/create', function() {
@@ -306,5 +314,6 @@ $router->middleware('teacher', RoleMiddleware::teacher());
 $router->middleware('parent', RoleMiddleware::parent());
 $router->middleware('adminOrDirector', RoleMiddleware::adminOrDirector());
 $router->middleware('adminOrCoordinator', RoleMiddleware::adminOrCoordinator());
+$router->middleware('adminOrDirectorOrCoordinator', RoleMiddleware::adminOrDirectorOrCoordinator());
 
 $router->dispatch();

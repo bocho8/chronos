@@ -128,6 +128,8 @@ class Sidebar {
             ),
             'COORDINADOR' => array_merge(
                 [],
+                $this->getAdministrationSectionsForCoordinator(),
+                $this->getAcademicSectionsForCoordinator(),
                 $this->getCoordinatorSections()
             ),
             'DOCENTE' => array_merge([], $this->getTeacherSections()),
@@ -183,6 +185,22 @@ class Sidebar {
         ];
     }
     
+    private function getAdministrationSectionsForCoordinator() {
+        $urls = \RouteHelper::getAdminUrls();
+        return [
+            [
+                'title' => 'administration',
+                'items' => [
+                    [
+                        'url' => $urls['teachers'],
+                        'text' => 'teachers',
+                        'icon' => '👨‍🏫'
+                    ]
+                ]
+            ]
+        ];
+    }
+    
     private function getAcademicSections() {
         $urls = \RouteHelper::getAdminUrls();
         return [
@@ -198,6 +216,42 @@ class Sidebar {
                         'url' => $urls['schedule_management'],
                         'text' => 'schedule_management',
                         'icon' => '⚙️'
+                    ],
+                    [
+                        'url' => $urls['groups'],
+                        'text' => 'groups',
+                        'icon' => '👥'
+                    ],
+                    [
+                        'url' => '/parent-assignments',
+                        'text' => 'parent_group_assignment',
+                        'icon' => '👨‍👩‍👧‍👦'
+                    ],
+                    [
+                        'url' => '/group-subjects',
+                        'text' => 'group_subject_assignment',
+                        'icon' => '📖'
+                    ],
+                    [
+                        'url' => '/bloques',
+                        'text' => 'time_blocks_management',
+                        'icon' => '⏰'
+                    ]
+                ]
+            ]
+        ];
+    }
+    
+    private function getAcademicSectionsForCoordinator() {
+        $urls = \RouteHelper::getAdminUrls();
+        return [
+            [
+                'title' => 'academic_management',
+                'items' => [
+                    [
+                        'url' => $urls['subjects'],
+                        'text' => 'subjects',
+                        'icon' => '📚'
                     ],
                     [
                         'url' => $urls['groups'],

@@ -20,7 +20,7 @@ $sidebar = new Sidebar('admin-reportes.php');
 
 $languageSwitcher->handleLanguageChange();
 
-AuthHelper::requireRole(['ADMIN', 'DIRECTOR']);
+AuthHelper::requireRole(['ADMIN', 'DIRECTOR', 'COORDINADOR']);
 
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');

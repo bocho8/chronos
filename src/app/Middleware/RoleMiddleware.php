@@ -109,6 +109,32 @@ class RoleMiddleware
     }
     
     /**
+     * Middleware for routes accessible by admin, director or coordinator
+     */
+    public static function adminOrDirectorOrCoordinator()
+    {
+        return function() {
+            if (!AuthMiddleware::handle()) {
+                return false;
+            }
+            
+            // Allow admin, director or coordinator access
+            if (\AuthHelper::hasRole('ADMIN') || \AuthHelper::hasRole('DIRECTOR') || \AuthHelper::hasRole('COORDINADOR')) {
+                return true;
+            }
+            
+            if (self::isAjaxRequest()) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Forbidden', 'message' => 'Insufficient permissions']);
+                return false;
+            } else {
+                header('Location: /unauthorized');
+                exit();
+            }
+        };
+    }
+    
+    /**
      * Middleware for routes accessible by admin or coordinator
      */
     public static function adminOrCoordinator()

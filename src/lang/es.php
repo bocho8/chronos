@@ -40,6 +40,7 @@ return [
     'admin_availability_note' => 'Como administrador, puede gestionar la disponibilidad de todos los docentes desde la sección correspondiente.',
     'admin_dashboard' => 'Panel de Administración',
     'director_dashboard' => 'Panel del Director',
+    'coordinator_dashboard' => 'Panel del Coordinador',
     'admin_note' => 'Nota para Administrador',
     'admin_panel' => 'Panel de Administración',
     'administration' => 'Administración',

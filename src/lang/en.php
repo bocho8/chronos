@@ -38,6 +38,7 @@ return [
     'admin_availability_note' => 'As administrator, you can manage the availability of all teachers from the corresponding section.',
     'admin_dashboard' => 'Administration Panel',
     'director_dashboard' => 'Director Panel',
+    'coordinator_dashboard' => 'Coordinator Panel',
     'admin_note' => 'Note for Administrator',
     'admin_panel' => 'Admin Panel',
     'administration' => 'Administration',

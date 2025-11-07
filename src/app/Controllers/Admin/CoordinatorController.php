@@ -23,6 +23,14 @@ class CoordinatorController
     
     public function __construct($database = null)
     {
+        require_once __DIR__ . '/../../../helpers/AuthHelper.php';
+        require_once __DIR__ . '/../../../config/session.php';
+        
+        initSecureSession();
+        
+        // Only ADMIN and DIRECTOR can manage coordinators (not coordinator themselves)
+        \AuthHelper::requireRole(['ADMIN', 'DIRECTOR']);
+        
         if ($database) {
             $this->coordinadorModel = new \Coordinador($database);
         } else {
