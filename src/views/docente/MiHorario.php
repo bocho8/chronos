@@ -21,7 +21,7 @@ initSecureSession();
 
 $translation = Translation::getInstance();
 $languageSwitcher = new LanguageSwitcher();
-$sidebar = new Sidebar('dashboard.php');
+$sidebar = new Sidebar('mi-horario.php');
 
 $languageSwitcher->handleLanguageChange();
 
@@ -54,22 +54,13 @@ try {
         $docenteId = $stmt->fetchColumn();
         
         if ($docenteId) {
-            // Obtener horario del docente
-            $scheduleQuery = "SELECT h.*, m.nombre as materia_nombre, g.nombre as grupo_nombre,
-                                     b.hora_inicio, b.hora_fin
-                             FROM horario h
-                             INNER JOIN materia m ON h.id_materia = m.id_materia
-                             INNER JOIN grupo g ON h.id_grupo = g.id_grupo
-                             INNER JOIN bloque_horario b ON h.id_bloque = b.id_bloque
-                             WHERE h.id_docente = :id_docente
-                             ORDER BY h.dia, b.hora_inicio";
-            $stmt = $database->getConnection()->prepare($scheduleQuery);
-            $stmt->bindParam(':id_docente', $docenteId, PDO::PARAM_INT);
-            $stmt->execute();
-            $scheduleResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Obtener horarios publicados del docente
+            require_once __DIR__ . '/../../models/Horario.php';
+            $horarioModel = new Horario($database->getConnection());
+            $scheduleResults = $horarioModel->getPublishedSchedulesByDocente($docenteId);
             
             // Organizar datos para la tabla de horarios
-            $scheduleData = $scheduleResults;
+            $scheduleData = $scheduleResults ?: [];
             
         }
     }
@@ -154,7 +145,7 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?php _e('app_name'); ?> — Dashboard Docente</title>
+    <title><?php _e('app_name'); ?> — <?php _e('my_schedule'); ?></title>
     <link rel="stylesheet" href="/css/styles.css">
     <?php echo Sidebar::getStyles(); ?>
 </head>
@@ -206,68 +197,8 @@ function getAssignmentForBlock($horario, $dia, $idBloque) {
             <section class="flex-1 px-4 md:px-6 py-6 md:py-8">
                 <div class="max-w-7xl mx-auto">
                     <div class="mb-6 md:mb-8">
-                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('teacher_dashboard'); ?></h2>
-                        <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('teacher_dashboard_description'); ?></p>
-                        
-                        <?php if ($isAdminAccessingTeacherView): ?>
-                            <div class="mb-6 p-4 rounded-lg bg-blue-50 text-blue-800 border border-blue-200">
-                                <div class="flex items-center">
-                                    <span class="text-blue-600 mr-2">ℹ️</span>
-                                    <div>
-                                        <p class="font-medium"><?php _e('admin_note'); ?></p>
-                                        <p class="text-sm"><?php _e('admin_availability_note'); ?></p>
-                                        <a href="/src/views/admin/admin-disponibilidad.php" class="text-blue-600 hover:text-blue-800 underline text-sm mt-1 inline-block">
-                                            <?php _e('manage_all_availability'); ?>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- Statistics -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-500"><?php _e('assigned_hours'); ?></p>
-                                    <p class="text-2xl font-semibold text-gray-900"><?php echo count($scheduleData); ?> <?php _e('hours'); ?></p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-500"><?php _e('margin_percentage'); ?></p>
-                                    <p class="text-2xl font-semibold text-gray-900"><?php echo count($scheduleData) > 0 ? round((count($scheduleData) / 20) * 100) : 0; ?>%</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-lg shadow-sm border border-lightborder p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="w-8 h-8 <?php echo count($scheduleData) > 16 ? 'bg-orange-100' : 'bg-green-100'; ?> rounded-full flex items-center justify-center">
-                                        <span class="text-orange-600 text-xs font-bold leading-none">H</span>
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-500"><?php _e('status'); ?></p>
-                                    <p class="text-lg font-semibold <?php echo count($scheduleData) > 16 ? 'text-orange-600' : 'text-green-600'; ?>">
-                                        <?php echo count($scheduleData) > 16 ? _e('over_16h') : _e('normal'); ?>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                        <h2 class="text-darktext text-xl md:text-2xl font-semibold mb-2 md:mb-2.5"><?php _e('my_schedule'); ?></h2>
+                        <p class="text-muted mb-4 md:mb-6 text-sm md:text-base"><?php _e('my_schedule_description'); ?></p>
                     </div>
 
                     <!-- Schedule Table -->

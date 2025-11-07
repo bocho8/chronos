@@ -289,6 +289,19 @@ $router->group(['middleware' => ['auth']], function($router) {
         });
     });
 
+    // Teacher API routes
+    $router->group(['prefix' => '/api/teacher', 'middleware' => ['teacher']], function($router) {
+        $router->post('/disponibilidad', function() {
+            require __DIR__ . '/../controllers/DocenteDisponibilidadHandler.php';
+        });
+        $router->get('/observaciones', function() {
+            require __DIR__ . '/../controllers/DocenteObservacionHandler.php';
+        });
+        $router->post('/observaciones', function() {
+            require __DIR__ . '/../controllers/DocenteObservacionHandler.php';
+        });
+    });
+
     // Parent-specific routes - keep prefix
     $router->group(['prefix' => '/parent', 'middleware' => ['parent']], function($router) {
         
