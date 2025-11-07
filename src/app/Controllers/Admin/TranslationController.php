@@ -16,9 +16,29 @@ class TranslationController
 
     public function __construct($database = null)
     {
+        require_once __DIR__ . '/../../../helpers/AuthHelper.php';
+        require_once __DIR__ . '/../../../config/session.php';
+        require_once __DIR__ . '/../../../helpers/ResponseHelper.php';
+        
+        initSecureSession();
+        
+        // Verify user is authenticated
+        if (!\AuthHelper::isLoggedIn()) {
+            \ResponseHelper::error('No autorizado', null, 401);
+            exit();
+        }
+        
+        // Check session timeout
+        if (!\AuthHelper::checkSessionTimeout()) {
+            \ResponseHelper::error('Sesión expirada', null, 401);
+            exit();
+        }
+        
+        // Only ADMIN can access translations
+        \AuthHelper::requireRole('ADMIN');
+        
         $this->database = $database;
         $this->translationService = new TranslationService();
-        require_once __DIR__ . '/../../../helpers/ResponseHelper.php';
     }
 
     /**

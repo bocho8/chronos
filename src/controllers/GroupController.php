@@ -18,7 +18,7 @@ require_once __DIR__ . '/../models/Grupo.php';
 
 initSecureSession();
 
-AuthHelper::requireRole('ADMIN');
+AuthHelper::requireRole(['ADMIN', 'DIRECTOR']);
 
 if (!AuthHelper::checkSessionTimeout()) {
     ResponseHelper::sendError('Sesión expirada', 401);

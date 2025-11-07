@@ -14,7 +14,7 @@ require_once __DIR__ . '/../helpers/ResponseHelper.php';
 initSecureSession();
 $translation = Translation::getInstance();
 
-AuthHelper::requireRole(['ADMIN', 'COORDINADOR']);
+AuthHelper::requireRole(['ADMIN', 'DIRECTOR', 'COORDINADOR']);
 
 if (!AuthHelper::checkSessionTimeout()) {
     ResponseHelper::error('Sesión expirada', null, 401);

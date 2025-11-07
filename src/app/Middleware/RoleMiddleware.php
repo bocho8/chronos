@@ -25,6 +25,11 @@ class RoleMiddleware
             return true;
         }
         
+        // Allow director access when admin is required
+        if ($requiredRole === 'ADMIN' && \AuthHelper::hasRole('DIRECTOR')) {
+            return true;
+        }
+        
         if (!\AuthHelper::hasRole($requiredRole)) {
             if (self::isAjaxRequest()) {
                 http_response_code(403);
@@ -74,6 +79,32 @@ class RoleMiddleware
     {
         return function() {
             return self::handle('PADRE');
+        };
+    }
+    
+    /**
+     * Middleware for routes accessible by admin or director
+     */
+    public static function adminOrDirector()
+    {
+        return function() {
+            if (!AuthMiddleware::handle()) {
+                return false;
+            }
+            
+            // Allow admin or director access
+            if (\AuthHelper::hasRole('ADMIN') || \AuthHelper::hasRole('DIRECTOR')) {
+                return true;
+            }
+            
+            if (self::isAjaxRequest()) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Forbidden', 'message' => 'Insufficient permissions']);
+                return false;
+            } else {
+                header('Location: /unauthorized');
+                exit();
+            }
         };
     }
     

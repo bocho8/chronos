@@ -22,7 +22,7 @@ $sidebar = new Sidebar('admin-docentes.php');
 
 $languageSwitcher->handleLanguageChange();
 
-AuthHelper::requireRole('ADMIN');
+AuthHelper::requireRole(['ADMIN', 'DIRECTOR']);
 
 if (!AuthHelper::checkSessionTimeout()) {
     header('Location: /src/views/login.php');

@@ -14,7 +14,7 @@ require_once __DIR__ . '/../../helpers/AuthHelper.php';
 
 initSecureSession();
 
-AuthHelper::requireRole('ADMIN');
+AuthHelper::requireRole(['ADMIN', 'DIRECTOR']);
 
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");

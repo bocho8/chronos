@@ -20,7 +20,7 @@ $sidebar = new Sidebar('admin-observaciones-predefinidas.php');
 
 $languageSwitcher->handleLanguageChange();
 
-AuthHelper::requireRole(['ADMIN', 'COORDINADOR']);
+AuthHelper::requireRole(['ADMIN', 'DIRECTOR', 'COORDINADOR']);
 
 if (!AuthHelper::checkSessionTimeout()) {
     header("Location: /src/views/login.php?message=session_expired");

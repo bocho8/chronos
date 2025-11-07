@@ -121,9 +121,10 @@ class Sidebar {
             ),
             'DIRECTOR' => array_merge(
                 [],
-                $this->getAdministrationSections(),
+                $this->getAdministrationSectionsForDirector(),
                 $this->getAcademicSections(),
-                $this->getDirectorSections()
+                $this->getDirectorSections(),
+                $this->getCoordinatorSections()
             ),
             'COORDINADOR' => array_merge(
                 [],
@@ -155,6 +156,27 @@ class Sidebar {
                         'url' => '/translations',
                         'text' => 'translations_management',
                         'icon' => '🌐'
+                    ]
+                ]
+            ]
+        ];
+    }
+    
+    private function getAdministrationSectionsForDirector() {
+        $urls = \RouteHelper::getAdminUrls();
+        return [
+            [
+                'title' => 'administration',
+                'items' => [
+                    [
+                        'url' => $urls['users'],
+                        'text' => 'users',
+                        'icon' => '👥'
+                    ],
+                    [
+                        'url' => $urls['teachers'],
+                        'text' => 'teachers',
+                        'icon' => '👨‍🏫'
                     ]
                 ]
             ]

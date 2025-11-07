@@ -59,6 +59,12 @@ $router->group(['middleware' => ['auth']], function($router) {
         });
     });
 
+    $router->group(['prefix' => '/director', 'middleware' => ['director']], function($router) {
+        $router->get('/dashboard', function() {
+            require __DIR__ . '/../views/director/dashboard.php';
+        });
+    });
+
     // Shared routes - accessible by admin and coordinator (no prefix)
     $router->group(['middleware' => ['adminOrCoordinator']], function($router) {
         $router->get('/availability', function() {
@@ -92,8 +98,8 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->post('/api/assignments', 'Admin\AssignmentController@handleRequest');
     });
 
-    // Admin-only routes - no prefix but admin middleware
-    $router->group(['middleware' => ['admin']], function($router) {
+    // Admin-only routes - no prefix but admin or director middleware
+    $router->group(['middleware' => ['adminOrDirector']], function($router) {
         $router->get('/teachers', function() {
             require __DIR__ . '/../views/admin/AdminDocentes.php';
         });
@@ -193,27 +199,6 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->get('/group-subjects', 'Admin\GroupSubjectController@index');
         $router->get('/api/group-subjects', 'Admin\GroupSubjectController@handleRequest');
         $router->post('/api/group-subjects', 'Admin\GroupSubjectController@handleRequest');
-
-        // Translation Management Routes
-        $router->get('/translations', 'Admin\TranslationController@index');
-        $router->get('/translations-test', function() {
-            echo "Translation route is working!";
-        });
-        $router->get('/translations-simple', function() {
-            require_once __DIR__ . '/../app/Controllers/Admin/TranslationController.php';
-            $controller = new \App\Controllers\Admin\TranslationController();
-            $controller->index();
-        });
-        $router->get('/translations/all', 'Admin\TranslationController@getAll');
-        $router->get('/translations/missing', 'Admin\TranslationController@getMissing');
-        $router->post('/translations/update', 'Admin\TranslationController@update');
-        $router->post('/translations/bulk-update', 'Admin\TranslationController@bulkUpdate');
-        $router->get('/translations/export', 'Admin\TranslationController@export');
-        $router->get('/translations/statistics', 'Admin\TranslationController@getStatistics');
-        $router->post('/translations/fill-missing', 'Admin\TranslationController@fillMissing');
-        $router->post('/translations/validate-key', 'Admin\TranslationController@validateKey');
-        $router->get('/translations/detect-spanish', 'Admin\TranslationController@detectSpanishErrors');
-        $router->post('/translations/clear-all-spanish', 'Admin\TranslationController@clearAllSpanish');
         
         // API routes for admin-only resources
         $router->post('/api/teachers', 'Admin\TeacherController@handleRequest');
@@ -238,6 +223,30 @@ $router->group(['middleware' => ['auth']], function($router) {
         $router->post('/api/publish-request/reject', function() {
             require __DIR__ . '/../controllers/PublishRequestHandler.php';
         });
+    });
+
+    // Admin-only routes - Translation Management (only for admin, not director)
+    $router->group(['middleware' => ['admin']], function($router) {
+        // Translation Management Routes
+        $router->get('/translations', 'Admin\TranslationController@index');
+        $router->get('/translations-test', function() {
+            echo "Translation route is working!";
+        });
+        $router->get('/translations-simple', function() {
+            require_once __DIR__ . '/../app/Controllers/Admin/TranslationController.php';
+            $controller = new \App\Controllers\Admin\TranslationController();
+            $controller->index();
+        });
+        $router->get('/translations/all', 'Admin\TranslationController@getAll');
+        $router->get('/translations/missing', 'Admin\TranslationController@getMissing');
+        $router->post('/translations/update', 'Admin\TranslationController@update');
+        $router->post('/translations/bulk-update', 'Admin\TranslationController@bulkUpdate');
+        $router->get('/translations/export', 'Admin\TranslationController@export');
+        $router->get('/translations/statistics', 'Admin\TranslationController@getStatistics');
+        $router->post('/translations/fill-missing', 'Admin\TranslationController@fillMissing');
+        $router->post('/translations/validate-key', 'Admin\TranslationController@validateKey');
+        $router->get('/translations/detect-spanish', 'Admin\TranslationController@detectSpanishErrors');
+        $router->post('/translations/clear-all-spanish', 'Admin\TranslationController@clearAllSpanish');
     });
 
     // Coordinator-specific routes - keep prefix for role-specific views
@@ -295,6 +304,7 @@ $router->middleware('director', RoleMiddleware::director());
 $router->middleware('coordinator', RoleMiddleware::coordinator());
 $router->middleware('teacher', RoleMiddleware::teacher());
 $router->middleware('parent', RoleMiddleware::parent());
+$router->middleware('adminOrDirector', RoleMiddleware::adminOrDirector());
 $router->middleware('adminOrCoordinator', RoleMiddleware::adminOrCoordinator());
 
 $router->dispatch();

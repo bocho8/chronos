@@ -27,7 +27,7 @@ class RouteHelper
     {
         return match ($userRole) {
             'ADMIN' => '/admin/dashboard',
-            'DIRECTOR' => '/admin/dashboard', // Directors use admin dashboard
+            'DIRECTOR' => '/director/dashboard',
             'COORDINADOR' => '/coordinator/dashboard',
             'DOCENTE' => '/teacher/dashboard',
             'PADRE' => '/parent/dashboard',

@@ -15,7 +15,7 @@ require_once __DIR__ . '/BloqueController.php';
 initSecureSession();
 
 // Check authentication
-AuthHelper::requireRole('ADMIN');
+AuthHelper::requireRole(['ADMIN', 'DIRECTOR']);
 
 // Check session timeout
 if (!AuthHelper::checkSessionTimeout()) {
