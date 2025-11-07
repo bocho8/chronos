@@ -746,6 +746,7 @@ try {
                     }
                 });
                 
+                window.paginationManager.render();
                 updateVisibleItems(1);
             }
 
@@ -801,7 +802,7 @@ try {
                 return matches;
             });
             
-            const startIndex = (state.currentPage - 1) * state.perPage;
+            const startIndex = (page - 1) * state.perPage;
             const endIndex = startIndex + state.perPage;
             
             allItems.forEach(item => {

@@ -186,6 +186,7 @@ $router->group(['middleware' => ['auth']], function($router) {
 
         // Parent Assignment Routes
         $router->get('/parent-assignments', 'Admin\ParentAssignmentController@index');
+        $router->get('/api/parent-assignments', 'Admin\ParentAssignmentController@handleRequest');
         $router->post('/api/parent-assignments', 'Admin\ParentAssignmentController@handleRequest');
         
         // Group Subject Assignment Routes

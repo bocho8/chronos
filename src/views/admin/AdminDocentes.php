@@ -1190,6 +1190,7 @@ function getTeacherAssignments($teacherId, $assignments) {
                     }
                 });
                 
+                window.paginationManager.render();
                 // Show first page by default
                 updateVisibleItems(1);
             }
@@ -1249,7 +1250,7 @@ function getTeacherAssignments($teacherId, $assignments) {
                 return matches;
             });
             
-            const startIndex = (state.currentPage - 1) * state.perPage;
+            const startIndex = (page - 1) * state.perPage;
             const endIndex = startIndex + state.perPage;
             
             // Hide all items first

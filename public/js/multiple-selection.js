@@ -346,7 +346,7 @@ class MultipleSelection {
 
     async performBulkDelete(selectedIds) {
         try {
-            const response = await fetch('/src/controllers/bulk_handler.php', {
+            const response = await fetch('/src/controllers/BulkHandler.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -476,7 +476,7 @@ class MultipleSelection {
 
     async bulkUpdateStatus(selectedIds, status) {
         try {
-            const response = await fetch('/src/controllers/bulk_handler.php', {
+            const response = await fetch('/src/controllers/BulkHandler.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -158,12 +158,14 @@ class PaginationManager {
     attachEventListeners() {
         // Page buttons
         const pageButtons = this.container.querySelectorAll('.pagination-btn:not([disabled])');
+        const self = this; // Store reference to ensure 'this' is available in event handler
         pageButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 const page = parseInt(btn.getAttribute('data-page'));
-                if (page && page !== this.currentPage && page >= 1) {
-                    this.setPage(page);
+                if (page && page !== self.currentPage && page >= 1) {
+                    self.setPage(page);
                 }
             });
         });

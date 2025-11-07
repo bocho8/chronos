@@ -1151,6 +1151,7 @@ function getUserInitials($nombre, $apellido) {
           }
         });
         
+        window.paginationManager.render();
         updateVisibleItems(1);
       }
 
@@ -1206,7 +1207,7 @@ function getUserInitials($nombre, $apellido) {
         return matches;
       });
       
-      const startIndex = (state.currentPage - 1) * state.perPage;
+      const startIndex = (page - 1) * state.perPage;
       const endIndex = startIndex + state.perPage;
       
       allItems.forEach(item => {
